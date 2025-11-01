@@ -61,7 +61,7 @@
 - [x] e_lfanew beyond file size → expect graceful error, no read past EOF
 - [x] Missing/corrupt PE signature → expect ERR_NO_PE_SIG
 - [x] Empty section table (NumberOfSections=0) → parser handles gracefully
-- [ ] Section with zero SizeOfRawData → no crash, warn if needed
+- [x] Section with zero SizeOfRawData → no crash, warn if needed
 - [ ] Section overlapping VirtualAddress/PointerToRawData → parser error or skip
 - [ ] Section PointerToRawData > file size → expect error, no crash
 - [x] RVA outside all sections → rva_to_file_offset returns -1

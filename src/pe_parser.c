@@ -233,7 +233,7 @@ RET_CODE parse_string_table(FILE *peFile, char **stringTableOut, DWORD offset) {
     return RET_SUCCESS;
 }
 
-RET_CODE parse_section_headers(FILE *peFile, PIMAGE_SECTION_HEADER *sections, WORD numberOfSections, DWORD offset) {
+RET_CODE parse_section_headers(FILE *peFile, PIMAGE_SECTION_HEADER *sections, WORD numberOfSections, DWORD offset, LONGLONG fileSize) {
     if (!peFile || offset == 0) return RET_INVALID_PARAM;
 
     if (numberOfSections == 0)
@@ -255,6 +255,29 @@ RET_CODE parse_section_headers(FILE *peFile, PIMAGE_SECTION_HEADER *sections, WO
         fprintf(stderr, "[!] Failed to read section headers\n");
         SAFE_FREE(*sections);
         return RET_ERROR;
+    }
+
+    // --- Validation of sections ---
+    for (int i = 0; i < numberOfSections; i++) {
+        PIMAGE_SECTION_HEADER sec = &(*sections)[i];
+
+        char secName[9] = {0};
+        memcpy(secName, sec->Name, 8);
+        secName[8] = '\0';
+
+        // Zero raw size
+        if (sec->SizeOfRawData == 0) {
+            REPORT_MALFORMED("Section has zero raw size", secName);
+        }
+
+        else if (sec->SizeOfRawData > fileSize) {
+            REPORT_MALFORMED("Section raw size exceeds file size (invalid or corrupted section)", secName);
+        }
+
+        // Packed section: VirtualSize=0 but raw data exists
+        if (sec->Misc.VirtualSize == 0 && sec->SizeOfRawData > 0) {
+            REPORT_MALFORMED("VirtualSize=0 but raw data exists (possible packed section)", secName);
+        }
     }
 
     return RET_SUCCESS;
@@ -865,7 +888,9 @@ RET_CODE parsePE(
 
     DWORD sectionOffset = (DWORD)((ULONGLONG)dosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + headerPtr->SizeOfOptionalHeader);
 
-    if (parse_section_headers(peFile, sections, headerPtr->NumberOfSections, sectionOffset) != RET_SUCCESS) {
+    LONGLONG fileSize = get_file_size(peFile);
+
+    if (parse_section_headers(peFile, sections, headerPtr->NumberOfSections, sectionOffset, fileSize) != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to parse section headers\n");
         return RET_ERROR;
     }

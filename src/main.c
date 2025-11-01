@@ -12,12 +12,12 @@ int main(void) {
         // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
         "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-        // "-e",
+        "-s",
         // "--strings",
         // "rgex:.*\\.exe",
-        "-x",
+        // "-x",
         // "export:NTDLL.RtlAcquireSRWLockExclusive",
-        "import:@4",
+        // "import:@4",
         // "-h",
         NULL
     };

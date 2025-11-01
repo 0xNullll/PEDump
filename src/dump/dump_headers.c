@@ -1206,6 +1206,7 @@ RET_CODE dump_section_headers(
     DWORD NumberOfSymbols,
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
+    LONGLONG fileSize,
     ULONGLONG imageBase) {
 
     if (!peFile || !sections) return RET_INVALID_PARAM;
@@ -1216,6 +1217,26 @@ RET_CODE dump_section_headers(
         numberOfSections);
 
     for (WORD i = 0; i < numberOfSections; i++) {
+        char secName[9] = {0};
+        memcpy(secName, sections[i].Name, 8);
+        secName[8] = '\0';
+
+        if (sections[i].SizeOfRawData == 0) {
+            REPORT_MALFORMED("Section has zero raw size", secName);
+            continue;
+        }
+
+        else if (sections[i].SizeOfRawData > fileSize) {
+            REPORT_MALFORMED("Section raw size exceeds file size (invalid or corrupted section)", secName);
+            continue;
+        }
+
+        // Packed section: VirtualSize=0 but raw data exists
+        if (sections[i].Misc.VirtualSize == 0 && sections[i].SizeOfRawData > 0) {
+            REPORT_MALFORMED("VirtualSize=0 but raw data exists (possible packed section)", secName);
+        }
+
+
         if (print_section_header(peFile,
                                  symTableOffset,
                                  NumberOfSymbols,

@@ -96,13 +96,15 @@ RET_CODE parse_string_table
 // peFile: pointer to the opened PE file
 // numberOfSections: number of section headers to parse
 // offset: file offset where section headers begin
+// fileSize: to check if rawDataSize is bigger than the file
 // Returns: RET_SUCESS on success, RET_ERROR otherwise.
 RET_CODE parse_section_headers
 (
     IN  FILE* peFile,
     OUT PIMAGE_SECTION_HEADER *sections,
     IN  WORD numberOfSections,
-    IN  DWORD offset
+    IN  DWORD offset,
+    IN  LONGLONG fileSize
 );
 
 // Parse a table of elements from a PE file at a given RVA
