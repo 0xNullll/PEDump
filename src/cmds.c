@@ -613,7 +613,7 @@ RET_CODE handle_commands(
 
             case CMD_SECTIONS:
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_section_headers(peFile, PointerToSymbolTable, NumberOfSymbols, sections, numberOfSections, imageBase) != RET_SUCCESS) {
+                    if (dump_section_headers(peFile, PointerToSymbolTable, NumberOfSymbols, sections, numberOfSections, fileSize, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Section Headers\n");
                     }
                 } else {

@@ -280,16 +280,18 @@ RET_CODE print_section_header
 // NumberOfSymbols : total number of symbols in the symbol table.
 // sections        : array to be filled with section headers.
 // numberOfSections: total number of sections in the PE file.
+// fileSize        : to check incase if sizeOfRaw is bigger than file size
 // imageBase       : base address of the loaded image.
 // Returns         : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_section_headers
 (
-    IN FILE *peFile,
-    IN DWORD symTableOffset,
-    IN DWORD NumberOfSymbols,
-    IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
-    IN ULONGLONG imageBase
+    IN FILE                  *peFile,
+    IN DWORD                  symTableOffset,
+    IN DWORD                  NumberOfSymbols,
+    IN PIMAGE_SECTION_HEADER  sections,
+    IN WORD                   numberOfSections,
+    IN LONGLONG               fileSize,
+    IN ULONGLONG              imageBase
 );
 
 #endif

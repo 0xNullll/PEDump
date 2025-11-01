@@ -912,6 +912,9 @@ RET_CODE dump_rsrc_dir(
         if (!rsrcEntriesDir[i].DataIsDirectory) {
             // You could handle a leaf here by reading IMAGE_RESOURCE_DATA_ENTRY
             // but for TYPE level it should normally be a subdirectory.
+
+            REPORT_MALFORMED("Resource root entry is not a directory", "Resource Directory Entry");
+            return RET_MALFORMED_FILE;
             continue;
         }
 
