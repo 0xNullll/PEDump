@@ -28,7 +28,7 @@
 //     char fileName[260];
 // } PETypeInfo, *PPETypeInfo;
 
-// TODO: Add deeper detection logic for native drivers (check for DriverEntry and kernel exports)
+// TODO Add deeper detection logic for native drivers (check for DriverEntry and kernel exports)
 RET_CODE identify_pe_type(
     const char *fileName,
     PIMAGE_DATA_DIRECTORY dataDirs,
