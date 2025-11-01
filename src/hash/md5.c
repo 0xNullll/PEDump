@@ -1,5 +1,8 @@
 #include "../include/md5.h"
 
+static const uint8_t PADDING[64] = { 0x80, 0 };
+
+// Memory set macro (no endianness issue)
 static void Encode(uint8_t *output, const uint32_t *input, unsigned int len) {
     unsigned int i, j;
     for (i = 0, j = 0; j < len; i++, j += 4) {
@@ -10,6 +13,7 @@ static void Encode(uint8_t *output, const uint32_t *input, unsigned int len) {
     }
 }
 
+// Memory set macro (no endianness issue)
 static void Decode(uint32_t *output, const uint8_t *input, unsigned int len) {
     unsigned int i, j;
     for (i = 0, j = 0; j < len; i++, j += 4) {
@@ -20,12 +24,10 @@ static void Decode(uint32_t *output, const uint8_t *input, unsigned int len) {
     }
 }
 
-// Memory copy macro handling endianness for MD5
-#if IS_LITTLE_ENDIAN
-    #define MD5_MEMCPY(dest, src, len) memcpy(dest, src, len)
-#else
-    #define MD5_MEMCPY(dest, src, len) Encode(dest, src, len)
-#endif
+#define MD5_MEMCPY(dest, src, len) memcpy(dest, src, len)
+#define MD5_MEMSET(dest, val, len) memset(dest, val, len)
+#define MD5_DECODE(dest, src, len) Decode(dest, src, len)
+#define MD5_ENCODE(dest, src, len) Encode(dest, src, len)
 
 int MD5Init(MD5_CTX *c) {
     if (!c) return 0;
@@ -62,14 +64,14 @@ void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
     size_t index, padLen;
 
     // Save number of bits
-    bits[0] = ctx->bitlen & 0xff;
-    bits[1] = (ctx->bitlen >> 8) & 0xff;
-    bits[2] = (ctx->bitlen >> 16) & 0xff;
-    bits[3] = (ctx->bitlen >> 24) & 0xff;
-    bits[4] = (ctx->bitlen >> 32) & 0xff;
-    bits[5] = (ctx->bitlen >> 40) & 0xff;
-    bits[6] = (ctx->bitlen >> 48) & 0xff;
-    bits[7] = (ctx->bitlen >> 56) & 0xff;
+    bits[0] = (uint8_t)(ctx->bitlen & 0xff);
+    bits[1] = (uint8_t)((ctx->bitlen >> 8) & 0xff);
+    bits[2] = (uint8_t)((ctx->bitlen >> 16) & 0xff);
+    bits[3] = (uint8_t)((ctx->bitlen >> 24) & 0xff);
+    bits[4] = (uint8_t)((ctx->bitlen >> 32) & 0xff);
+    bits[5] = (uint8_t)((ctx->bitlen >> 40) & 0xff);
+    bits[6] = (uint8_t)((ctx->bitlen >> 48) & 0xff);
+    bits[7] = (uint8_t)((ctx->bitlen >> 56) & 0xff);
 
     // Pad out to 56 mod 64
     index = ctx->buffer_len;
@@ -89,7 +91,7 @@ void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
 void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
     uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
-    MD5_MEMCPY(x, block, 64);
+    MD5_DECODE(x, block, 64);
 
     // Round 1
     FF (a, b, c, d, x[ 0], S11, 0xd76aa478); // 1
@@ -211,6 +213,3 @@ uint8_t *compute_md5_file(const char *filename, uint8_t out[MD5_DIGEST_LENGTH]) 
     return out;
 }
 
-inline int md5_compare(const uint8_t a[MD5_DIGEST_LENGTH], const uint8_t b[MD5_DIGEST_LENGTH]) {
-    return memcmp(a, b, MD5_DIGEST_LENGTH);
-}

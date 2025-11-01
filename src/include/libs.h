@@ -1,25 +1,6 @@
 #ifndef LIBS_H
 #define LIBS_H
 
-// Detect GCC/Clang
-#if defined(__GNUC__)
-    #define USING_GCC 1
-#else
-    #define USING_GCC 0
-#endif
-
-// Detect little-endian (GCC/Clang only, fallback for others)
-#if USING_GCC
-    #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        #define IS_LITTLE_ENDIAN 1
-    #else
-        #define IS_LITTLE_ENDIAN 0
-    #endif
-#else
-    // Assume little-endian on MSVC/x86, or implement runtime check
-    #define IS_LITTLE_ENDIAN 1
-#endif
-
 // =============================================================
 //  Platform-Specific Includes and Feature Flags
 // =============================================================

@@ -4,8 +4,6 @@
 #include "libs.h"
 #include "file_defs.h"
 
-// Memory set macro (no endianness issue)
-#define MD5_MEMSET(dest, val, len) memset(dest, val, len)
 
 #define MD5_DIGEST_LENGTH 16
 
@@ -103,8 +101,6 @@ uint8_t *MD5
     OUT uint8_t       *md5
 );
 
-static uint8_t PADDING[64] = { 0x80, 0 };
-
 // Convert MD5 digest to hex string
 void md5_to_hex
 (
@@ -115,8 +111,8 @@ void md5_to_hex
 // Compute MD5 for a file
 uint8_t *compute_md5_file
 (
-    IN const char *filename,
-    OUT uint8_t    out[MD5_DIGEST_LENGTH]
+    IN  const char *filename,
+    OUT uint8_t     out[MD5_DIGEST_LENGTH]
 );
 
 // Compare two digests, returns 1 if equal, 0 otherwise
@@ -124,6 +120,8 @@ inline int md5_compare
 (
     IN const uint8_t a[MD5_DIGEST_LENGTH],
     IN const uint8_t b[MD5_DIGEST_LENGTH]
-);
+) {
+    return memcmp(a, b, MD5_DIGEST_LENGTH);
+}
 
 #endif
