@@ -55,7 +55,7 @@
 - [x] Update all header files functions to look pro and add IN OUT and INOUT prefix to them
 
 ## MALFORMED FILE HANDLING
-- [ ] Implement a specific error-handling function to alert users of malformed files
+- [x] Implement a specific error-handling function to alert users of malformed files
 
 - [x] Invalid DOS magic (e_magic != "MZ") → expect ERR_INVALID_DOS, no crash
 - [x] e_lfanew beyond file size → expect graceful error, no read past EOF
@@ -63,18 +63,17 @@
 - [x] Empty section table (NumberOfSections=0) → parser handles gracefully
 - [x] Section with zero SizeOfRawData → no crash, warn if needed
 - [ ] Section overlapping VirtualAddress/PointerToRawData → parser error or skip
-- [ ] Section PointerToRawData > file size → expect error, no crash
+- [x] Section PointerToRawData > file size → expect error, no crash
 - [x] RVA outside all sections → rva_to_file_offset returns -1
 - [x] Data directory RVA=0, Size=0 → handled gracefully
 - [ ] Security directory with odd offset → skip or report, no crash
-- [ ] Truncated resource directory → parser detects incomplete resource
+- [x] Truncated resource directory → parser detects incomplete resource
 - [ ] Resource with bad NameOffset/ID → skip invalid entry, no crash
 - [ ] CLR header with invalid Metadata RVA → parser error, no crash
 - [ ] Malformed RuntimeFunctionEntry → parser skips entry
-- [ ] Packed section (VirtualSize=0 but data exists) → parser reads safely
+- [x] Packed section (VirtualSize=0 but data exists) → parser reads safely
 - [x] Non-printable section name → parser handles, no crash
 - [x] Overlay appended after last section → parser detects and reads correctly
 - [ ] Bit-flipped headers → parser error or safe skip
 - [ ] File truncated mid-section → parser detects incomplete section
 - [ ] Duplicate sections → parser warns or skips duplicates
-- [ ] Alignment fields set to non-standard → parser aligns correctly or warns
