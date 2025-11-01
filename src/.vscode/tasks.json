@@ -65,7 +65,7 @@
                 "${workspaceFolder}\\main.c",
                 
                 "-o",
-                "${workspaceFolder}\\pedumper.exe"
+                "${workspaceFolder}\\pedump.exe"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
