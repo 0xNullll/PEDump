@@ -1,0 +1,80 @@
+# PE Parser Project TODO List
+
+[x] = finished
+[-] = work in progress
+[ ] = not finished
+
+## CORE FEATURES
+- [x] Overlay parser
+- [x] String Parser
+- [x] Extraction of data
+- [x] Hexdump annotations with section markers
+- [ ] Packer detection heuristics ### only in v2
+- [x] Split format options into temporary (-tf / --temp-format) and permanent (-f / --format) for sticky defaults and one-off overrides per dump
+- [x] Add the ability to either decide the maximum and start offset using hex or lines
+- [ ] Add a "raw dump" feature: strip headers, overlays, annotations, and any non-essential info for scripting or piping output to files
+
+## CERTIFICATES & SECURITY
+- [ ] Parse security certificates in dump_reloc_dir (OpenSSL)
+- [ ] Parse catalog certificates in dump_load_config_dir (OpenSSL)
+- [ ] Add signature verification: validate Authenticode certificates and chain
+
+## SPECIAL PE STRUCTURES
+- [ ] Parse & dump IMAGE_ENCLAVE_CONFIG32 & IMAGE_ENCLAVE_CONFIG64 in dump_load_config_dir
+- [ ] Finish parsing/dumping CLR/.NET information ### only in v2
+
+## RESOURCES & METADATA
+- [x] make a dumping function for version info
+- [ ] Utilize SectionAlignment
+- [ ] Evaluate usefulness of `truncateNames` parameter, possibly add a new command
+
+## DEBUGGING & TESTING
+- [ ] Test dump_MISC_debug_info
+- [ ] Test dump_exception_debug_info
+- [ ] Test dump_OMAP_debug_info
+- [ ] Test dump_bound_import_dir
+- [x] Fix all possible warnings
+- [ ] Test command system in alot of diff ways to clear any errors
+- [ ] test on Linux
+- [ ] test on macOS
+
+## FRAMEWORK & USABILITY
+- [-] Print useful file info: type, CPU architecture, size, 32/64-bit
+- [x] Update dump_all_data_directories to handle different formats and convert RVA→offsets (skip security directory when passing to raw dump functions)
+- [x] Allow raw dump line ranges: -1 = last line, start-end = specific lines, default = all lines
+- [x] Dump all printable strings with metadata (offset, size, type: Unicode/ASCII)
+- [-] Implement search command (string/binary/regex) with match offsets + format/output support
+- [ ] Implement hashing feature: compute MD5, SHA1, SHA256 for full file or individual sections
+- [ ] Implement hash comparison: compare hashes of files or sections using multiple algorithms
+
+## CLEANUP & POLISH
+- [-] Polish functions
+- [-] Add/update all header file comments
+- [x] Round up all number inputs in commands to prevent errors
+- [x] Update all flags function names to look similiar and start with Get*
+- [x] Update all header files functions to look pro and add IN OUT and INOUT prefix to them
+
+## MALFORMED FILE HANDLING
+- [ ] Implement a specific error-handling function to alert users of malformed files
+
+- [x] Invalid DOS magic (e_magic != "MZ") → expect ERR_INVALID_DOS, no crash
+- [x] e_lfanew beyond file size → expect graceful error, no read past EOF
+- [x] Missing/corrupt PE signature → expect ERR_NO_PE_SIG
+- [x] Empty section table (NumberOfSections=0) → parser handles gracefully
+- [ ] Section with zero SizeOfRawData → no crash, warn if needed
+- [ ] Section overlapping VirtualAddress/PointerToRawData → parser error or skip
+- [ ] Section PointerToRawData > file size → expect error, no crash
+- [x] RVA outside all sections → rva_to_file_offset returns -1
+- [x] Data directory RVA=0, Size=0 → handled gracefully
+- [ ] Security directory with odd offset → skip or report, no crash
+- [ ] Truncated resource directory → parser detects incomplete resource
+- [ ] Resource with bad NameOffset/ID → skip invalid entry, no crash
+- [ ] CLR header with invalid Metadata RVA → parser error, no crash
+- [ ] Malformed RuntimeFunctionEntry → parser skips entry
+- [ ] Packed section (VirtualSize=0 but data exists) → parser reads safely
+- [x] Non-printable section name → parser handles, no crash
+- [x] Overlay appended after last section → parser detects and reads correctly
+- [ ] Bit-flipped headers → parser error or safe skip
+- [ ] File truncated mid-section → parser detects incomplete section
+- [ ] Duplicate sections → parser warns or skips duplicates
+- [ ] Alignment fields set to non-standard → parser aligns correctly or warns

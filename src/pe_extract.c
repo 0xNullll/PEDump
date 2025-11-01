@@ -1,0 +1,668 @@
+#include "include/pe_extract.h"
+
+// typedef enum _PE_MAIN_TYPE {
+//     PE_TYPE_UNKNOWN = 0,
+//     PE_TYPE_EXE,
+//     PE_TYPE_DLL,
+//     PE_TYPE_DRIVER,
+//     PE_TYPE_SYSTEM,
+//     PE_TYPE_EFI,
+//     PE_TYPE_CONTROL_PANEL,
+//     PE_TYPE_ACTIVEX,
+//     PE_TYPE_SCREENSAVER
+// } PE_MAIN_TYPE;
+
+// typedef struct _PETypeInfo {
+//     BYTE isConsole     : 1;
+//     BYTE isGui         : 1;
+//     BYTE isFirmware    : 1;
+//     BYTE isNative      : 1;
+//     BYTE hasExports    : 1;
+//     BYTE hasImports    : 1;
+//     BYTE hasSignature  : 1;
+//     BYTE reserved      : 2;   // keep alignment to 8 bits
+
+//     PE_MAIN_TYPE mainType;
+
+//     char extension[32];
+//     char fileName[260];
+// } PETypeInfo, *PPETypeInfo;
+
+// TODO: Add deeper detection logic for native drivers (check for DriverEntry and kernel exports)
+RET_CODE identify_pe_type(
+    const char *fileName,
+    PIMAGE_DATA_DIRECTORY dataDirs,
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    WORD fileFlags,
+    DWORD addrOfEntryPoint,
+    WORD subsystem,
+    WORD majorSubVer, WORD minorSubVer,
+    PPETypeInfo outPetypeinfo) {
+    
+    PETypeInfo petypeinfo = {0};
+    petypeinfo.mainType = PE_TYPE_UNKNOWN;
+    int status;
+    
+    // Store file name (if your struct supports it)
+    if (fileName) strncpy(petypeinfo.fileName, fileName, sizeof(petypeinfo.fileName) - 1);
+    
+    // EFI / Boot Application detection
+    if (subsystem == IMAGE_SUBSYSTEM_EFI_APPLICATION ||
+        subsystem == IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER ||
+        subsystem == IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER ||
+        subsystem == IMAGE_SUBSYSTEM_EFI_ROM ||
+        subsystem == IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION)
+        {
+            petypeinfo.isFirmware = 1;
+            petypeinfo.mainType = PE_TYPE_EFI;
+            strncpy(petypeinfo.extension, ".efi", sizeof(petypeinfo.extension) - 1);
+            status = RET_SUCCESS;
+        }
+    
+    // Native subsystem (kernel / system binaries)
+    if (subsystem == IMAGE_SUBSYSTEM_NATIVE) {
+        petypeinfo.isNative = 1;
+        // Kernel-mode binary
+        if (fileFlags & IMAGE_FILE_DLL) {
+            // find if the main entry point function is DriverEntry() and other symbols inside the file later on to identify a sys file
+
+            // Usually a .sys driver or a kernel DLL
+            petypeinfo.mainType = PE_TYPE_DLL;
+            strncpy(petypeinfo.extension, ".dll", sizeof(petypeinfo.extension) - 1);
+        } else {
+            // Kernel EXE (e.g., ntoskrnl.exe)
+            petypeinfo.mainType = PE_TYPE_SYSTEM;
+            strncpy(petypeinfo.extension, ".exe", sizeof(petypeinfo.extension) - 1);
+            }
+            status = RET_SUCCESS;
+        }
+        
+    // DLLs (user-mode libraries)
+    if ((fileFlags & IMAGE_FILE_DLL) && subsystem != IMAGE_SUBSYSTEM_NATIVE) {
+        petypeinfo.mainType = PE_TYPE_DLL;
+        strncpy(petypeinfo.extension, ".dll", sizeof(petypeinfo.extension) - 1);
+        status = RET_SUCCESS;
+    }
+
+    // Executables (GUI or Console)
+    if (!(fileFlags & IMAGE_FILE_DLL) && addrOfEntryPoint != 0) {
+        petypeinfo.mainType = PE_TYPE_EXE;
+        strncpy(petypeinfo.extension, ".exe", sizeof(petypeinfo.extension) - 1);
+
+        if (subsystem == IMAGE_SUBSYSTEM_WINDOWS_GUI) petypeinfo.isGui = 1;
+        else if (subsystem == IMAGE_SUBSYSTEM_WINDOWS_CUI) petypeinfo.isConsole = 1;
+        
+        status = RET_SUCCESS;
+    }
+    
+    // MUI Resource-Only DLLs
+    if ((fileFlags & IMAGE_FILE_DLL) &&
+    addrOfEntryPoint == 0 &&
+    has_section(sections, numberOfSections, ".rsrc") &&
+    !has_section(sections, numberOfSections, ".text"))
+    {
+        petypeinfo.mainType = PE_TYPE_MUI;
+        strncpy(petypeinfo.extension, ".dll.mui", sizeof(petypeinfo.extension) - 1);
+        status = RET_SUCCESS;
+    }
+    
+    // Unknown fallback
+    if (status != RET_SUCCESS) strncpy(petypeinfo.extension, ".bin", sizeof(petypeinfo.extension) - 1);
+    *outPetypeinfo = petypeinfo;
+    return status;
+}
+
+
+RET_CODE section_process_extract(
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    PExtractConfig extractConfig,
+    PDWORD outFo,
+    PDWORD outSize,
+    PWORD outSectionIdx) {
+
+    int status = RET_NO_VALUE;
+
+    BYTE match = 0;  // reset here each iteration
+    for (WORD i = 0; i < numberOfSections && !match; i++) {
+        if (extractConfig->section.useName) {
+            if (memcmp(extractConfig->section.name, sections[i].Name,
+                       sizeof(extractConfig->section.name)) == 0) {
+                match = 1;
+            }
+        }
+        else if (extractConfig->section.useIdx) {
+            if (extractConfig->section.index == (ULONG)i + 1) {
+                match = 1;
+            }
+        }
+        else if (extractConfig->section.useRva) {
+            if (extractConfig->section.addr.rva >= sections[i].VirtualAddress &&
+                extractConfig->section.addr.rva < sections[i].VirtualAddress + max(sections[i].Misc.VirtualSize, sections[i].SizeOfRawData)) {
+                match = 1;
+            }
+        }
+        else if (extractConfig->section.useFo) {
+            if (extractConfig->section.addr.fo >= sections[i].PointerToRawData &&
+                extractConfig->section.addr.fo < sections[i].PointerToRawData + sections[i].SizeOfRawData) {
+                match = 1;
+            }
+        }
+
+        if (match) { 
+            *outFo      = sections[i].PointerToRawData;
+            *outSize    = sections[i].SizeOfRawData;
+            *outSectionIdx = i + 1;
+            status = RET_SUCCESS;  // exits loop immediately on first match
+        }
+    }
+
+    return status; // no match after full loop
+}
+
+BOOL check_export_match(
+    const PExtractConfig extractConfig,
+    DWORD funcRva, DWORD nameRva, ULONGLONG ordinal,
+    const char *name, const char *forwardName, const char *ExportDllName, const char *forwardDllName) {
+    
+    if (extractConfig->export.useRva && (extractConfig->export.rva == funcRva || extractConfig->export.rva == nameRva)) return TRUE;
+    if (extractConfig->export.useOrdinal && extractConfig->export.ordinal == ordinal) return TRUE;
+
+    if (extractConfig->export.useName &&
+        strncmp(extractConfig->export.funcName, name, sizeof(extractConfig->export.funcName)) == 0) return TRUE;
+
+    if (extractConfig->export.useForwarder && 
+        strncmp(extractConfig->export.forwarderName, forwardName, sizeof(extractConfig->export.forwarderName)) == 0) return TRUE;
+
+    if (extractConfig->export.useDll && (
+        strncmp(extractConfig->export.dllName, ExportDllName, sizeof(extractConfig->export.dllName)) == 0 ||
+        strncmp(extractConfig->export.dllName, forwardDllName, sizeof(extractConfig->export.dllName)) == 0 )) return TRUE;
+
+    return FALSE;
+}
+
+RET_CODE export_process_extract(
+    FILE *peFile,
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    PIMAGE_DATA_DIRECTORY expDirData,
+    PIMAGE_EXPORT_DIRECTORY expDir,
+    PExtractConfig extractConfig,
+    PMATCH_LIST outMatchesList) {
+
+    if (!peFile || !expDirData || !expDir) return RET_INVALID_PARAM;
+
+    RET_CODE status = RET_NO_VALUE;
+
+    init_match_list(outMatchesList, 1, sizeof(EXPORT_MATCH));
+
+    // === Resolve export DLL name ===
+    char ExportDllName[MAX_DLL_NAME] = {0};
+    SECTION_INFO secExportName = get_section_info(expDir->Name, sections, numberOfSections);
+    if (secExportName.size != 0 &&
+        expDir->Name - secExportName.virtualAddress < secExportName.size)
+    {
+        if (FSEEK64(peFile, secExportName.rawOffset + expDir->Name - secExportName.virtualAddress, SEEK_SET) == 0)
+            fread(ExportDllName, 1, MAX_DLL_NAME - 1, peFile);
+    } 
+    else strcpy(ExportDllName, "<invalid>");
+
+    // === Parse Export Tables ===
+    DWORD *EAT = parse_table_from_rva(peFile, expDir->AddressOfFunctions,
+                                      sizeof(DWORD), expDir->NumberOfFunctions,
+                                      sections, numberOfSections);
+
+    DWORD *NameRVAArray = parse_table_from_rva(peFile, expDir->AddressOfNames,
+                                               sizeof(DWORD), expDir->NumberOfNames,
+                                               sections, numberOfSections);
+
+    WORD *NameOrdinalArray = parse_table_from_rva(peFile, expDir->AddressOfNameOrdinals,
+                                                  sizeof(WORD), expDir->NumberOfNames,
+                                                  sections, numberOfSections);
+
+    if (!EAT || !NameRVAArray || !NameOrdinalArray)
+        return RET_ERROR;
+
+    // getting the virtual address of function addresses located after the IMAGE_EXPORT_DIRECTORY 
+    DWORD rvaBase = expDir->AddressOfFunctions + sizeof(IMAGE_EXPORT_DIRECTORY);
+
+    // === Iterate over exports ===
+    for (DWORD funcIdx = 0; funcIdx < expDir->NumberOfFunctions; funcIdx++) {
+        EXPORT_MATCH ExportMatch = {0};
+        DWORD funcRVA = EAT[funcIdx];
+        DWORD nameRVA = 0;
+        char funcName[MAX_FUNC_NAME] = {0};
+        char forwardName[MAX_FUNC_NAME] = {0};
+        char forwardDllName[MAX_DLL_NAME] = {0};
+        int entryMatched = 0;
+
+        // Resolve function name
+        for (DWORD j = 0; j < expDir->NumberOfNames; j++) {
+            if (NameOrdinalArray[j] == funcIdx) {
+                nameRVA = NameRVAArray[j];
+                DWORD nameOffset;
+                if (rva_to_offset(nameRVA, sections, numberOfSections, &nameOffset) == RET_SUCCESS &&
+                    FSEEK64(peFile, nameOffset, SEEK_SET) == 0) {
+                    fread(funcName, 1, sizeof(funcName) - 1, peFile);
+                    funcName[sizeof(funcName) - 1] = '\0';
+                }
+                break;
+            }
+        }
+
+        // Resolve forwarder name (if forwarder RVA)
+        bool isForwarded = false;
+        if (strncmp(extractConfig->export.dllName, ExportDllName, sizeof(extractConfig->export.dllName)) != 0 &&
+            funcRVA >= expDirData->VirtualAddress &&
+            funcRVA < expDirData->VirtualAddress + expDirData->Size) {
+            DWORD fwdOffset;
+            if (rva_to_offset(funcRVA, sections, numberOfSections, &fwdOffset) == RET_SUCCESS &&
+                FSEEK64(peFile, fwdOffset, SEEK_SET) == 0) {
+                fread(forwardName, 1, sizeof(forwardName) - 1, peFile);
+
+                get_dll_from_forwarder(forwardName, forwardDllName, sizeof(forwardDllName));
+
+                isForwarded = true;
+            }
+        }
+
+        if (check_export_match(extractConfig, funcRVA, nameRVA, funcIdx + expDir->Base, funcName, forwardName, ExportDllName, forwardDllName)) {
+            if (extractConfig->export.useDll)
+                ExportMatch.type |= EXPORT_TYPE_DLL_NAME;
+
+            if (extractConfig->export.useName)
+                ExportMatch.type |= EXPORT_TYPE_NAME;
+
+            if (extractConfig->export.useOrdinal)
+                ExportMatch.type |= EXPORT_TYPE_ORDINAL;
+
+            if (extractConfig->export.useRva)
+                ExportMatch.type |= EXPORT_TYPE_RVA;
+                
+            ExportMatch.isForwarded = isForwarded;
+
+            ExportMatch.funcRva = funcRVA;
+            ExportMatch.nameRva = nameRVA;
+
+            ExportMatch.ordinal = funcIdx + expDir->Base;
+
+            if (ExportMatch.type & EXPORT_TYPE_DLL_NAME) {
+                strncpy(ExportMatch.dllName, forwardDllName, sizeof(ExportMatch.dllName) - 1);
+            } else {
+                strncpy(ExportMatch.dllName, ExportDllName, sizeof(ExportMatch.dllName) - 1);
+            }
+
+            strncpy(ExportMatch.funcName, funcName, sizeof(ExportMatch.funcName) - 1);
+            strncpy(ExportMatch.forwarderName, forwardName, sizeof(ExportMatch.forwarderName) - 1);
+
+            ExportMatch.rva = rvaBase;
+
+            entryMatched = 1;
+        }
+
+        if (entryMatched) {
+            if (ensure_match_capacity(outMatchesList, 1) != RET_SUCCESS) goto cleanup;
+            if (add_match(outMatchesList, &ExportMatch) != RET_SUCCESS) goto cleanup;
+            status = RET_SUCCESS;
+
+            if ((ExportMatch.type & EXPORT_TYPE_DLL_NAME) == 0) break;
+        }
+
+        rvaBase += sizeof(DWORD);
+    }
+
+cleanup:
+    if (status != RET_SUCCESS) {
+        free_match_list(outMatchesList);
+    }
+
+    return status;
+}
+
+BOOL check_import_match(const PExtractConfig extractConfig,  ULONGLONG ordinal, WORD hint, const char *funcName, const char *dllName) {
+    if (extractConfig->import.useOrdinal && extractConfig->import.ordinal == ordinal) return TRUE;
+    if (extractConfig->import.useHint && extractConfig->import.hint == hint) return TRUE;
+
+    if (extractConfig->import.useName &&
+        strncmp(extractConfig->import.funcName, funcName, sizeof(extractConfig->import.funcName)) == 0) return TRUE;
+    if (extractConfig->import.useDll &&
+        strncmp(extractConfig->import.dllName, dllName, sizeof(extractConfig->import.dllName)) == 0) return TRUE;
+
+    return FALSE;
+}
+
+RET_CODE import_process_extract(
+    FILE *peFile,
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    PIMAGE_IMPORT_DESCRIPTOR impDesc,
+    int is64bit,
+    PExtractConfig extractConfig,
+    PMATCH_LIST outMatchesList) {
+
+    if (!peFile || !impDesc) return RET_INVALID_PARAM;
+
+    RET_CODE status = RET_NO_VALUE;
+    WORD count = count_imp_descriptors(impDesc);
+
+    init_match_list(outMatchesList, 1, sizeof(IMPORT_MATCH));
+
+    for (WORD i = 0; i < count; i++) {
+        char dllName[MAX_DLL_NAME] = {0};
+        
+        if (!read_import_dll_name(peFile, &impDesc[i], sections, numberOfSections, dllName)) {
+            strcpy(dllName, "<invalid>");
+        }
+
+        // Skip DLLs if not global and DLL doesn't match
+        if (!extractConfig->import.isGlobal && STREQI(extractConfig->import.dllName, dllName) != 0) {
+            continue;
+        }
+
+        DWORD rvaINT = impDesc[i].OriginalFirstThunk ? impDesc[i].OriginalFirstThunk : impDesc[i].FirstThunk;
+        DWORD INToffset;
+        if (rva_to_offset(rvaINT, sections, numberOfSections, &INToffset) != RET_SUCCESS) {
+            goto cleanup;
+        }
+
+        ULONGLONG numImports = count_thunks(peFile, rvaINT, sections, numberOfSections, is64bit);
+
+        if (FSEEK64(peFile, INToffset, SEEK_SET) != 0) {
+            goto cleanup;
+        }
+    
+        DWORD thunkSize = is64bit ? sizeof(IMAGE_THUNK_DATA64) : sizeof(IMAGE_THUNK_DATA32);    
+
+        for (ULONGLONG entry = 0; entry < numImports; entry++) {
+            IMPORT_MATCH importMatch = {0};
+            LONGLONG thunkPos = FTELL64(peFile);
+            ULONGLONG ordinal = 0;
+            WORD hint = 0;
+            char name[MAX_FUNC_NAME] = {0};
+            int entryMatched = 0;
+
+            // calculate the RVA directly
+            DWORD currentThunkRVA = impDesc[i].FirstThunk + (DWORD)(entry * thunkSize);
+
+            if (extractConfig->import.isGlobal || extractConfig->import.useDll) importMatch.isGlobal = 1;
+
+            if (is64bit) {
+                IMAGE_THUNK_DATA64 thunk64 = {0};
+                if (fread(&thunk64, sizeof(thunk64), 1, peFile) != 1 || thunk64.u1.AddressOfData == 0)
+                    break;
+
+                if (IMAGE_SNAP_BY_ORDINAL64(thunk64.u1.Ordinal)) {
+                    ordinal = IMAGE_ORDINAL64(thunk64.u1.Ordinal);
+                    if (check_import_match(extractConfig, ordinal, 0, "", dllName)) {
+                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
+                        strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
+                        importMatch.ordinal = (WORD)ordinal;
+                        importMatch.type = extractConfig->import.useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
+                        importMatch.rawOrd = thunk64.u1.Ordinal;
+                        importMatch.thunkDataRVA = 0;
+                        importMatch.thunkRVA = currentThunkRVA;
+                        entryMatched = 1;
+                    }
+                } else {
+                    if (!read_import_hint_and_name(peFile, (DWORD)thunk64.u1.AddressOfData,
+                                                  sections, numberOfSections, &hint, name))
+                        continue;
+
+                    if (check_import_match(extractConfig, 0, hint, name, dllName)) {
+                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
+                        strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
+                        importMatch.hint = hint;
+                        importMatch.type =
+                            extractConfig->import.useName ? IMPORT_TYPE_NAME :
+                            (extractConfig->import.useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
+                        importMatch.rawOrd = 0;
+                        importMatch.thunkDataRVA = (DWORD)thunk64.u1.AddressOfData;
+                        importMatch.thunkRVA = currentThunkRVA;
+                        entryMatched = 1;
+                    }
+                }
+
+                FSEEK64(peFile, (ULONGLONG)thunkPos + sizeof(thunk64), SEEK_SET);
+            } else {
+                IMAGE_THUNK_DATA32 thunk32 = {0};
+                if (fread(&thunk32, sizeof(thunk32), 1, peFile) != 1 || thunk32.u1.AddressOfData == 0)
+                    break;
+
+                if (IMAGE_SNAP_BY_ORDINAL32(thunk32.u1.Ordinal)) {
+                    ordinal = IMAGE_ORDINAL32(thunk32.u1.Ordinal);
+                    if (check_import_match(extractConfig, ordinal, 0, "", dllName)) {
+                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
+                        strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
+                        importMatch.ordinal = (WORD)ordinal;
+                        importMatch.type = extractConfig->import.useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
+                        importMatch.rawOrd = thunk32.u1.Ordinal;
+                        importMatch.thunkDataRVA = 0;
+                        importMatch.thunkRVA = currentThunkRVA;
+                        entryMatched = 1;
+                    }
+                } else {
+                    if (!read_import_hint_and_name(peFile, thunk32.u1.AddressOfData,
+                                                  sections, numberOfSections, &hint, name))
+                        continue;
+
+                    if (check_import_match(extractConfig, 0, hint, name, dllName)) {
+                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
+                        strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
+                        importMatch.hint = hint;
+                        importMatch.type =
+                            extractConfig->import.useName ? IMPORT_TYPE_NAME :
+                            (extractConfig->import.useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
+                        importMatch.rawOrd = 0;
+                        importMatch.thunkDataRVA = thunk32.u1.AddressOfData;
+                        importMatch.thunkRVA = currentThunkRVA;
+                        entryMatched = 1;
+                    }
+                }
+
+                FSEEK64(peFile, (ULONGLONG)thunkPos + sizeof(thunk32), SEEK_SET);
+            }
+
+            if (entryMatched) {
+                if (ensure_match_capacity(outMatchesList, 1) != RET_SUCCESS) goto cleanup;
+                if (add_match(outMatchesList, &importMatch) != RET_SUCCESS) goto cleanup;
+                status = RET_SUCCESS;
+            }
+        }
+    }
+
+cleanup:
+    if (status != RET_SUCCESS) {
+        free_match_list(outMatchesList);
+    }
+
+    return status;
+}
+
+RET_CODE execute_extract(
+    FILE *peFile,
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    DWORD symTableOffset,
+    DWORD NumberOfSymbols,
+    PIMAGE_DATA_DIRECTORY dataDirs,
+    PPEDataDirectories dirs,
+    LONGLONG fileSize,
+    ULONGLONG imageBase,
+    int is64bit,
+    PConfig config,
+    PFileSectionList fileSectionList) {
+
+    if (!peFile || !sections || !numberOfSections) return RET_INVALID_PARAM;
+
+    DWORD inFo, inSize;
+    PMATCH_LIST MatchList;
+    WORD dataDirIndex;
+    int status = RET_SUCCESS;
+
+    switch (config->extractConfig.kind) {
+        case EXTRACT_SECTION:
+            status = section_process_extract(sections, numberOfSections, &config->extractConfig, &inFo, &inSize, &dataDirIndex); 
+            
+            if (status != RET_SUCCESS) {
+                fprintf(stderr,"[!!] Section info not found\n");
+                break;
+            }
+            if (config->formatConfig.view == VIEW_TABLE) {
+                WORD sectionIdx = config->extractConfig.section.index;
+                status = print_section_header(peFile, symTableOffset, NumberOfSymbols, &sections[sectionIdx], sectionIdx, imageBase);
+            } else {
+                status = print_range(peFile, inFo,  inSize, fileSize, &config->formatConfig, fileSectionList, 1);
+            }
+
+            if (status != RET_SUCCESS) {
+                fprintf(stderr, "[!!] Failed to dump extracted Section info\n");
+            }
+            break;
+
+        case EXTRACT_EXPORT:
+            MatchList = calloc(1, sizeof(MATCH_LIST));
+
+            status = export_process_extract(
+                peFile, sections, numberOfSections, &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT], dirs->exportDir,
+                &config->extractConfig, MatchList);
+
+            if (status != RET_SUCCESS) {
+                if (status == RET_NO_VALUE) {
+                    fprintf(stderr,"[!!] Export info not found\n");
+                }
+                else if (status == RET_ERROR) {
+                    fprintf(stderr, "[!!] Failed to extract Export info\n");       
+                }
+                break;
+            }
+
+            dump_extracted_exports(MatchList, sections, numberOfSections, imageBase, 0);
+            free_match_list(MatchList);
+
+            break;
+
+        case EXTRACT_IMPORT: 
+            MatchList = calloc(1, sizeof(MATCH_LIST));
+
+            status = import_process_extract(
+                peFile, sections, numberOfSections, dirs->importDir,
+                is64bit, &config->extractConfig, MatchList);
+
+            if (status != RET_SUCCESS) {
+                if (status == RET_NO_VALUE) {
+                    fprintf(stderr,"[!!] Import info not found\n");
+                }
+                else if (status == RET_ERROR) {
+                    fprintf(stderr, "[!!] Failed to extract Import info\n");       
+                }
+                break;
+            }
+
+            dump_extracted_imports(MatchList, sections, numberOfSections, imageBase, 0);
+            free_match_list(MatchList);
+
+            break;
+        default:
+            fprintf(stderr,"[!!] Uknown extracting kind\n");
+            status = RET_NO_VALUE;
+            break;
+    }
+
+    return status;
+}
+
+RET_CODE extract_version_resource(
+    FILE *peFile,
+    PIMAGE_SECTION_HEADER sections,
+    WORD numberOfSections,
+    PIMAGE_DATA_DIRECTORY rsrcDataDir,
+    PIMAGE_RESOURCE_DIRECTORY rsrcDir,
+    PIMAGE_RESOURCE_DIRECTORY_ENTRY rsrcEntriesDir,
+    PDWORD outDataRVA,
+    PDWORD outSize) {
+
+    if (!peFile || !sections || !rsrcDataDir || !rsrcDir || !rsrcEntriesDir || !outDataRVA || !outSize)
+        return RET_INVALID_PARAM;
+
+    *outDataRVA = 0;
+    *outSize    = 0;
+
+    // Convert .rsrc RVA to file offset
+    DWORD rsrcFO = 0;
+    if (rva_to_offset(rsrcDataDir->VirtualAddress, sections, numberOfSections, &rsrcFO) != RET_SUCCESS)
+        return RET_ERROR;
+
+    SECTION_INFO rsrcSecInfo = get_section_info(rsrcDataDir->VirtualAddress, sections, numberOfSections);
+
+    WORD totalTypeEntries = rsrcDir->NumberOfNamedEntries + rsrcDir->NumberOfIdEntries;
+
+    // --------------------------
+    // Level 1: Resource Type
+    // --------------------------
+    for (WORD i = 0; i < totalTypeEntries; i++) {
+        if (!rsrcEntriesDir[i].NameIsString && rsrcEntriesDir[i].Id == 16) { // VERSIONINFO
+            if (!rsrcEntriesDir[i].DataIsDirectory)
+                continue; // unexpected leaf
+
+            DWORD nameDirFO = rsrcSecInfo.rawOffset + (rsrcEntriesDir[i].OffsetToDirectory & 0x7FFFFFFF);
+
+            WORD totalNameEntries = 0;
+            PIMAGE_RESOURCE_DIRECTORY_ENTRY nameEntries = read_resource_dir_entries(peFile, nameDirFO, &totalNameEntries);
+            if (!nameEntries) return RET_ERROR;
+
+            // --------------------------
+            // Level 2: Name
+            // --------------------------
+            for (WORD j = 0; j < totalNameEntries; j++) {
+                if (!nameEntries[j].DataIsDirectory)
+                    continue;
+
+                DWORD langDirFO = rsrcSecInfo.rawOffset + (nameEntries[j].OffsetToDirectory & 0x7FFFFFFF);
+
+                WORD totalLangEntries = 0;
+                PIMAGE_RESOURCE_DIRECTORY_ENTRY langEntries = read_resource_dir_entries(peFile, langDirFO, &totalLangEntries);
+                if (!langEntries) {
+                    SAFE_FREE(nameEntries);
+                    return RET_ERROR;
+                }
+
+                // --------------------------
+                // Level 3: Language
+                // --------------------------
+                for (WORD k = 0; k < totalLangEntries; k++) {
+                    if (langEntries[k].DataIsDirectory)
+                        continue; // should be leaf
+
+                    DWORD dataEntryFO = rsrcSecInfo.rawOffset + (langEntries[k].OffsetToData & 0x7FFFFFFF);
+                    IMAGE_RESOURCE_DATA_ENTRY dataEntry;
+
+                    if (FSEEK64(peFile, dataEntryFO, SEEK_SET) != 0){
+                        SAFE_FREE(nameEntries);
+                        SAFE_FREE(langEntries);  
+                        return RET_ERROR;
+                    }
+
+                    if (fread(&dataEntry, sizeof(dataEntry), 1, peFile) != 1) {
+                        SAFE_FREE(nameEntries);
+                        SAFE_FREE(langEntries);
+                        return RET_ERROR;              
+                    }
+
+                    *outDataRVA = dataEntry.OffsetToData;
+                    *outSize    = dataEntry.Size;
+
+                    SAFE_FREE(nameEntries);
+                    SAFE_FREE(langEntries);
+                    return RET_SUCCESS; // first VERSIONINFO found
+                }
+
+                SAFE_FREE(langEntries);
+            }
+
+            SAFE_FREE(nameEntries);
+        }
+    }
+
+    return RET_NO_VALUE; // no VERSIONINFO resource found
+}
