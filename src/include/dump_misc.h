@@ -25,7 +25,7 @@ RET_CODE dump_pe_strings
 // sections, and data directories. Prints key information such as architecture, PE type, 
 // subsystem, image base, entry point, linker version, timestamps, and characteristics.
 //
-// fileName   : Path to the PE file
+// filePath   : Path to the PE file
 // nt32       : Pointer to IMAGE_NT_HEADERS32 structure (for 32-bit PE files)
 // nt64       : Pointer to IMAGE_NT_HEADERS64 structure (for 64-bit PE files)
 // sections   : Pointer to the array of section headers
@@ -35,7 +35,7 @@ RET_CODE dump_pe_strings
 // Returns    : RET_CODE indicating success or failure of the dump operation
 RET_CODE dump_pe_overview
 (
-    IN const char *fileName,
+    IN const char *filePath,
     IN PIMAGE_NT_HEADERS32 nt32,
     IN PIMAGE_NT_HEADERS64 nt64,
     IN PIMAGE_SECTION_HEADER sections,

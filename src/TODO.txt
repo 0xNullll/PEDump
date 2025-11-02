@@ -64,7 +64,6 @@
 - [x] Section PointerToRawData > file size → expect error, no crash
 - [x] RVA outside all sections → rva_to_file_offset returns -1
 - [x] Data directory RVA=0, Size=0 → handled gracefully
-- [ ] Security directory with odd offset → skip or report, no crash
 - [x] Truncated resource directory → parser detects incomplete resource
 - [ ] Resource with bad NameOffset/ID → skip invalid entry, no crash
 - [ ] CLR header with invalid Metadata RVA → parser error, no crash

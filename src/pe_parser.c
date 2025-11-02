@@ -848,57 +848,100 @@ RET_CODE parse_all_data_directories(
     return status;
 }
 
-RET_CODE parsePE(
-    FILE *peFile, PIMAGE_DOS_HEADER dosHeader, PIMAGE_RICH_HEADER *richHeader,
-    PIMAGE_NT_HEADERS32 nt32,  PIMAGE_NT_HEADERS64 nt64, PIMAGE_SECTION_HEADER *sections,
-    PEDataDirectories *dirs, int *is64bit) {
+RET_CODE parsePE(PPEContext peCtx) {
+    if (!peCtx || !peCtx->fileHandle) {
+        fprintf(stderr, "[!] Invalid arguments passed to parsePE\n");
+        return RET_ERROR;
+    }
 
-    if (parse_dos_header(peFile, dosHeader) != RET_SUCCESS) {
+    // === DOS HEADER ===
+    if (parse_dos_header(peCtx->fileHandle, peCtx->dosHeader) != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to parse DOS header\n");
         return RET_ERROR;
     }
 
-    int richHdrStatus = parse_rich_header(peFile, 0x40, (ULONG)dosHeader->e_lfanew, richHeader);
+    // === RICH HEADER ===
+    int richHdrStatus = parse_rich_header(
+        peCtx->fileHandle,
+        0x40,
+        (ULONG)peCtx->dosHeader->e_lfanew,
+        &peCtx->richHeader
+    );
 
     if (richHdrStatus != RET_SUCCESS) {
         if (richHdrStatus == RET_ERROR) {
             fprintf(stderr, "[!] Failed to parse Rich Header\n");
+        } else if (richHdrStatus == RET_NO_VALUE) {
+            peCtx->richHeader = NULL;
         }
-        else if (richHdrStatus == RET_NO_VALUE) {
-            if (richHeader) {
-                richHeader = NULL;
-            }
-        }
+        // Not fatal — continue parsing
     }
 
-    PE_ARCH arch = get_pe_architecture(peFile);
+    // === ARCHITECTURE DETECTION ===
+    PE_ARCH arch = get_pe_architecture(peCtx->fileHandle);
     if (arch == PE_INVALID) {
         fprintf(stderr, "[!] Unknown PE architecture\n");
         return RET_ERROR;
     }
 
-    *is64bit = (arch == PE_64);
+    peCtx->is64Bit = (arch == PE_64);
 
-    if (parse_nt_headers(peFile, nt32, nt64, *is64bit, (DWORD)dosHeader->e_lfanew) != RET_SUCCESS) {
+    // === NT HEADERS ===
+    if (parse_nt_headers(
+            peCtx->fileHandle,
+            peCtx->nt32,
+            peCtx->nt64,
+            peCtx->is64Bit,
+            (DWORD)peCtx->dosHeader->e_lfanew
+        ) != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to parse NT headers\n");
         return RET_ERROR;
     }
 
-    PIMAGE_FILE_HEADER headerPtr = *is64bit ? &nt64->FileHeader : &nt32->FileHeader;
+    PIMAGE_FILE_HEADER fileHdr = peCtx->is64Bit
+        ? &peCtx->nt64->FileHeader
+        : &peCtx->nt32->FileHeader;
 
-    DWORD sectionOffset = (DWORD)((ULONGLONG)dosHeader->e_lfanew + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + headerPtr->SizeOfOptionalHeader);
+    PIMAGE_OPTIONAL_HEADER32 opt32 = peCtx->is64Bit ? NULL : &peCtx->nt32->OptionalHeader;
+    PIMAGE_OPTIONAL_HEADER64 opt64 = peCtx->is64Bit ? &peCtx->nt64->OptionalHeader : NULL;
 
-    LONGLONG fileSize = get_file_size(peFile);
+    // === CORE STATE FILL ===
+    peCtx->numberOfSections = fileHdr->NumberOfSections;
+    peCtx->imageBase        = peCtx->is64Bit ? opt64->ImageBase : opt32->ImageBase;
+    peCtx->sizeOfImage      = peCtx->is64Bit ? opt64->SizeOfImage : opt32->SizeOfImage;
 
-    if (parse_section_headers(peFile, sections, headerPtr->NumberOfSections, sectionOffset, fileSize) != RET_SUCCESS) {
+    // === SECTION HEADERS ===
+    DWORD sectionOffset = (DWORD)(
+        (ULONGLONG)peCtx->dosHeader->e_lfanew +
+        sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) +
+        fileHdr->SizeOfOptionalHeader
+    );
+
+    if (parse_section_headers(
+            peCtx->fileHandle,
+            &peCtx->sections,
+            peCtx->numberOfSections,
+            sectionOffset,
+            peCtx->fileSize
+        ) != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to parse section headers\n");
         return RET_ERROR;
     }
 
-    if (parse_all_data_directories(peFile, nt32, nt64, dirs, *sections, *is64bit) != RET_SUCCESS) {
+    // === DATA DIRECTORIES ===
+    if (parse_all_data_directories(
+            peCtx->fileHandle,
+            peCtx->nt32,
+            peCtx->nt64,
+            peCtx->dirs,
+            peCtx->sections,
+            peCtx->is64Bit
+        ) != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to parse data directories\n");
         return RET_ERROR;
     }
 
+    // === SUCCESS ===
+    peCtx->valid = 1;
     return RET_SUCCESS;
 }

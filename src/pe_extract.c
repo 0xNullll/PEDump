@@ -30,7 +30,7 @@
 
 // TODO Add deeper detection logic for native drivers (check for DriverEntry and kernel exports)
 RET_CODE identify_pe_type(
-    const char *fileName,
+    const char *filePath,
     PIMAGE_DATA_DIRECTORY dataDirs,
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
@@ -45,7 +45,7 @@ RET_CODE identify_pe_type(
     int status;
     
     // Store file name (if your struct supports it)
-    if (fileName) strncpy(petypeinfo.fileName, fileName, sizeof(petypeinfo.fileName) - 1);
+    if (filePath) strncpy(petypeinfo.fileName, filePath, sizeof(petypeinfo.fileName) - 1);
     
     // EFI / Boot Application detection
     if (subsystem == IMAGE_SUBSYSTEM_EFI_APPLICATION ||

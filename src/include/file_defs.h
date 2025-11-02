@@ -38,7 +38,7 @@
     #define REGEX_MATCH(pat, s)  re_matchp((pat), (s), 0)
 #endif
 
-#define SAFE_FREE(ptr)  if (ptr) { free(ptr); ptr = NULL; }
+#define SAFE_FREE(p) do { if (p) { free(p); (p) = NULL; } } while (0)
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 #ifndef MAX_PATH_LENGTH
@@ -88,6 +88,9 @@ typedef enum _RET_CODE {
 } RET_CODE;
 
 //      -- Forward typedef prototypes --
+
+// located in pe_structs.h
+typedef struct _PEContext           PEContext,         *PPEContext;
 
 // located in utils.h
 typedef struct _SECTION_INFO        SECTION_INFO;
