@@ -69,7 +69,6 @@ int main(void) {
 
 cleanup:
     freePEContext(&peCtx);
-    
     fclose(peFile);
     return status;
 }
