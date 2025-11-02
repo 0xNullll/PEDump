@@ -18,7 +18,6 @@
 // NameRVAArray    : Export Name Table (array of RVAs to names).
 // NameOrdinalArray: Ordinal Table (array of WORDs).
 // imageBase       : base address of the loaded image.
-// truncateNames   : If non-zero, long function names are truncated with "..." for neat output.
 // Returns         : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_exported_functions
 (
@@ -30,8 +29,7 @@ RET_CODE dump_exported_functions
     IN PDWORD EAT,
     IN PDWORD NameRVAArray,
     IN PWORD  NameOrdinalArray,
-    IN ULONGLONG imageBase,
-    IN int truncateNames
+    IN ULONGLONG imageBase
 );
 
 // Dumps the Export Directory of a PE file.
@@ -41,7 +39,6 @@ RET_CODE dump_exported_functions
 // ExportDirData   : pointer to IMAGE_DATA_DIRECTORY of the Export Table.
 // ExportDir       : pointer to IMAGE_EXPORT_DIRECTORY structure.
 // imageBase       : base address of the loaded image.
-// truncateNames   : If non-zero, long function names are truncated with "..." for neat output.
 // Returns         : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_export_dir
 (
@@ -50,8 +47,7 @@ RET_CODE dump_export_dir
     IN WORD numberOfSections,
     IN PIMAGE_DATA_DIRECTORY ExportDirData,
     IN PIMAGE_EXPORT_DIRECTORY ExportDir,
-    IN ULONGLONG imageBase,
-    IN int truncateNames
+    IN ULONGLONG imageBase
 );
 
 // Reads the hint and name of an imported function.

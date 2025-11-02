@@ -474,7 +474,7 @@ RET_CODE handle_commands(
     Config config;
     init_config(&config);
 
-    const char *fileName = argv[1];
+    const char *fileName = argv[argc - 2];
 
     // get file size
     LONGLONG fileSize = get_file_size(peFile);
@@ -493,7 +493,6 @@ RET_CODE handle_commands(
     WORD numberOfSections      = is64bit ? nt64->FileHeader.NumberOfSections : nt32->FileHeader.NumberOfSections;
     DWORD PointerToSymbolTable = is64bit ? nt64->FileHeader.PointerToSymbolTable : nt32->FileHeader.PointerToSymbolTable;
     DWORD NumberOfSymbols      = is64bit ? nt64->FileHeader.NumberOfSymbols : nt32->FileHeader.NumberOfSymbols;
-    // DWORD SectionAlignment     = is64bit ? nt64->OptionalHeader.SectionAlignment : nt32->OptionalHeader.SectionAlignment;
     WORD machine               = is64bit ? nt64->FileHeader.Machine : nt32->FileHeader.Machine;
 
     // Data directories
@@ -538,7 +537,7 @@ RET_CODE handle_commands(
     int status;
 
     // iterate over arguments
-    for (int i = 2; i < argc; i++) {
+    for (int i = 1; i < argc - 2; i++) {
         if (argv[i] == NULL) break;
 
         if (resetNextArg) {
@@ -646,7 +645,7 @@ RET_CODE handle_commands(
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase, false) != RET_SUCCESS) {
+                        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Export Directory\n");
                         }
                     } else {

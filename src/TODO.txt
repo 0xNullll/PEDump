@@ -25,8 +25,6 @@
 
 ## RESOURCES & METADATA
 - [x] make a dumping function for version info
-- [ ] Utilize SectionAlignment
-- [ ] Evaluate usefulness of `truncateNames` parameter, possibly add a new command
 
 ## DEBUGGING & TESTING
 - [ ] Test dump_MISC_debug_info
@@ -34,7 +32,7 @@
 - [ ] Test dump_OMAP_debug_info
 - [ ] Test dump_bound_import_dir
 - [x] Fix all possible warnings
-- [ ] Test command system in alot of diff ways to clear any errors
+- [ ] Test commands system in alot of diff ways to clear any errors
 - [ ] test on Linux
 - [ ] test on macOS
 
