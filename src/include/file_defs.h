@@ -41,19 +41,28 @@
 #define SAFE_FREE(ptr)  if (ptr) { free(ptr); ptr = NULL; }
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-#define MAX_DLL_NAME 256   // Maximum length for DLL names in Import/Export tables
-#define MAX_FUNC_NAME 512  // Maximum length for function names in Export table
+#ifndef MAX_PATH_LENGTH
+    #define MAX_PATH_LENGTH 260 // Maximum file path length
+#endif
+
+#ifndef MAX_DLL_NAME
+    #define MAX_DLL_NAME 256   // Maximum length for DLL names in Import/Export tables
+#endif
+
+#ifndef MAX_FUNC_NAME
+    #define MAX_FUNC_NAME 512  // Maximum length for function names in Export table
+#endif
 
 #ifndef IN
-#define IN /* input parameter */
+    #define IN // input parameter
 #endif
 
 #ifndef OUT
-#define OUT /* output parameter */
+    #define OUT // output parameter
 #endif
 
 #ifndef INOUT 
-#define INOUT /* input/output parameter */
+    #define INOUT // input/output parameter
 #endif
 
 typedef enum _PE_ARCH{
@@ -74,8 +83,8 @@ typedef enum _RET_CODE {
     RET_INVALID_PARAM   = 2,  // One or more invalid parameters were passed
     RET_NO_VALUE        = 3,  // Function completed but has no value to return
     RET_INVALID_BOUND   = 4,  // Index or offset out of valid range
-    RET_BUFFER_OVERFLOW = 5,
-    RET_MALFORMED_FILE  = 6
+    RET_BUFFER_OVERFLOW = 5,  // Provided buffer is too small
+    RET_MALFORMED_FILE  = 6  //  File is malformed or corrupted
 } RET_CODE;
 
 //      -- Forward typedef prototypes --
@@ -89,6 +98,7 @@ typedef struct _FileSectionList     FileSectionList,   *PFileSectionList;
 // located in cmds.h
 typedef struct _FormatConfig        FormatConfig,      *PFormatConfig;
 typedef struct _ExtractConfig       ExtractConfig,     *PExtractConfig;
+typedef struct _HashConfig          HashConfig,        *PHashConfig;
 typedef struct _Config              Config,            *PConfig;
 
 // located in pe_extract.h

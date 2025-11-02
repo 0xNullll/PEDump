@@ -183,7 +183,7 @@ void print_help(void) {
         "  -dd,   --data-directories                    Print all Data directories\n"
         "\n"
 
-        "CLR Directories:\n"
+        "CLR Directories:\n" // not fully implemented yet
         "  -ch,   --clr-header                          Print CLR Header\n"
         "  -cm,   --clr-metadata                        Print CLR Metadata\n"
         "  -crr,  --clr-readytorun                      Print CLR ReadyToRun info\n"

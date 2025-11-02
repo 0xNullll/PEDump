@@ -1090,6 +1090,18 @@ RET_CODE handle_commands(
                 }
                 break;
 
+            case CMD_HASH_FILE:
+            break;
+
+            case CMD_HASH_SECTION:
+            break;
+
+            case CMD_HASH_RANGE:
+            break;
+
+            case CMD_COMPARE_TARGETS:
+            break;
+
             default:
                 fprintf(stderr, "Error: Unhandled command code %d. Please report this.\n", command);
                 break;

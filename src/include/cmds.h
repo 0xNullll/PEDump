@@ -78,10 +78,17 @@ typedef enum {
     CMD_ALL,
 
     CMD_VA2FILE,
+    
     CMD_FORMAT,
     CMD_TEMP_FORMAT,
+
     CMD_STRINGS,
     CMD_EXTRACT,
+
+    CMD_HASH_FILE,
+    CMD_HASH_SECTION,
+    CMD_HASH_RANGE,
+    CMD_COMPARE_TARGETS,
 
     CMD_UNKNOWN
 } COMMAND;
@@ -176,12 +183,72 @@ typedef struct _ExtractConfig{
     };
 } ExtractConfig, *PExtractConfig;
 
+typedef enum {
+    TARGET_NONE,
+    TARGET_FILE,
+    TARGET_SECTION,
+    TARGET_RANGE,
+} TargetType;
+
+typedef struct _Target{
+    TargetType type;                    // Type of target (section, range, etc.)
+    char name[IMAGE_SIZEOF_SHORT_NAME]; // Section name, export/import name
+    WORD index;                         // section index in PE headers
+    
+    BYTE  useName;  // if 1 → use name
+    BYTE  useIdx;   // if 1 → use index
+    BYTE  useRva;   // if 1 → use RVA
+    BYTE  useFo;    // if 1 → use file offset
+
+    union {
+        ULONGLONG rva; // Relative Virtual Address
+        ULONGLONG fo;  // File offset
+    } addr;
+
+    ULONGLONG start;       // Range start (for hash-range or compare)
+    ULONGLONG end;         // Range end (for hash-range or compare)
+} Target, *PTarget;
+
+typedef enum {
+    HASHCMD_NONE,
+    HASHCMD_FILE,
+    HASHCMD_SECTION,
+    HASHCMD_RANGE,
+    HASHCMD_COMPARE
+} HashCommandType;
+
+typedef enum {
+    ALG_MD5,
+    ALG_SHA1,
+    ALG_SHA256
+} HashAlg;
+
+typedef enum {
+    COMPARESTYLE_NONE,
+    COMPARESTYLE_RAW,        // raw byte-by-byte comparison
+    COMPARESTYLE_SECTION,    // section-to-section
+    COMPARESTYLE_RANGE       // range-to-range
+} CompareStyle;
+
+typedef struct _HashConfig{
+    HashCommandType cmdType; // Type of hash command
+    HashAlg alg;             // Hash algorithm to use
+
+    Target target1;          // First target (or only target)
+    Target target2;          // Second target (for comparisons)
+
+    CompareStyle style;      // Style of comparison, if cmdType == HASHCMD_COMPARE
+
+    char file1[MAX_PATH_LENGTH]; // File path for first file
+    char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
+} HashConfig, *PHashConfig;
+
 typedef struct _Config{
-    FormatConfig formatConfig;
     PCommandEntry command_table; // pointer to command table
+    FormatConfig  formatConfig;  // --format
     ExtractConfig extractConfig; // --extract ID
-    char set_os_version[ 32 ]; // --set-os-version
-    ULONGLONG va2file; // --va2file hex
+    HashConfig    hashConfig;    // --hash and --compare commands
+    ULONGLONG     va2file;       // --va2file hex
 } Config, *PConfig;
 
 // Checks whether the provided command-line arguments are valid.

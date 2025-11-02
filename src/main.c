@@ -6,20 +6,20 @@
 int main(void) {
 
     // Fake argc/argv
-    int argc = 3;
+    int argc = 4;
     char *argv[] = {
         "PEdump", // argv[0] = program name
-        "-h",
+        // "-h",
         // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-        // "-s",
+        "-s",
         // "--strings",
         // "rgex:.*\\.exe",
         // "-x",
         // "export:NTDLL.RtlAcquireSRWLockExclusive",
         // "import:@4",
         // "-h",
-        // "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
+        "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
         NULL
     };
 
