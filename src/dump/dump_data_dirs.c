@@ -9,8 +9,7 @@ RET_CODE dump_exported_functions(
     PDWORD EAT,
     PDWORD NameRVAArray,
     PWORD  NameOrdinalArray,
-    ULONGLONG imageBase,
-    int truncateNames)  {
+    ULONGLONG imageBase)  {
         
     ULONGLONG vaBase = imageBase + ExportDir->AddressOfFunctions;
     DWORD foBase;
@@ -63,17 +62,6 @@ RET_CODE dump_exported_functions(
         char *printFuncName = funcName[0] ? funcName : "-";
         char *printForwardName = forwardName[0] ? forwardName : " ";
 
-        if (truncateNames) {
-            // truncate both to 77 chars
-            static char bufFunc[81], bufFwd[81];
-            strncpy(bufFunc, printFuncName, 77); bufFunc[77] = '\0';
-            strncpy(bufFwd, printForwardName, 77); bufFwd[77] = '\0';
-            if (strlen(printFuncName) > 77) strcat(bufFunc, "...");
-            if (strlen(printForwardName) > 77) strcat(bufFwd, "...");
-            printFuncName = bufFunc;
-            printForwardName = bufFwd;
-        }
-
         printf("%llX %lX   %-4lu %-8lX %08lX %-8s %-80s %s\n",
                vaBase, foBase,
                funcIdx + 1,
@@ -98,8 +86,7 @@ RET_CODE dump_export_dir(
     WORD numberOfSections,
     PIMAGE_DATA_DIRECTORY ExportDirData,
     PIMAGE_EXPORT_DIRECTORY ExportDir,
-    ULONGLONG imageBase,
-    int truncateNames) {
+    ULONGLONG imageBase) {
 
     if (!peFile || !ExportDirData || !ExportDir)
         return RET_INVALID_PARAM;
@@ -226,7 +213,7 @@ RET_CODE dump_export_dir(
                                                 sizeof(WORD), ExportDir->NumberOfNames,
                                                 sections, numberOfSections);
 
-    if (dump_exported_functions(peFile, sections, numberOfSections, ExportDirData, ExportDir, EAT, NameRVAArray, NameOrdinalArray, imageBase, truncateNames) != RET_SUCCESS) {
+    if (dump_exported_functions(peFile, sections, numberOfSections, ExportDirData, ExportDir, EAT, NameRVAArray, NameOrdinalArray, imageBase) != RET_SUCCESS) {
         printf("[!!] Failed to dump Exported Functions\n");
         return RET_ERROR;
     }
@@ -4427,7 +4414,7 @@ RET_CODE dump_all_data_directories(
     // EXPORT
     //
     if (pExportDataDir->VirtualAddress) {
-        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase, false) != RET_SUCCESS)
+        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase) != RET_SUCCESS)
             fprintf(stderr, "[!] Failed to dump Export Directory\n");
         END_DIR();
     }

@@ -6,19 +6,20 @@
 int main(void) {
 
     // Fake argc/argv
-    int argc = 5;
+    int argc = 3;
     char *argv[] = {
-        "pe_parser", // argv[0] = program name
+        "PEdump", // argv[0] = program name
+        "-h",
         // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
-        "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-        "-s",
+        // "-s",
         // "--strings",
         // "rgex:.*\\.exe",
         // "-x",
         // "export:NTDLL.RtlAcquireSRWLockExclusive",
         // "import:@4",
         // "-h",
+        // "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
         NULL
     };
 
@@ -56,7 +57,7 @@ int main(void) {
         return RET_ERROR;
     }
 
-    char *file_name = argv[1]; 
+    char *file_name = argv[argc - 2]; 
 
     // C:\\Windows\\System32\\kernel32.dll
     // C:\\Users\\agent\\AppData\\Local\\Roblox\\Versions\\RobloxStudioInstaller.exe
