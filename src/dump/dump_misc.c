@@ -77,7 +77,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
 }
 
 RET_CODE dump_pe_overview(
-    const char *fileName,
+    const char *filePath,
     PIMAGE_NT_HEADERS32 nt32,
     PIMAGE_NT_HEADERS64 nt64,
     PIMAGE_SECTION_HEADER sections,
@@ -110,7 +110,7 @@ RET_CODE dump_pe_overview(
     PETypeInfo peTypeInfo;
 
     status = identify_pe_type(
-        fileName,
+        filePath,
         dataDirs,
         sections,
         numberOfSections,
@@ -131,7 +131,7 @@ RET_CODE dump_pe_overview(
 
     // PE Overview
     printf("======================================================================\n");
-    printf("PE Overview : %s\n", fileName);
+    printf("PE Overview : %s\n", filePath);
     printf("----------------------------------------------------------------------\n");
     printf("File Size              : %lld bytes\n", fileSize);
     printf("Architecture           : %s %s\n", is64bit ? "x64" : "x86", file_header_machine_to_string(machine));

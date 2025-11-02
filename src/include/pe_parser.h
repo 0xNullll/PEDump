@@ -339,25 +339,11 @@ RET_CODE parse_all_data_directories
 // ===== End of Data Directory Parsers =====
 
 // Parses the entire PE structure, extracting all key headers and data directories.
-// peFile       : Pointer to the opened PE file.
-// dosHeader    : Output pointer to the IMAGE_DOS_HEADER structure.
-// richHeader   : Output pointer to the optional RICH header.
-// nt32         : Output pointer to IMAGE_NT_HEADERS32 (for 32-bit).
-// nt64         : Output pointer to IMAGE_NT_HEADERS64 (for 64-bit).
-// sections     : Output pointer to the section headers array.
-// dirs         : Output pointer to the PEDataDirectories structure.
-// is64bit      : Output flag indicating PE architecture (1 = 64-bit, 0 = 32-bit).
+// peCtx        : the stracture of the pe file to be filled
 // Returns      : RET_SUCESS on success, RET_ERROR otherwise.
 RET_CODE parsePE
 (
-    IN FILE *peFile,
-    OUT PIMAGE_DOS_HEADER dosHeader,
-    OUT PIMAGE_RICH_HEADER *richHeader,
-    OUT PIMAGE_NT_HEADERS32 nt32,
-    OUT PIMAGE_NT_HEADERS64 nt64,
-    OUT PIMAGE_SECTION_HEADER *sections,
-    OUT PEDataDirectories *dirs,
-    OUT int *is64bit
+    OUT PPEContext  peCtx
 );
 
 #endif

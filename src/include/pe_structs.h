@@ -1064,32 +1064,53 @@ typedef struct {
 
 typedef struct _PEDataDirectories {
     // Export Table
-    PIMAGE_EXPORT_DIRECTORY        exportDir; // done
+    PIMAGE_EXPORT_DIRECTORY        exportDir;
 
     // Import Table
-    PIMAGE_IMPORT_DESCRIPTOR       importDir; // done
+    PIMAGE_IMPORT_DESCRIPTOR       importDir;
 
     // Resource Table
-    PIMAGE_RESOURCE_DIRECTORY        rsrcDir;        // done
-    PIMAGE_RESOURCE_DIRECTORY_ENTRY  rsrcEntriesDir; // done
+    PIMAGE_RESOURCE_DIRECTORY        rsrcDir;
+    PIMAGE_RESOURCE_DIRECTORY_ENTRY  rsrcEntriesDir;
 
     // Debug Directory
-    PIMAGE_DEBUG_DIRECTORY         debugDir;        // done
+    PIMAGE_DEBUG_DIRECTORY         debugDir;
 
     // TLS Directory
-    PIMAGE_TLS_DIRECTORY32         tls32;           // done
-    PIMAGE_TLS_DIRECTORY64         tls64;           // done
+    PIMAGE_TLS_DIRECTORY32         tls32;
+    PIMAGE_TLS_DIRECTORY64         tls64;
 
     // Load Config Directory
-    PIMAGE_LOAD_CONFIG_DIRECTORY32 loadConfig32;    // done
-    PIMAGE_LOAD_CONFIG_DIRECTORY64 loadConfig64;    // done
+    PIMAGE_LOAD_CONFIG_DIRECTORY32 loadConfig32;
+    PIMAGE_LOAD_CONFIG_DIRECTORY64 loadConfig64;
 
     // Delay Import Descriptor
-    PIMAGE_DELAYLOAD_DESCRIPTOR    delayImportDir;     // done
+    PIMAGE_DELAYLOAD_DESCRIPTOR    delayImportDir;
 
     // CLR (.NET) Directory
     PIMAGE_COR20_HEADER            clrHeader;       // usually a single struct
 } PEDataDirectories, *PPEDataDirectories;
+
+typedef struct _PEContext {
+    char filePath[MAXLOGICALLOGNAMESIZE]; // full path or label
+
+    FILE *fileHandle;
+
+    PIMAGE_DOS_HEADER      dosHeader;
+    PIMAGE_RICH_HEADER     richHeader;
+    PIMAGE_NT_HEADERS32    nt32;
+    PIMAGE_NT_HEADERS64    nt64;
+    PIMAGE_SECTION_HEADER  sections;
+    PPEDataDirectories     dirs;
+
+    WORD      numberOfSections;
+    ULONGLONG imageBase;
+    ULONGLONG sizeOfImage;
+    LONGLONG  fileSize;
+
+    BYTE is64Bit;
+    BYTE valid;                           // 0 → invalid or failed load
+} PEContext, *PPEContext;
 
 #pragma pack(pop)
 

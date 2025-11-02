@@ -1,5 +1,44 @@
 #include "../include/struct_io.h"
 
+void initPEContext(FILE *peFile, const char *fileName, PPEContext peCtx) {
+    if (!peCtx)
+        return;
+
+    memset(peCtx, 0, sizeof(PEContext));
+
+    // Associate the file handle immediately
+    peCtx->fileHandle = peFile;
+
+    // Get and store file size safely
+    peCtx->fileSize = (peFile != NULL) ? get_file_size(peFile) : 0;
+
+    // Copy file name/path safely
+    if (fileName && *fileName) {
+        strncpy(peCtx->filePath, fileName, sizeof(peCtx->filePath) - 1);
+        peCtx->filePath[sizeof(peCtx->filePath) - 1] = '\0';
+    } else {
+        strcpy(peCtx->filePath, "<unknown>");
+    }
+
+    // Allocate essential headers
+    peCtx->dosHeader = calloc(1, sizeof(IMAGE_DOS_HEADER));
+    peCtx->nt32      = calloc(1, sizeof(IMAGE_NT_HEADERS32));
+    peCtx->nt64      = calloc(1, sizeof(IMAGE_NT_HEADERS64));
+    peCtx->dirs      = calloc(1, sizeof(PEDataDirectories));
+
+    // Optional / dynamic parts
+    peCtx->sections   = NULL;
+    peCtx->richHeader = NULL;
+
+    // Structural / state defaults
+    peCtx->is64Bit          = 0;
+    peCtx->valid            = 0;
+    peCtx->numberOfSections = 0;
+    peCtx->imageBase        = 0;
+    peCtx->sizeOfImage      = 0;
+}
+
+
 void init_match_list(MATCH_LIST *list, ULONGLONG initialCapacity, ULONGLONG itemSize) {
     list->items = malloc(initialCapacity * itemSize);
     list->count = 0;
@@ -52,31 +91,45 @@ void add_section(PFileSectionList list, DWORD offset, DWORD size, const char* na
     list->count++;
 }
 
-void fill_pe_sections_manual(
-    FILE *peFile, PIMAGE_DOS_HEADER dosHeader, PIMAGE_RICH_HEADER richHeader,
-    PIMAGE_NT_HEADERS32 nt32, PIMAGE_NT_HEADERS64 nt64, PIMAGE_SECTION_HEADER sections,
-    WORD numberOfSections, int is64bit, LONGLONG fileSize, PFileSectionList outList) {
-    if (!outList || !dosHeader) return;
+void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
+    if (!peCtx || !peCtx->dosHeader || !outList) return;
 
     outList->sections = NULL;
     outList->count = 0;
     outList->capacity = 0;
 
-    DWORD ntOffset = (DWORD)dosHeader->e_lfanew;
-    PIMAGE_OPTIONAL_HEADER32 opt32 = NULL;
-    PIMAGE_OPTIONAL_HEADER64 opt64 = NULL;
+    FILE *peFile = peCtx->fileHandle;
+    int is64bit  = peCtx->is64Bit;
+    LONGLONG fileSize = peCtx->fileSize;
+    DWORD ntOffset = (DWORD)peCtx->dosHeader->e_lfanew;
     DWORD foOfEntryPoint = 0;
 
-    // 1. DOS Header
+    // --- Pick headers directly ---
+    PIMAGE_NT_HEADERS32 nt32 = peCtx->nt32;
+    PIMAGE_NT_HEADERS64 nt64 = peCtx->nt64;
+    PIMAGE_SECTION_HEADER sections = peCtx->sections;
+
+    if ((!is64bit && !nt32) || (is64bit && !nt64) || !sections)
+        return;
+
+    // --- Common header info ---
+    PIMAGE_FILE_HEADER fileHdr = is64bit
+        ? &nt64->FileHeader
+        : &nt32->FileHeader;
+
+    WORD numberOfSections = fileHdr->NumberOfSections;
+
+    // --- DOS Header ---
     add_section(outList, 0, sizeof(IMAGE_DOS_HEADER), "DOS Header");
 
-    // 2. RICH Header
-    if (richHeader) {
-        add_section(outList, richHeader->richHdrOff, richHeader->richHdrSize, "RICH Header");
+    // --- Rich Header ---
+    if (peCtx->richHeader) {
+        add_section(outList, peCtx->richHeader->richHdrOff,
+                    peCtx->richHeader->richHdrSize, "RICH Header");
     }
 
-    // 3. NT Headers
-    DWORD fileHeaderSize     = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER);
+    // --- NT Headers ---
+    DWORD fileHeaderSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER);
     DWORD optionalHeaderSize = is64bit
         ? sizeof(IMAGE_OPTIONAL_HEADER64)
         : sizeof(IMAGE_OPTIONAL_HEADER32);
@@ -90,47 +143,41 @@ void fill_pe_sections_manual(
                 optionalHeaderSize,
                 is64bit ? "Optional Header 64" : "Optional Header 32");
 
-    // Entry Point
+    // --- Optional Header + Entry Point ---
     DWORD epRva = 0;
-    if (is64bit && nt64) {
-        opt64 = &nt64->OptionalHeader;
-        epRva = opt64->AddressOfEntryPoint;
-    } else if (!is64bit && nt32) {
-        opt32 = &nt32->OptionalHeader;
-        epRva = opt32->AddressOfEntryPoint;
+    PIMAGE_DATA_DIRECTORY dataDirs = NULL;
+
+    if (is64bit) {
+        epRva = nt64->OptionalHeader.AddressOfEntryPoint;
+        dataDirs = nt64->OptionalHeader.DataDirectory;
+    } else {
+        epRva = nt32->OptionalHeader.AddressOfEntryPoint;
+        dataDirs = nt32->OptionalHeader.DataDirectory;
     }
-    if (epRva &&
-        rva_to_offset(epRva, sections, numberOfSections, &foOfEntryPoint) != RET_SUCCESS) {
+
+    if (epRva && rva_to_offset(epRva, sections, numberOfSections, &foOfEntryPoint) != RET_SUCCESS)
         foOfEntryPoint = 0;
-    }
 
-    // 4. COFF Symbol Table + String Table
-    if ((is64bit && nt64) || (!is64bit && nt32)) {
-        DWORD pointerToSymbolTable = is64bit
-            ? nt64->FileHeader.PointerToSymbolTable
-            : nt32->FileHeader.PointerToSymbolTable;
-        DWORD numberOfSymbols = is64bit
-            ? nt64->FileHeader.NumberOfSymbols
-            : nt32->FileHeader.NumberOfSymbols;
+    // --- COFF Symbol Table + String Table ---
+    if (fileHdr->PointerToSymbolTable && fileHdr->NumberOfSymbols) {
+        DWORD pointerToSymbolTable = fileHdr->PointerToSymbolTable;
+        DWORD numberOfSymbols = fileHdr->NumberOfSymbols;
 
-        if (pointerToSymbolTable && numberOfSymbols) {
-            // Symbol Table
-            DWORD symTableSize = numberOfSymbols * sizeof(IMAGE_SYMBOL);
-            add_section(outList, pointerToSymbolTable, symTableSize, "COFF Symbol Table");
+        DWORD symTableSize = numberOfSymbols * sizeof(IMAGE_SYMBOL);
+        add_section(outList, pointerToSymbolTable, symTableSize, "COFF Symbol Table");
 
-            // String Table
-            DWORD stringTableOffset = pointerToSymbolTable + symTableSize;
-            DWORD stringTableSize   = 0;
-            if (get_string_table_size(peFile, stringTableOffset, fileSize, &stringTableSize) == RET_SUCCESS &&
-                stringTableSize > 0) {
-                add_section(outList, stringTableOffset, stringTableSize, "COFF String Table");
-            }
+        DWORD stringTableOffset = pointerToSymbolTable + symTableSize;
+        DWORD stringTableSize = 0;
+
+        if (get_string_table_size(peFile, stringTableOffset, fileSize, &stringTableSize) == RET_SUCCESS &&
+            stringTableSize > 0) {
+            add_section(outList, stringTableOffset, stringTableSize, "COFF String Table");
         }
     }
 
-    // 5. Sections
+    // --- Sections ---
     DWORD lastSectionEnd = 0;
-    DWORD maxOffset = 0; // for overlay detection
+    DWORD maxOffset = 0;
 
     for (WORD i = 0; i < numberOfSections; i++) {
         char secName[32] = {0};
@@ -141,7 +188,7 @@ void fill_pe_sections_manual(
         DWORD secSize  = sections[i].SizeOfRawData;
         DWORD secEnd   = secStart + secSize;
 
-        // Entry point marker
+        // Mark entry point
         if (foOfEntryPoint >= secStart && foOfEntryPoint < secEnd) {
             strcat(secName, " * Entry Point");
             DWORD epSize = (secEnd - foOfEntryPoint > 16) ? 16 : (secEnd - foOfEntryPoint);
@@ -154,11 +201,7 @@ void fill_pe_sections_manual(
         if (secEnd > maxOffset) maxOffset = secEnd;
     }
 
-    // 6. Data directories
-    PIMAGE_DATA_DIRECTORY dataDirs = NULL;
-    if (is64bit && opt64) dataDirs = opt64->DataDirectory;
-    else if (!is64bit && opt32) dataDirs = opt32->DataDirectory;
-
+    // --- Data Directories ---
     if (dataDirs) {
         for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++) {
             DWORD dirSize = dataDirs[i].Size;
@@ -169,23 +212,31 @@ void fill_pe_sections_manual(
 
             BOOL needsDirectorySuffix =
                 (i != IMAGE_DIRECTORY_ENTRY_ARCHITECTURE &&
-                i != IMAGE_DIRECTORY_ENTRY_GLOBALPTR &&
-                i != IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR);
+                 i != IMAGE_DIRECTORY_ENTRY_GLOBALPTR &&
+                 i != IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR);
 
-            snprintf(name, sizeof(name), "%s %s", get_data_directory_name(i), needsDirectorySuffix ? "Directory" : "");
+            snprintf(name, sizeof(name), "%s %s",
+                     get_data_directory_name(i),
+                     needsDirectorySuffix ? "Directory" : "");
 
             if (i == IMAGE_DIRECTORY_ENTRY_SECURITY) {
-                DWORD secOff = dataDirs[i].VirtualAddress; // this is a file offset
+                DWORD secOff = dataDirs[i].VirtualAddress;
                 if (secOff >= (ULONG)fileSize) continue;
 
-                DWORD usable = (dirSize > (ULONG)fileSize - secOff) ? ((ULONG)fileSize - secOff) : dirSize;
+                DWORD usable = (dirSize > (ULONG)fileSize - secOff)
+                                 ? ((ULONG)fileSize - secOff)
+                                 : dirSize;
                 add_section(outList, secOff, usable, name);
                 endOffset = secOff + usable;
             } else {
-                if (rva_to_offset(dataDirs[i].VirtualAddress, sections, numberOfSections, &fo) != RET_SUCCESS ||
-                    fo >= (ULONG)fileSize) continue;
+                if (rva_to_offset(dataDirs[i].VirtualAddress, sections,
+                                  numberOfSections, &fo) != RET_SUCCESS ||
+                    fo >= (ULONG)fileSize)
+                    continue;
 
-                DWORD usable = (dirSize > (ULONG)fileSize - fo) ? ((ULONG)fileSize - fo) : dirSize;
+                DWORD usable = (dirSize > (ULONG)fileSize - fo)
+                                 ? ((ULONG)fileSize - fo)
+                                 : dirSize;
                 add_section(outList, fo, usable, name);
                 endOffset = fo + usable;
             }
@@ -194,12 +245,14 @@ void fill_pe_sections_manual(
         }
     }
 
-    // 7. Overlay detection
+    // --- Overlay detection ---
     if ((ULONG)fileSize > lastSectionEnd) {
-        add_section(outList, lastSectionEnd, (ULONG)fileSize - lastSectionEnd, "Overlay (after last section)");
+        add_section(outList, lastSectionEnd, (ULONG)fileSize - lastSectionEnd,
+                    "Overlay (after last section)");
     }
     if ((ULONG)fileSize > maxOffset && maxOffset != lastSectionEnd) {
-        add_section(outList, maxOffset, (ULONG)fileSize - maxOffset, "Overlay (after all data)");
+        add_section(outList, maxOffset, (ULONG)fileSize - maxOffset,
+                    "Overlay (after all data)");
     }
 }
 
@@ -214,58 +267,42 @@ void free_sections(PFileSectionList list) {
 void freePEDataDirectories(PEDataDirectories *dirs) {
     if (!dirs) return;
 
-    if (dirs->exportDir) {
-        SAFE_FREE(dirs->exportDir);
-        dirs->exportDir = NULL;
+    SAFE_FREE(dirs->exportDir);
+    SAFE_FREE(dirs->importDir);
+    SAFE_FREE(dirs->rsrcDir);
+    SAFE_FREE(dirs->rsrcEntriesDir);
+    SAFE_FREE(dirs->debugDir);
+    SAFE_FREE(dirs->tls32);
+    SAFE_FREE(dirs->tls64);
+    SAFE_FREE(dirs->loadConfig32);
+    SAFE_FREE(dirs->loadConfig64);
+    SAFE_FREE(dirs->delayImportDir);
+    SAFE_FREE(dirs->clrHeader);
+}
+
+void freePEContext(PPEContext peContext) {
+    if (!peContext)
+        return;
+
+    // Free nested directory allocations
+    if (peContext->dirs) {
+        freePEDataDirectories(peContext->dirs);
+        SAFE_FREE(peContext->dirs);
     }
 
-    if (dirs->importDir) {
-        SAFE_FREE(dirs->importDir);
-        dirs->importDir = NULL;
-    }
+    // Free individual headers if allocated
+    SAFE_FREE(peContext->dosHeader);
+    SAFE_FREE(peContext->richHeader);
+    SAFE_FREE(peContext->nt32);
+    SAFE_FREE(peContext->nt64);
+    SAFE_FREE(peContext->sections);
 
-    if (dirs->rsrcDir) {
-        SAFE_FREE(dirs->rsrcDir);
-        dirs->rsrcDir = NULL;
-    }
+    // Reset core metadata fields
+    peContext->numberOfSections = 0;
+    peContext->imageBase = 0;
+    peContext->sizeOfImage = 0;
+    peContext->is64Bit = 0;
+    peContext->valid = 0;
 
-    if (dirs->rsrcEntriesDir) {
-        SAFE_FREE(dirs->rsrcEntriesDir);
-        dirs->rsrcEntriesDir = NULL;
-    }
-
-    if (dirs->debugDir) {
-        SAFE_FREE(dirs->debugDir);
-        dirs->debugDir = NULL;
-    }
-
-    if (dirs->tls32) {
-        SAFE_FREE(dirs->tls32);
-        dirs->tls32 = NULL;
-    }
-
-    if (dirs->tls64) {
-        SAFE_FREE(dirs->tls64);
-        dirs->tls64 = NULL;
-    }
-
-    if (dirs->loadConfig32) {
-        SAFE_FREE(dirs->loadConfig32);
-        dirs->loadConfig32 = NULL;
-    }
-
-    if (dirs->loadConfig64) {
-        SAFE_FREE(dirs->loadConfig64);
-        dirs->loadConfig64 = NULL;
-    }
-
-    if (dirs->delayImportDir) {
-        SAFE_FREE(dirs->delayImportDir);
-        dirs->delayImportDir = NULL;
-    }
-
-    if (dirs->clrHeader) {
-        SAFE_FREE(dirs->clrHeader);
-        dirs->clrHeader = NULL;
-    }
+    memset(peContext->filePath, 0, sizeof(peContext->filePath));
 }

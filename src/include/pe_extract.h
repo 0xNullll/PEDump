@@ -90,7 +90,7 @@ typedef struct _MATCH_LIST{
 } MATCH_LIST, *PMATCH_LIST;
 
 // Identifies the type of a PE file (EXE, DLL, SYS, etc.) and fills type-related info.
-// fileName          : path to the PE file
+// filePath          : path to the PE file
 // dataDirs          : pointer to the PE file's data directories
 // sections          : array of section headers
 // numberOfSections  : number of sections in the PE
@@ -103,7 +103,7 @@ typedef struct _MATCH_LIST{
 // Returns           : RET_CODE indicating success or failure
 RET_CODE identify_pe_type
 (
-    IN  const char *fileName,
+    IN  const char *filePath,
     IN  PIMAGE_DATA_DIRECTORY dataDirs,
     IN  PIMAGE_SECTION_HEADER sections,
     IN  WORD numberOfSections,

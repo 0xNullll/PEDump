@@ -1,6 +1,61 @@
 #ifndef CMDS_H
 #define CMDS_H
 
+/*
+============================================================
+ Command System Core Types
+ -----------------------------------------------------------
+ This header defines the foundational types, enums, and data
+ structures that drive pedumper's command-handling system.
+
+ Each supported command-line action (like "dos", "imports",
+ "extract", "hash", etc.) is represented by a COMMAND enum
+ value. These are registered in g_command_table[], which maps
+ both short and long command names to their internal command
+ IDs.
+
+ The system is designed around three key configuration
+ structures, each handling a specific category of operations:
+
+   • FormatConfig
+       Controls how data is displayed or dumped (table, hex,
+       decimal, or binary). Used by formatting-related flags
+       like "--format" or temporary format options.
+
+   • ExtractConfig
+       Defines what type of data entity the user wants to
+       extract (section, import, or export), along with the
+       identification and matching rules (e.g., by name,
+       index, RVA, etc.). Used by the "--extract" command.
+
+   • HashConfig
+       Handles hashing and comparison operations for files,
+       sections, and arbitrary ranges. It defines:
+           - Which algorithm to use (MD5, SHA1, SHA256)
+           - What targets are being hashed (TargetType)
+           - Whether it’s a single-hash operation or a
+             comparison between two targets/files
+
+       The structure uses the HashCommandType enum to
+       distinguish between:
+           HASHCMD_HASH_TARGET     → single file/section/range
+           HASHCMD_COMPARE_TARGETS → cross-file or cross-target
+                                      comparison
+
+ All of these are aggregated into a single Config structure,
+ which represents the full state of a parsed pedumper
+ invocation — ready for execution by the command dispatch
+ system.
+
+ In summary:
+   - COMMAND           → identifies the selected user command
+   - FormatConfig      → display style and view settings
+   - ExtractConfig     → entity extraction and matching rules
+   - HashConfig        → hashing or comparison setup
+   - Config            → unified runtime command context
+============================================================
+*/
+
 #include "libs.h"
 #include "file_defs.h"
 #include "pe_utils.h"
@@ -13,30 +68,6 @@
 #include "dump_misc.h"
 #include "pe_extract.h"
 
-/*
-============================================================
- Command System Core Types
- -----------------------------------------------------------
- This header defines the core structures, enums and functions
-  that represent the entire PE command handling system.
-
- Each command (like "dos", "imports", "exports", etc.) is
- represented by a COMMAND enum value, with lookup info in
- g_command_table[].
-
- FormatConfig controls how data ranges are displayed or
- dumped (table, hex, decimal, binary, etc.).
-
- ExtractConfig describes what type of entity the user wants
- to extract (section, import, or export), along with the
- rules or identifiers for matching.
-
- These types collectively define how command-line arguments
- are parsed, mapped to PE operations, and formatted for
- output.
-============================================================
-*/
-
 typedef enum {
     CMD_HELP,
 
@@ -46,7 +77,6 @@ typedef enum {
     CMD_NT_HEADERS,
     CMD_SECTIONS,
 
-    CMD_DATA_DIRECTORIES,
     CMD_EXPORTS,
     CMD_IMPORTS,
     CMD_RESOURCES,
@@ -59,8 +89,8 @@ typedef enum {
     CMD_BOUND_IMPORT,
     CMD_IAT,
     CMD_DELAY_IMPORT,
+    CMD_DATA_DIRECTORIES,
 
-    // CLR family
     CMD_CLR_HEADER,
     CMD_CLR_METADATA,
     CMD_CLR_READYTORUN,
@@ -85,10 +115,8 @@ typedef enum {
     CMD_STRINGS,
     CMD_EXTRACT,
 
-    CMD_HASH_FILE,
-    CMD_HASH_SECTION,
-    CMD_HASH_RANGE,
-    CMD_COMPARE_TARGETS,
+    CMD_HASH,
+    CMD_HASH_COMPARE,
 
     CMD_UNKNOWN
 } COMMAND;
@@ -102,7 +130,7 @@ typedef struct {
 extern CommandEntry g_command_table[]; // only declared here
 
 typedef enum _ViewMode{
-    VIEW_TABLE,
+    VIEW_TABLE = 0,
     VIEW_HEX,
     VIEW_DEC,
     VIEW_BIN
@@ -121,10 +149,10 @@ typedef struct _FormatConfig{
 
 // What kind of thing we’re extracting
 typedef enum {
-    EXTRACT_NONE    = 0,
-    EXTRACT_SECTION = 1 << 0,
-    EXTRACT_EXPORT  = 1 << 1,
-    EXTRACT_IMPORT  = 1 << 2,
+    EXTRACT_NONE = 0,
+    EXTRACT_SECTION,
+    EXTRACT_EXPORT,
+    EXTRACT_IMPORT,
 } ExtractKind;
 
 typedef struct _ExtractConfig{
@@ -184,7 +212,7 @@ typedef struct _ExtractConfig{
 } ExtractConfig, *PExtractConfig;
 
 typedef enum {
-    TARGET_NONE,
+    TARGET_NONE = 0,
     TARGET_FILE,
     TARGET_SECTION,
     TARGET_RANGE,
@@ -210,25 +238,17 @@ typedef struct _Target{
 } Target, *PTarget;
 
 typedef enum {
-    HASHCMD_NONE,
-    HASHCMD_FILE,
-    HASHCMD_SECTION,
-    HASHCMD_RANGE,
-    HASHCMD_COMPARE
-} HashCommandType;
-
-typedef enum {
-    ALG_MD5,
+    ALG_MD5 = 0,
     ALG_SHA1,
     ALG_SHA256
 } HashAlg;
 
 typedef enum {
-    COMPARESTYLE_NONE,
-    COMPARESTYLE_RAW,        // raw byte-by-byte comparison
-    COMPARESTYLE_SECTION,    // section-to-section
-    COMPARESTYLE_RANGE       // range-to-range
-} CompareStyle;
+    HASHCMD_NONE = 0,
+    HASHCMD_HASH_TARGET,   // single target (file, section, or range)
+    HASHCMD_COMPARE_TARGETS
+} HashCommandType;
+
 
 typedef struct _HashConfig{
     HashCommandType cmdType; // Type of hash command
@@ -236,8 +256,6 @@ typedef struct _HashConfig{
 
     Target target1;          // First target (or only target)
     Target target2;          // Second target (for comparisons)
-
-    CompareStyle style;      // Style of comparison, if cmdType == HASHCMD_COMPARE
 
     char file1[MAX_PATH_LENGTH]; // File path for first file
     char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
@@ -365,30 +383,22 @@ RET_CODE parse_extract_arg
     OUT PConfig c
 );
 
+RET_CODE parse_hash_arg
+(
+    IN  const char *arg,
+    OUT PConfig c
+);
+
 // Handles all parsed commands and dispatches the corresponding operations.
 // argc      : Number of command-line arguments.
 // argv      : Array of command-line argument strings.
-// peFile    : Pointer to the opened PE file.
-// dosHeader : Pointer to IMAGE_DOS_HEADER structure.
-// richHeader: Pointer to IMAGE_RICH_HEADER structure (optional).
-// nt32      : Pointer to IMAGE_NT_HEADERS32 structure (for 32-bit binaries).
-// nt64      : Pointer to IMAGE_NT_HEADERS64 structure (for 64-bit binaries).
-// sections  : Pointer to PE section headers array.
-// dirs      : Pointer to PEDataDirectories structure.
-// is64bit   : Flag indicating PE architecture (1 = 64-bit, 0 = 32-bit).
+// peCtx     : Holds all the file structures and context
 // Returns   : RET_SUCCESS on success, RET_ERROR otherwise.
 RET_CODE handle_commands
 (
-    IN int argc,
-    IN char **argv,
-    IN FILE *peFile,
-    IN PIMAGE_DOS_HEADER dosHeader,
-    IN PIMAGE_RICH_HEADER richHeader,
-    IN PIMAGE_NT_HEADERS32 nt32,
-    IN PIMAGE_NT_HEADERS64 nt64,
-    IN PIMAGE_SECTION_HEADER sections,
-    IN PPEDataDirectories dirs,
-    IN int is64bit
+    IN int          argc,
+    IN char       **argv,
+    IN PPEContext   peCtx
 );
 
 #endif

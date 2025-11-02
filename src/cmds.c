@@ -14,7 +14,6 @@ CommandEntry g_command_table[] = {
     {"--nt-headers",       "-nth",  CMD_NT_HEADERS},
     {"--sections",         "-s",    CMD_SECTIONS},
 
-    {"--data-directories", "-dd",   CMD_DATA_DIRECTORIES},
     {"--exports",          "-e",    CMD_EXPORTS},
     {"--imports",          "-i",    CMD_IMPORTS},
     {"--resources",        "-r",    CMD_RESOURCES},
@@ -27,6 +26,7 @@ CommandEntry g_command_table[] = {
     {"--bound-import",     "-bi",   CMD_BOUND_IMPORT},
     {"--iat",              "-iat",  CMD_IAT},
     {"--delay-import",     "-di",   CMD_DELAY_IMPORT},
+    {"--data-directories", "-dd",   CMD_DATA_DIRECTORIES},
 
     // CLR family
     {"--clr-header",     "-ch",  CMD_CLR_HEADER},
@@ -51,7 +51,10 @@ CommandEntry g_command_table[] = {
     {"--extract",          "-x",    CMD_EXTRACT},
     {"--strings",          "-s",    CMD_STRINGS},
 
-    { NULL,                NULL,    CMD_UNKNOWN }
+    {"-h",                 "--hash",             CMD_HASH},
+    {"-cc",                "--compare-targets",  CMD_HASH_COMPARE},
+
+    {NULL,                 NULL,  CMD_UNKNOWN}
 };
 
 BOOL isCmdValid(int argc) {
@@ -305,17 +308,6 @@ RET_CODE handle_export_extract(char *val, ExtractConfig *extractConfig) {
         extractConfig->export.useRva = 1;
     }
 
-    // // === export:fwd/NAME ===
-    // else if (strncmp(val, "fwd/", 4) == 0) {
-    //     const char *str = val + 4;
-    //     if (!*str) return RET_INVALID_PARAM;
-
-    //     strncpy(extractConfig->export.forwarderName, str,
-    //             sizeof(extractConfig->export.forwarderName) - 1);
-    //     extractConfig->export.forwarderName[sizeof(extractConfig->export.forwarderName) - 1] = '\0';
-    //     extractConfig->export.useForwarder = 1;
-    // }
-
     // === export:NAME ===
     else {
         ULONGLONG len = strlen(val);
@@ -382,12 +374,6 @@ RET_CODE handle_import_extract(char *val, ExtractConfig *extractConfig) {
             extractConfig->import.dllName[0] = '\0';
             extractConfig->import.useDll     = 0;
             extractConfig->import.isGlobal   = 1;
-
-            // strncpy(extractConfig->import.funcName, val, sizeof(extractConfig->import.funcName) - 1);
-            // extractConfig->import.funcName[sizeof(extractConfig->import.funcName) - 1] = '\0';
-            // extractConfig->import.useName = 1;
-
-            // return RET_SUCCESS;
     }
 
     if (*slash == '\0') {
@@ -415,11 +401,13 @@ RET_CODE handle_import_extract(char *val, ExtractConfig *extractConfig) {
 }
 
 RET_CODE parse_extract_arg(const char *arg, PConfig c) {
+    int ret = RET_INVALID_PARAM;
+
     ExtractConfig extractConfig = {0};
 
     if (!arg) {
         c->extractConfig = extractConfig;
-        return RET_INVALID_PARAM;
+        return ret;
     }
 
     ViewMode format = c->formatConfig.view;
@@ -434,8 +422,6 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
     char buf[564];
     strncpy(buf, arg, sizeof(buf) - 1);
     buf[sizeof(buf) - 1] = '\0';
-
-    int ret = RET_INVALID_PARAM;
 
     if (strncmp(buf, "section:", 8) == 0) {
         extractConfig.kind = EXTRACT_SECTION;
@@ -458,75 +444,103 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
 }
 
 
-RET_CODE handle_commands(
-    int argc, char **argv,
-    FILE *peFile,
-    PIMAGE_DOS_HEADER dosHeader,
-    PIMAGE_RICH_HEADER richHeader,
-    PIMAGE_NT_HEADERS32 nt32,
-    PIMAGE_NT_HEADERS64 nt64,
-    PIMAGE_SECTION_HEADER sections,
-    PPEDataDirectories dirs,
-    int is64bit) {
+// typedef struct _HashConfig{
+//     HashCommandType cmdType; // Type of hash command
+//     HashAlg alg;             // Hash algorithm to use
 
-    if (!peFile) return RET_INVALID_PARAM;
+//     Target target1;          // First target (or only target)
+//     Target target2;          // Second target (for comparisons)
 
+//     char file1[MAX_PATH_LENGTH]; // File path for first file
+//     char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
+// } HashConfig, *PHashConfig;
+
+
+RET_CODE parse_hash_arg(const char *arg, PConfig c) {
+    RET_CODE ret = RET_INVALID_PARAM;
+
+    HashConfig hashConfig = {0};
+
+    if (!arg) {
+        c->hashConfig = hashConfig;
+        return ret;
+    }
+
+
+    return ret;
+}
+
+RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
+    if (!peCtx || !peCtx->valid) {
+        fprintf(stderr, "[!] Invalid or uninitialized PE context\n");
+        return RET_INVALID_PARAM;
+    }
+
+    // --- Initialize configuration ---
     Config config;
     init_config(&config);
 
-    const char *fileName = argv[argc - 2];
+    // --- Use values directly from context ---
+    BOOL is64bit = peCtx->is64Bit;
+    PIMAGE_DOS_HEADER dosHeader = peCtx->dosHeader;
+    PIMAGE_NT_HEADERS32 nt32 = peCtx->nt32;
+    PIMAGE_NT_HEADERS64 nt64 = peCtx->nt64;
 
-    // get file size
-    LONGLONG fileSize = get_file_size(peFile);
+    LONGLONG fileSize = peCtx->fileSize;
+    ULONGLONG imageBase = peCtx->imageBase;
+    WORD numberOfSections = peCtx->numberOfSections;
 
-    // pick correct headers and common values
-    PVOID fileHeader = is64bit ? (PVOID)&nt64->FileHeader : (PVOID)&nt32->FileHeader;
-    PVOID ntHeader   = is64bit ? (PVOID)&nt64: (PVOID)&nt32;
-    PVOID optHeader  = is64bit ? (PVOID)&nt64->OptionalHeader : (PVOID)&nt32->OptionalHeader;
-
-    DWORD foNtHeaders   = (DWORD)dosHeader->e_lfanew;
-    DWORD foFileHeader  = foNtHeaders + sizeof(DWORD); // PE signature
-    DWORD foOptHeader   = foFileHeader + sizeof(IMAGE_FILE_HEADER);
-    DWORD foSecHeaders  = (DWORD)(foOptHeader + (is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64) : sizeof(IMAGE_OPTIONAL_HEADER32)));
-
-    ULONGLONG imageBase        = is64bit ? nt64->OptionalHeader.ImageBase : nt32->OptionalHeader.ImageBase;
-    WORD numberOfSections      = is64bit ? nt64->FileHeader.NumberOfSections : nt32->FileHeader.NumberOfSections;
+    // --- Use values from inside context ---
     DWORD PointerToSymbolTable = is64bit ? nt64->FileHeader.PointerToSymbolTable : nt32->FileHeader.PointerToSymbolTable;
-    DWORD NumberOfSymbols      = is64bit ? nt64->FileHeader.NumberOfSymbols : nt32->FileHeader.NumberOfSymbols;
-    WORD machine               = is64bit ? nt64->FileHeader.Machine : nt32->FileHeader.Machine;
+    DWORD NumberOfSymbols      = is64bit ? nt64->FileHeader.NumberOfSymbols      : nt32->FileHeader.NumberOfSymbols;
+    WORD machine               = is64bit ? nt64->FileHeader.Machine              : nt32->FileHeader.Machine;
 
-    // Data directories
+    // --- Offsets (relative to file start) ---
+    DWORD foNtHeaders  = (DWORD)dosHeader->e_lfanew;
+    DWORD foFileHeader = foNtHeaders  + sizeof(DWORD); // PE signature
+    DWORD foOptHeader  = foFileHeader + sizeof(IMAGE_FILE_HEADER);
+    DWORD foSecHeaders = foOptHeader  +
+        (DWORD)(is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64) : sizeof(IMAGE_OPTIONAL_HEADER32));
+
+    // --- Pointers (in-memory views) ---
+    PIMAGE_FILE_HEADER fileHeader = is64bit
+        ? (PIMAGE_FILE_HEADER)&nt64->FileHeader
+        : (PIMAGE_FILE_HEADER)&nt32->FileHeader;
+
+    PVOID optHeader = peCtx->is64Bit
+        ? (PVOID)&nt64->OptionalHeader
+        : (PVOID)&nt32->OptionalHeader;
+
+    PVOID ntHeaders = peCtx->is64Bit ? (PVOID)&nt64 : (PVOID)&nt32;
+
+    // --- Data Directories ---
     PIMAGE_DATA_DIRECTORY dataDirs = is64bit
         ? nt64->OptionalHeader.DataDirectory
         : nt32->OptionalHeader.DataDirectory;
 
-    PIMAGE_DATA_DIRECTORY pExportDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT];
-    PIMAGE_DATA_DIRECTORY pImportDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_IMPORT];
-    PIMAGE_DATA_DIRECTORY pRsrcDataDir         = &dataDirs[IMAGE_DIRECTORY_ENTRY_RESOURCE];
-    PIMAGE_DATA_DIRECTORY pExceptionDataDir    = &dataDirs[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
-    PIMAGE_DATA_DIRECTORY pSecurityDataDir     = &dataDirs[IMAGE_DIRECTORY_ENTRY_SECURITY];
-    PIMAGE_DATA_DIRECTORY pRelocDataDir        = &dataDirs[IMAGE_DIRECTORY_ENTRY_BASERELOC];
-    PIMAGE_DATA_DIRECTORY pDebugDataDir        = &dataDirs[IMAGE_DIRECTORY_ENTRY_DEBUG];
-    PIMAGE_DATA_DIRECTORY pTlsDataDir          = &dataDirs[IMAGE_DIRECTORY_ENTRY_TLS];
-    PIMAGE_DATA_DIRECTORY pLcfgDataDir         = &dataDirs[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
-    PIMAGE_DATA_DIRECTORY pBoundImportDataDir  = &dataDirs[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
-    PIMAGE_DATA_DIRECTORY pIatDataDir          = &dataDirs[IMAGE_DIRECTORY_ENTRY_IAT];
-    PIMAGE_DATA_DIRECTORY pDelayImportDataDir  = &dataDirs[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
-    PIMAGE_DATA_DIRECTORY pClrHeaderDataDir    = &dataDirs[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+    PIMAGE_DATA_DIRECTORY pExportDataDir      = &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT];
+    PIMAGE_DATA_DIRECTORY pImportDataDir      = &dataDirs[IMAGE_DIRECTORY_ENTRY_IMPORT];
+    PIMAGE_DATA_DIRECTORY pRsrcDataDir        = &dataDirs[IMAGE_DIRECTORY_ENTRY_RESOURCE];
+    PIMAGE_DATA_DIRECTORY pExceptionDataDir   = &dataDirs[IMAGE_DIRECTORY_ENTRY_EXCEPTION];
+    PIMAGE_DATA_DIRECTORY pSecurityDataDir    = &dataDirs[IMAGE_DIRECTORY_ENTRY_SECURITY];
+    PIMAGE_DATA_DIRECTORY pRelocDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_BASERELOC];
+    PIMAGE_DATA_DIRECTORY pDebugDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_DEBUG];
+    PIMAGE_DATA_DIRECTORY pTlsDataDir         = &dataDirs[IMAGE_DIRECTORY_ENTRY_TLS];
+    PIMAGE_DATA_DIRECTORY pLcfgDataDir        = &dataDirs[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
+    PIMAGE_DATA_DIRECTORY pBoundImportDataDir = &dataDirs[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT];
+    PIMAGE_DATA_DIRECTORY pIatDataDir         = &dataDirs[IMAGE_DIRECTORY_ENTRY_IAT];
+    PIMAGE_DATA_DIRECTORY pDelayImportDataDir = &dataDirs[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
+    PIMAGE_DATA_DIRECTORY pClrHeaderDataDir   = &dataDirs[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 
-    // Allocate the FileSectionList structure
+    // --- File Section List ---
     PFileSectionList file_section_list = malloc(sizeof(FileSectionList));
     if (!file_section_list) {
-        fprintf(stderr,"[!] Failed to allocate memory for FileSectionList\n");
+        fprintf(stderr, "[!] Failed to allocate memory for FileSectionList\n");
         return RET_ERROR;
     }
 
-
-    fill_pe_sections_manual(peFile, dosHeader, richHeader, nt32, nt64, sections, numberOfSections, is64bit, fileSize, file_section_list);
-
-    // for (WORD i = 0; i < file_section_list->count; i++ ) {
-    //     printf("%08X %08X %s\n", file_section_list->sections[i].offset, file_section_list->sections[i].endOffset, file_section_list->sections[i].name);
-    // }
+    // Fill section information manually (using already parsed context)
+    fill_pe_sections_manual(peCtx, file_section_list);
 
     // A helper flag indicating that the next argument should trigger a reset
     // of the temporary format configuration.
@@ -536,7 +550,7 @@ RET_CODE handle_commands(
 
     int status;
 
-    // iterate over arguments
+   // iterate over arguments
     for (int i = 1; i < argc - 2; i++) {
         if (argv[i] == NULL) break;
 
@@ -550,8 +564,8 @@ RET_CODE handle_commands(
             resetNextArg = TRUE;
         }
 
-
         COMMAND command = parse_command(argv[i], &config);
+
         
         switch (command) {
             case CMD_UNKNOWN:
@@ -568,7 +582,7 @@ RET_CODE handle_commands(
                         fprintf(stderr, "[!] Failed to dump Dos Header\n");
                     }
                 } else {
-                    if (print_range(peFile, 0, sizeof(IMAGE_DOS_HEADER), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, 0, sizeof(IMAGE_DOS_HEADER), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Dos Header\n");
                     }
                 }
@@ -576,11 +590,11 @@ RET_CODE handle_commands(
 
             case CMD_FILE_HEADER:
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_file_header(peFile, foFileHeader, fileHeader, imageBase, 1) != RET_SUCCESS) {
+                    if (dump_file_header(peCtx->fileHandle, foFileHeader, fileHeader, imageBase, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump File Header\n");
                     }
                 } else {
-                    if (print_range(peFile, foFileHeader, sizeof(IMAGE_FILE_HEADER), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, foFileHeader, sizeof(IMAGE_FILE_HEADER), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump File Header\n");
                     }                      
                 }
@@ -588,11 +602,11 @@ RET_CODE handle_commands(
 
             case CMD_OPTIONAL_HEADER:
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_optional_header(peFile, sections, numberOfSections, foOptHeader, optHeader, imageBase, is64bit, 1) != RET_SUCCESS) {
+                    if (dump_optional_header(peCtx->fileHandle, peCtx->sections, numberOfSections, foOptHeader, optHeader, imageBase, is64bit, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Optional Header\n");
                     }
                 } else {
-                    if (print_range(peFile, foOptHeader, is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64) : sizeof(IMAGE_OPTIONAL_HEADER32), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, foOptHeader, is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64) : sizeof(IMAGE_OPTIONAL_HEADER32), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Optional Header\n");
                     }
                 }
@@ -600,11 +614,11 @@ RET_CODE handle_commands(
 
             case CMD_NT_HEADERS:
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_nt_headers(peFile, sections, numberOfSections, foNtHeaders, ntHeader, imageBase, is64bit) != RET_SUCCESS) {
+                    if (dump_nt_headers(peCtx->fileHandle, peCtx->sections, numberOfSections, foNtHeaders, ntHeaders, imageBase, is64bit) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump NT Headers\n");
                     }
                 } else {
-                    if (print_range(peFile, foNtHeaders, is64bit ? sizeof(IMAGE_NT_HEADERS64) : sizeof(IMAGE_NT_HEADERS32), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, foNtHeaders, is64bit ? sizeof(IMAGE_NT_HEADERS64) : sizeof(IMAGE_NT_HEADERS32), fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump NT Headers\n");
                     }
                 }
@@ -612,25 +626,12 @@ RET_CODE handle_commands(
 
             case CMD_SECTIONS:
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_section_headers(peFile, PointerToSymbolTable, NumberOfSymbols, sections, numberOfSections, fileSize, imageBase) != RET_SUCCESS) {
+                    if (dump_section_headers(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections, fileSize, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Section Headers\n");
                     }
                 } else {
-                    if (print_range(peFile, foSecHeaders, sizeof(IMAGE_SECTION_HEADER) * numberOfSections, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, foSecHeaders, sizeof(IMAGE_SECTION_HEADER) * numberOfSections, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Section Headers\n");
-                    }
-                }
-                break;
-
-            case CMD_DATA_DIRECTORIES:
-                if (config.formatConfig.view == VIEW_TABLE) {
-                    status = dump_all_data_directories(peFile, sections, numberOfSections, dataDirs, dirs, imageBase, is64bit, fileSize, machine);
-                } else {
-                    status = dump_all_data_directories_raw(peFile, sections, numberOfSections, dataDirs, fileSize, &config.formatConfig, file_section_list);
-                }
-                if (status != RET_SUCCESS) {
-                    if (status == RET_ERROR) {
-                        fprintf(stderr, "[!] Failed to dump Data Directories\n");    
                     }
                 }
                 break;
@@ -638,18 +639,18 @@ RET_CODE handle_commands(
             case CMD_EXPORTS:
                 if (pExportDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pExportDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pExportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Export Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase) != RET_SUCCESS) {
+                        if (dump_export_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExportDataDir, peCtx->dirs->exportDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Export Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pExportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pExportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Export Directory\n");
                         }
                     }
@@ -659,18 +660,18 @@ RET_CODE handle_commands(
             case CMD_IMPORTS:
                 if (pImportDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pImportDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Import Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_import_dir(peFile, sections, numberOfSections, pImportDataDir, dirs->importDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        if (dump_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pImportDataDir, peCtx->dirs->importDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Import Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Import Directory\n");
                         }
                     }
@@ -680,18 +681,18 @@ RET_CODE handle_commands(
             case CMD_RESOURCES:
                 if (pRsrcDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pRsrcDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pRsrcDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Resource Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_rsrc_dir(peFile, sections, numberOfSections, pRsrcDataDir, dirs->rsrcDir, dirs->rsrcEntriesDir, imageBase) != RET_SUCCESS) {
+                        if (dump_rsrc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir, peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Resource Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pRsrcDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pRsrcDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Resource Directory\n");
                         }
                     }
@@ -701,18 +702,18 @@ RET_CODE handle_commands(
             case CMD_EXCEPTION:
                 if (pExceptionDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pExceptionDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pExceptionDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Exception Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_exception_dir(peFile, sections, numberOfSections, pExceptionDataDir, machine, imageBase) != RET_SUCCESS) {
+                        if (dump_exception_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExceptionDataDir, machine, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Exception Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pExceptionDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pExceptionDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Exception Directory\n");
                         }
                     }
@@ -722,11 +723,11 @@ RET_CODE handle_commands(
             case CMD_SECURITY:
                 if (pSecurityDataDir->VirtualAddress) {
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_security_dir(peFile, pSecurityDataDir) != RET_SUCCESS) {
+                        if (dump_security_dir(peCtx->fileHandle, pSecurityDataDir) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Security Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, pSecurityDataDir->VirtualAddress, pSecurityDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, pSecurityDataDir->VirtualAddress, pSecurityDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Security Directory\n");
                         }
                     }
@@ -736,18 +737,18 @@ RET_CODE handle_commands(
             case CMD_BASERELOC:
                 if (pRelocDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pRelocDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pRelocDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Base Relocation Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_reloc_dir(peFile, sections, numberOfSections, pRelocDataDir, imageBase) != RET_SUCCESS) {
+                        if (dump_reloc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRelocDataDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pRelocDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pRelocDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
                         }
                     }
@@ -757,18 +758,18 @@ RET_CODE handle_commands(
             case CMD_DEBUG:
                 if (pDebugDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pDebugDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pDebugDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Debug Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_debug_dir(peFile, sections, numberOfSections, pDebugDataDir, dirs->debugDir, machine, imageBase, is64bit) != RET_SUCCESS) {
+                        if (dump_debug_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDebugDataDir, peCtx->dirs->debugDir, machine, imageBase, is64bit) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Debug Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pDebugDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pDebugDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Debug Directory\n");
                         }
                     }
@@ -778,18 +779,18 @@ RET_CODE handle_commands(
             case CMD_TLS:
                 if (pTlsDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pTlsDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pTlsDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert TLS Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_tls_dir(peFile, sections, numberOfSections, pTlsDataDir, dirs->tls64, dirs->tls32, imageBase, is64bit) != RET_SUCCESS) {
+                        if (dump_tls_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pTlsDataDir, peCtx->dirs->tls64, peCtx->dirs->tls32, imageBase, is64bit) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump TLS Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pTlsDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pTlsDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump TLS Directory\n");
                         }
                     }
@@ -799,18 +800,18 @@ RET_CODE handle_commands(
             case CMD_LOAD_CONFIG:
                 if (pLcfgDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pLcfgDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pLcfgDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Load Config Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_load_config_dir(peFile, sections, numberOfSections, pLcfgDataDir, dirs->loadConfig64, dirs->loadConfig32, imageBase, is64bit) != RET_SUCCESS) {
+                        if (dump_load_config_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pLcfgDataDir, peCtx->dirs->loadConfig64, peCtx->dirs->loadConfig32, imageBase, is64bit) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pLcfgDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pLcfgDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
                         }
                     }
@@ -820,18 +821,18 @@ RET_CODE handle_commands(
             case CMD_BOUND_IMPORT:
                 if (pBoundImportDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pBoundImportDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pBoundImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Bound Import Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_bound_import_dir(peFile, sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
+                        if (dump_bound_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                         }
                     }
@@ -841,18 +842,18 @@ RET_CODE handle_commands(
             case CMD_IAT:
                 if (pIatDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pIatDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pIatDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert IAT Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_iat_table(peFile, sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        if (dump_iat_table(peCtx->fileHandle, peCtx->sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump IAT Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pIatDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pIatDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump IAT Directory\n");
                         }
                     }
@@ -862,18 +863,18 @@ RET_CODE handle_commands(
             case CMD_DELAY_IMPORT:
                 if (pDelayImportDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pDelayImportDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pDelayImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert Delay Import Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_delay_import_dir(peFile, sections, numberOfSections, pDelayImportDataDir, dirs->delayImportDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        if (dump_delay_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDelayImportDataDir, peCtx->dirs->delayImportDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pDelayImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pDelayImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
                         }
                     }
@@ -883,20 +884,33 @@ RET_CODE handle_commands(
             case CMD_CLR_HEADER:
                 if (pClrHeaderDataDir->VirtualAddress) {
                     DWORD fo = 0;
-                    status = rva_to_offset(pClrHeaderDataDir->VirtualAddress, sections, numberOfSections, &fo);
+                    status = rva_to_offset(pClrHeaderDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert CLR/.NET Header Directory RVA to file offset\n");
                         break;
                     }
 
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_clr_header_dir(peFile, sections, numberOfSections, pClrHeaderDataDir, dirs->clrHeader, imageBase) != RET_SUCCESS) {
+                        if (dump_clr_header_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pClrHeaderDataDir, peCtx->dirs->clrHeader, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
                         }
                     } else {
-                        if (print_range(peFile, fo, pClrHeaderDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, fo, pClrHeaderDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
                         }
+                    }
+                }
+                break;
+
+            case CMD_DATA_DIRECTORIES:
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    status = dump_all_data_directories(peCtx->fileHandle, peCtx->sections, numberOfSections, dataDirs, peCtx->dirs, imageBase, is64bit, fileSize, machine);
+                } else {
+                    status = dump_all_data_directories_raw(peCtx->fileHandle, peCtx->sections, numberOfSections, dataDirs, fileSize, &config.formatConfig, file_section_list);
+                }
+                if (status != RET_SUCCESS) {
+                    if (status == RET_ERROR) {
+                        fprintf(stderr, "[!] Failed to dump Data Directories\n");    
                     }
                 }
                 break;
@@ -917,13 +931,13 @@ RET_CODE handle_commands(
                 break;
 
             case CMD_RICH:
-                if (richHeader) {
+                if (peCtx->richHeader) {
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_rich_header(peFile, 0x40, (DWORD)dosHeader->e_lfanew, richHeader) != RET_SUCCESS) {
+                        if (dump_rich_header(peCtx->fileHandle, 0x40, (DWORD)dosHeader->e_lfanew, peCtx->richHeader) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Rich Header\n");
                         }
                     } else {
-                        if (print_range(peFile, richHeader->richHdrOff, richHeader->richHdrSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, peCtx->richHeader->richHdrOff, peCtx->richHeader->richHdrSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Rich Header\n");
                         }
                     }
@@ -934,24 +948,22 @@ RET_CODE handle_commands(
                 if (pRsrcDataDir->VirtualAddress) {
                     DWORD versionInfoRva = 0, versionInfoSize = 0;
 
-                    if (extract_version_resource(peFile, sections, numberOfSections, pRsrcDataDir, dirs->rsrcDir, dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize) == RET_NO_VALUE) {
+                    if (extract_version_resource(peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir, peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize) == RET_NO_VALUE) {
                         fprintf(stderr,"[!] Version Info was not found\n");
                         break;
                     }
 
-                    // printf("%08X %08X\n", versionInfoRva, versionInfoSize);
-
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_version_info(peFile, sections, numberOfSections, versionInfoRva, versionInfoSize, imageBase) != RET_SUCCESS) {
+                        if (dump_version_info(peCtx->fileHandle, peCtx->sections, numberOfSections, versionInfoRva, versionInfoSize, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Version Info\n");
                         }
                     } else {
                         DWORD versionInfoFO = 0;
 
-                        if (rva_to_offset(versionInfoRva, sections, numberOfSections, &versionInfoFO) != RET_SUCCESS) {
+                        if (rva_to_offset(versionInfoRva, peCtx->sections, numberOfSections, &versionInfoFO) != RET_SUCCESS) {
                             break;
                         }
-                        if (print_range(peFile, versionInfoFO, versionInfoSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, versionInfoFO, versionInfoSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Version Info\n");
                         }
                     }
@@ -961,13 +973,13 @@ RET_CODE handle_commands(
             case CMD_SYMBOL_TABLE:
                 if (PointerToSymbolTable && NumberOfSymbols) {
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_symbol_table(peFile, PointerToSymbolTable, NumberOfSymbols, sections, numberOfSections) != RET_SUCCESS) {
+                        if (dump_symbol_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
                         }
                     } else {
                         DWORD symbolTableSize = NumberOfSymbols * IMAGE_SIZEOF_SYMBOL;
 
-                        if (print_range(peFile, PointerToSymbolTable, symbolTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, PointerToSymbolTable, symbolTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
                         }
                     }
@@ -977,7 +989,7 @@ RET_CODE handle_commands(
             case CMD_STRING_TABLE:
                 if (PointerToSymbolTable && NumberOfSymbols) {
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_string_table(peFile, PointerToSymbolTable, NumberOfSymbols) != RET_SUCCESS) {
+                        if (dump_string_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump COFF String Table\n");    
                         }
                     } else {
@@ -985,12 +997,12 @@ RET_CODE handle_commands(
                         DWORD stringTableSize;
 
                         // Calculate offset to string table
-                        if (get_string_table_size(peFile, stringTableOffset, fileSize, &stringTableSize) != RET_SUCCESS) {
+                        if (get_string_table_size(peCtx->fileHandle, stringTableOffset, fileSize, &stringTableSize) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to get the size of COFF String Table\n");
                             break;
                         }
 
-                        if (print_range(peFile, stringTableOffset, stringTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, stringTableOffset, stringTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump COFF String Table\n");
                         }
                     }
@@ -1000,15 +1012,15 @@ RET_CODE handle_commands(
             case CMD_OVERLAY:
                 DWORD overlayFo, overlaySize;
 
-                getOverlayInfo(sections, numberOfSections, fileSize, &overlayFo, &overlaySize);
+                getOverlayInfo(peCtx->sections, numberOfSections, fileSize, &overlayFo, &overlaySize);
                 
-                if (print_range(peFile, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                if (print_range(peCtx->fileHandle, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                     fprintf(stderr, "[!] Failed to dump Overlay\n");
                 }
                 break;
 
             case CMD_OVERVIEW:
-                if (dump_pe_overview(fileName, nt32, nt64, sections, dataDirs, is64bit, fileSize) != RET_SUCCESS) {
+                if (dump_pe_overview(peCtx->filePath, nt32, nt64, peCtx->sections, dataDirs, is64bit, fileSize) != RET_SUCCESS) {
                     fprintf(stderr, "[!] Failed to dump PE Over View info\n");   
                 }
                 break;
@@ -1017,7 +1029,7 @@ RET_CODE handle_commands(
                 if (config.formatConfig.view == VIEW_TABLE) {
                 // havent been handled yet.
                 } else {
-                    if (print_range(peFile, 0, (DWORD)fileSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                    if (print_range(peCtx->fileHandle, 0, (DWORD)fileSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump the whole file\n");
                     }
                 }
@@ -1025,17 +1037,17 @@ RET_CODE handle_commands(
                 break;
 
             case CMD_VA2FILE:
-                if (argv[i + 1] != NULL) {
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     i++;
                     ULONGLONG VA = convert_to_hex(argv[i]);
-                    if (va_to_fileOff_cmd(VA, sections, numberOfSections, imageBase) != RET_SUCCESS) {
+                    if (va_to_fileOff_cmd(VA, peCtx->sections, numberOfSections, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert VA=0x%llX to file offset\n", VA);
                     }
                 }
                 break;
 
             case CMD_FORMAT:
-                if (argv[i + 1] != NULL) {
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     i++;
                     if (parse_format_arg(argv[i], FALSE, &config) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid format: %s\n", argv[i]);
@@ -1044,7 +1056,7 @@ RET_CODE handle_commands(
                 break;
 
             case CMD_TEMP_FORMAT:
-                if (argv[i + 1] != NULL) {
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     i++;
     
                     // save the format config state
@@ -1057,17 +1069,16 @@ RET_CODE handle_commands(
                 break;
 
             case CMD_STRINGS: // NOT FINSHED
-
                 char *regexFilter;
 
-                if (argv[i + 1] != NULL && strncmp(argv[i + 1], "rgex:", strlen("rgex:")) == 0) {
+                if (argv[i + 1] && argv[i + 1][0] != '\0' && strncmp(argv[i + 1], "rgex:", strlen("rgex:")) == 0) {
                     regexFilter = argv[i + 1] + strlen("rgex:");
                     i++;
                 } else {
                     regexFilter = NULL;
                 }
 
-                if (dump_pe_strings(peFile, regexFilter) != RET_SUCCESS) {
+                if (dump_pe_strings(peCtx->fileHandle, regexFilter) != RET_SUCCESS) {
                     fprintf(stderr, "[!] Failed to dump file strings\n");
                 }
 
@@ -1075,32 +1086,32 @@ RET_CODE handle_commands(
 
             case CMD_EXTRACT:
                 // handle extraction of data
-                if (argv[i + 1] != NULL) {
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     i++;
                     if (parse_extract_arg(argv[i], &config) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid Extract Command: %s\n", argv[i]);
                         break;
                     }
                     if (execute_extract(
-                        peFile, sections, numberOfSections,
-                        PointerToSymbolTable, NumberOfSymbols, dataDirs, dirs,
+                        peCtx->fileHandle, peCtx->sections, numberOfSections,
+                        PointerToSymbolTable, NumberOfSymbols, dataDirs, peCtx->dirs,
                         fileSize, imageBase, is64bit, &config, file_section_list) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to execute extraction\n");
                     }
                 }
                 break;
 
-            case CMD_HASH_FILE:
-            break;
+            case CMD_HASH:
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
+                    i++;
+                }
+                break;
 
-            case CMD_HASH_SECTION:
-            break;
-
-            case CMD_HASH_RANGE:
-            break;
-
-            case CMD_COMPARE_TARGETS:
-            break;
+            case CMD_HASH_COMPARE:
+                if (argv[i + 1] && argv[i + 1][0] != '\0') {
+                    i++;
+                }                    
+                break;
 
             default:
                 fprintf(stderr, "Error: Unhandled command code %d. Please report this.\n", command);
@@ -1112,9 +1123,8 @@ RET_CODE handle_commands(
     if (file_section_list->count) {
         free_sections(file_section_list);
     }
-    if (file_section_list) {
-        SAFE_FREE(file_section_list);
-    }
 
-    return RET_SUCCESS;
+    SAFE_FREE(file_section_list);
+    
+    return status;
 }
