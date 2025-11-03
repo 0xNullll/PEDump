@@ -98,7 +98,7 @@ typedef struct _RVA_INFO            RVA_INFO;
 typedef struct _FileSection         FileSection,       *PFileSection;
 typedef struct _FileSectionList     FileSectionList,   *PFileSectionList;
 
-// located in cmds.h
+// located in cmds_types.h
 typedef struct _FormatConfig        FormatConfig,      *PFormatConfig;
 typedef struct _ExtractConfig       ExtractConfig,     *PExtractConfig;
 typedef struct _HashConfig          HashConfig,        *PHashConfig;

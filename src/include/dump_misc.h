@@ -4,7 +4,7 @@
 #include "libs.h"
 #include "pe_structs.h"
 #include "file_defs.h"
-#include "cmds.h"
+#include "cmd_types.h"
 #include "pe_extract.h"
 
 #define MAX_ASCII_STRING    2048
@@ -15,6 +15,11 @@
 
 #define IS_ASCII_PRINTABLE(c) ((c) >= 0x20 && (c) <= 0x7E)
 
+// Dumps strings from a PE file, optionally filtering them using a regex pattern.
+// If regexFilter is provided, only strings matching the pattern are returned.
+// peFile      : pointer to the open PE file
+// regexFilter : regex pattern to filter strings (can be NULL to skip filtering)
+// Returns     : RET_CODE indicating success or failure
 RET_CODE dump_pe_strings
 (
     IN FILE *peFile,
