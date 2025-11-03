@@ -495,10 +495,10 @@ RET_CODE execute_extract(
 
     if (!peFile || !sections || !numberOfSections) return RET_INVALID_PARAM;
 
-    DWORD inFo, inSize;
-    PMATCH_LIST MatchList;
-    WORD dataDirIndex;
-    int status = RET_SUCCESS;
+    DWORD inFo = 0, inSize = 0;
+    PMATCH_LIST MatchList = NULL;
+    WORD dataDirIndex = 0;
+    RET_CODE status = RET_SUCCESS;
 
     switch (config->extractConfig.kind) {
         case EXTRACT_SECTION:
@@ -508,6 +508,7 @@ RET_CODE execute_extract(
                 fprintf(stderr,"[!!] Section info not found\n");
                 break;
             }
+
             if (config->formatConfig.view == VIEW_TABLE) {
                 WORD sectionIdx = config->extractConfig.section.index;
                 status = print_section_header(peFile, symTableOffset, NumberOfSymbols, &sections[sectionIdx], sectionIdx, imageBase);
@@ -520,51 +521,52 @@ RET_CODE execute_extract(
             }
             break;
 
-        case EXTRACT_EXPORT:
+        case EXTRACT_EXPORT: 
             MatchList = calloc(1, sizeof(MATCH_LIST));
+            if (!MatchList) return RET_ERROR;
 
             status = export_process_extract(
                 peFile, sections, numberOfSections, &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT], dirs->exportDir,
                 &config->extractConfig, MatchList);
 
             if (status != RET_SUCCESS) {
-                if (status == RET_NO_VALUE) {
-                    fprintf(stderr,"[!!] Export info not found\n");
-                }
-                else if (status == RET_ERROR) {
-                    fprintf(stderr, "[!!] Failed to extract Export info\n");       
-                }
+                free_match_list(MatchList);
+                SAFE_FREE(MatchList);
+
+                if (status == RET_NO_VALUE) fprintf(stderr,"[!!] Export info not found\n");
+                else if (status == RET_ERROR) fprintf(stderr, "[!!] Failed to extract Export info\n");       
                 break;
             }
 
             dump_extracted_exports(MatchList, sections, numberOfSections, imageBase, 0);
             free_match_list(MatchList);
-
+            SAFE_FREE(MatchList);
             break;
 
-        case EXTRACT_IMPORT: 
+        case EXTRACT_IMPORT:
             MatchList = calloc(1, sizeof(MATCH_LIST));
+            if (!MatchList) return RET_ERROR;
 
             status = import_process_extract(
                 peFile, sections, numberOfSections, dirs->importDir,
                 is64bit, &config->extractConfig, MatchList);
 
             if (status != RET_SUCCESS) {
-                if (status == RET_NO_VALUE) {
-                    fprintf(stderr,"[!!] Import info not found\n");
-                }
-                else if (status == RET_ERROR) {
-                    fprintf(stderr, "[!!] Failed to extract Import info\n");       
-                }
+                free_match_list(MatchList);
+                SAFE_FREE(MatchList);
+
+                if (status == RET_NO_VALUE) fprintf(stderr,"[!!] Import info not found\n");
+                else if (status == RET_ERROR) fprintf(stderr, "[!!] Failed to extract Import info\n");       
                 break;
             }
 
             dump_extracted_imports(MatchList, sections, numberOfSections, imageBase, 0);
             free_match_list(MatchList);
-
+            SAFE_FREE(MatchList);
             break;
+
         default:
-            fprintf(stderr,"[!!] Uknown extracting kind\n");
+            fprintf(stderr,"[!!] Unknown extracting kind\n");
             status = RET_NO_VALUE;
             break;
     }
