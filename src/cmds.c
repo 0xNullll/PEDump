@@ -51,8 +51,8 @@ CommandEntry g_command_table[] = {
     {"--extract",          "-x",    CMD_EXTRACT},
     {"--strings",          "-s",    CMD_STRINGS},
 
-    {"-h",                 "--hash",             CMD_HASH},
-    {"-cc",                "--compare-targets",  CMD_HASH_COMPARE},
+    {"--hash",             "-H",  CMD_HASH},
+    {"--compare-targets",  "-cc", CMD_HASH_COMPARE},
 
     {NULL,                 NULL,  CMD_UNKNOWN}
 };
@@ -248,37 +248,33 @@ RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
 }
 
 
-RET_CODE handle_section_extract(char *val, ExtractConfig *extractConfig) {
-    if (!val || !extractConfig) return RET_INVALID_PARAM;
+RET_CODE handle_section_extract(char *val, PSectionExtract section) {
+    if (!val || !section) return RET_INVALID_PARAM;
 
     // Reset section config flags
-    memset(&extractConfig->section, 0, sizeof(extractConfig->section));
+    memset(section, 0, sizeof(*section));
 
     if (*val == '/' || *val == '.') {
-        strncpy(extractConfig->section.name, val, sizeof(extractConfig->section.name) - 1);
-        extractConfig->section.useName = 1;
+        strncpy(section->name, val, sizeof(section->name) - 1);
+        section->useName = 1;
     }
     else if (*val == '#') {
-        extractConfig->section.index = (WORD)convert_to_hex(val + 1);
-        extractConfig->section.useIdx = 1;
+        section->index  = (WORD)convert_to_hex(val + 1);
+        section->useIdx = 1;
     }
     else if (strncmp(val, "rva", 3) == 0) {
         char *cmd = strchr(val, '/');
         if (!cmd) return RET_INVALID_PARAM;
         *cmd++ = '\0';
-        if (!cmd) return RET_INVALID_PARAM;
-
-        extractConfig->section.addr.rva = (DWORD)convert_to_hex(cmd);
-        extractConfig->section.useRva = 1;
+        section->addr.rva = (DWORD)convert_to_hex(cmd);
+        section->useRva   = 1;
     }
     else if (strncmp(val, "fo", 2) == 0) {
         char *cmd = strchr(val, '/');
         if (!cmd) return RET_INVALID_PARAM;
         *cmd++ = '\0';
-        if (!cmd) return RET_INVALID_PARAM;
-
-        extractConfig->section.addr.fo = (DWORD)convert_to_hex(cmd);
-        extractConfig->section.useFo = 1;
+        section->addr.fo = (DWORD)convert_to_hex(cmd);
+        section->useFo   = 1;
     }
     else {
         return RET_INVALID_PARAM;
@@ -287,116 +283,81 @@ RET_CODE handle_section_extract(char *val, ExtractConfig *extractConfig) {
     return RET_SUCCESS;
 }
 
-RET_CODE handle_export_extract(char *val, ExtractConfig *extractConfig) {
-    if (!val || !extractConfig) return RET_INVALID_PARAM;
+RET_CODE handle_export_extract(char *val, PExportExtract exp) {
+    if (!val || !exp) return RET_INVALID_PARAM;
 
-    // Reset export config flags
-    memset(&extractConfig->export, 0, sizeof(extractConfig->export));
+    memset(exp, 0, sizeof(*exp));
 
-    // === export:#ORD ===
     if (*val == '#') {
-        extractConfig->export.ordinal = (WORD)convert_to_hex(val + 1);
-        extractConfig->export.useOrdinal = 1;
+        exp->ordinal     = (WORD)convert_to_hex(val + 1);
+        exp->useOrdinal  = 1;
     }
-
-    // === export:rva/VAL ===
     else if (strncmp(val, "rva/", 4) == 0) {
-        const char *numStr = val + 4;
-        if (!*numStr) return RET_INVALID_PARAM;
-
-        extractConfig->export.rva = (DWORD)convert_to_hex(numStr);
-        extractConfig->export.useRva = 1;
+        exp->rva     = (DWORD)convert_to_hex(val + 4);
+        exp->useRva  = 1;
     }
-
-    // === export:NAME ===
     else {
-        ULONGLONG len = strlen(val);
+        size_t len = strlen(val);
 
-        // Check if it ends with ".dll" safely
         if (len >= 4 && STREQI(val + len - 4, ".dll") == 0) {
-            strncpy(extractConfig->export.dllName, val,
-                    sizeof(extractConfig->export.dllName) - 1);
-            extractConfig->export.dllName[sizeof(extractConfig->export.dllName) - 1] = '\0';
-            extractConfig->export.useDll = 1;
+            strncpy(exp->dllName, val, sizeof(exp->dllName) - 1);
+            exp->useDll = 1;
             return RET_SUCCESS;
         }
 
-        // Check if it’s a forwarded name (contains a dot)
         if (strchr(val, '.')) {
-            strncpy(extractConfig->export.forwarderName, val,
-                    sizeof(extractConfig->export.forwarderName) - 1);
-            extractConfig->export.forwarderName[sizeof(extractConfig->export.forwarderName) - 1] = '\0';
-            extractConfig->export.useForwarder = 1;
+            strncpy(exp->forwarderName, val, sizeof(exp->forwarderName) - 1);
+            exp->useForwarder = 1;
             return RET_SUCCESS;
         }
 
-        // Otherwise, normal function
-        strncpy(extractConfig->export.funcName, val,
-                sizeof(extractConfig->export.funcName) - 1);
-        extractConfig->export.funcName[sizeof(extractConfig->export.funcName) - 1] = '\0';
-        extractConfig->export.useName = 1;
+        strncpy(exp->funcName, val, sizeof(exp->funcName) - 1);
+        exp->useName = 1;
         return RET_SUCCESS;
     }
 
     return RET_SUCCESS;
 }
 
-RET_CODE handle_import_extract(char *val, ExtractConfig *extractConfig) {
-    if (!val || !extractConfig) return RET_INVALID_PARAM;
+RET_CODE handle_import_extract(char *val, PImportExtract imp) {
+    if (!val || !imp) return RET_INVALID_PARAM;
 
-    // Reset import config flags
-    memset(&extractConfig->import, 0, sizeof(extractConfig->import));
+    memset(imp, 0, sizeof(*imp));
 
     char *slash = strchr(val, '/');
     size_t len = strlen(val);
 
-    // === Case 1: import:LIB/NAME or import:LIB ===
     if (slash) {
-        *slash = '\0';
-        slash++; // move past '/'
-
-        strncpy(extractConfig->import.dllName, val, sizeof(extractConfig->import.dllName) - 1);
-        extractConfig->import.dllName[sizeof(extractConfig->import.dllName) - 1] = '\0';
-        extractConfig->import.isGlobal = 0;
+        *slash++ = '\0';
+        strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
+        imp->isGlobal = 0;
     }
-    // === Case 2: No slash, may be DLL or global name ===
     else {
-        slash = val;
-
-        if (len > 0 && STREQI(val + (len - 5), ".dll") == 0) {
-            strncpy(extractConfig->import.dllName, val, sizeof(extractConfig->import.dllName) - 1);
-            extractConfig->import.dllName[sizeof(extractConfig->import.dllName) - 1] = '\0';
-            extractConfig->import.useDll   = 1;
-            extractConfig->import.isGlobal = 0;
-            return RET_SUCCESS; // import by DLL — nothing after '.dll'
+        if (len >= 4 && STREQI(val + len - 4, ".dll") == 0) {
+            strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
+            imp->useDll   = 1;
+            imp->isGlobal = 0;
+            return RET_SUCCESS;
         }
-            // Global import (e.g., "CreateFileA")
-            extractConfig->import.dllName[0] = '\0';
-            extractConfig->import.useDll     = 0;
-            extractConfig->import.isGlobal   = 1;
+        imp->dllName[0] = '\0';
+        imp->isGlobal   = 1;
     }
 
-    if (*slash == '\0') {
-        // Nothing after '/'
-        return RET_INVALID_PARAM;
-    }
+    if (!slash || *slash == '\0') return RET_INVALID_PARAM;
 
-    // === Handle specific match type ===
     if (*slash == '#') {
-        slash++;
-        extractConfig->import.ordinal    = (WORD)convert_to_hex(slash);
-        extractConfig->import.useOrdinal = 1;
+        imp->ordinal    = (WORD)convert_to_hex(slash + 1);
+        imp->useOrdinal = 1;
     }
     else if (*slash == '@') {
-        slash++;
-        extractConfig->import.hint    = (WORD)convert_to_hex(slash);
-        extractConfig->import.useHint = 1;
+        imp->hint      = (WORD)convert_to_hex(slash + 1);
+        imp->useHint   = 1;
     }
     else {
-        strncpy(extractConfig->import.funcName, slash, sizeof(extractConfig->import.funcName) - 1);
-        extractConfig->import.funcName[sizeof(extractConfig->import.funcName) - 1] = '\0';
-        extractConfig->import.useName = 1;
+        strncpy(imp->funcName, slash, sizeof(imp->funcName) - 1);
+        imp->useName = 1;
     }
+
     return RET_SUCCESS;
 }
 
@@ -425,16 +386,16 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
 
     if (strncmp(buf, "section:", 8) == 0) {
         extractConfig.kind = EXTRACT_SECTION;
-        ret = handle_section_extract(buf + 8, &extractConfig);
+        ret = handle_section_extract(buf + 8, &extractConfig.section);
     }
     else if (strncmp(buf, "export:", 7) == 0) {
         extractConfig.kind = EXTRACT_EXPORT;
-        ret = handle_export_extract(buf + 7, &extractConfig);
+        ret = handle_export_extract(buf + 7, &extractConfig.export);
     }
     else if (strncmp(buf, "import:", 7) == 0) {
         extractConfig.kind = EXTRACT_IMPORT;
-        ret = handle_import_extract(buf + 7, &extractConfig);
-    } 
+        ret = handle_import_extract(buf + 7, &extractConfig.import);
+    }
 
     if (ret != RET_SUCCESS)
         return ret;
@@ -443,6 +404,23 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
     return RET_SUCCESS;
 }
 
+// typedef enum {
+//     TARGET_NONE = 0,
+//     TARGET_FILE,
+//     TARGET_SECTION,
+//     TARGET_RANGE,
+// } TargetType;
+
+// typedef struct _Target{
+//     TargetType type; // Type of target (section, range, etc.)
+
+//     union {
+//         SectionExtract section;
+//     };
+
+//     ULONGLONG start; // Range start (for hash-range or compare)
+//     ULONGLONG end;   // Range end (for hash-range or compare)
+// } Target, *PTarget;
 
 // typedef struct _HashConfig{
 //     HashCommandType cmdType; // Type of hash command
@@ -455,7 +433,6 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
 //     char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
 // } HashConfig, *PHashConfig;
 
-
 RET_CODE parse_hash_arg(const char *arg, PConfig c) {
     RET_CODE ret = RET_INVALID_PARAM;
 
@@ -466,6 +443,66 @@ RET_CODE parse_hash_arg(const char *arg, PConfig c) {
         return ret;
     }
 
+    // Copy arg safely
+    char buf[564];
+    strncpy(buf, arg, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    char *alg = strchr(buf, '@');
+    if (alg) {
+        alg = '\0';
+
+        alg++;
+        if (!alg || strncmp(alg, "md5", 3) == 0) {
+            hashConfig.alg = ALG_MD5;
+        }
+        else if (strncmp(alg, "sha1", 4) == 0) {
+            hashConfig.alg = ALG_SHA1;
+        }
+        else if (strncmp(alg, "sha265", 6) == 0) {
+            hashConfig.alg = ALG_SHA256; 
+        }
+    } else {
+        hashConfig.alg = ALG_MD5;
+    }
+
+    char *split = strstr(buf, "::"); // check if its comperation or single
+    if (split) {
+        hashConfig.cmdType = HASHCMD_COMPARE_TARGETS;
+
+       split = '\0';
+    
+        split += 2;
+        if (!split) return RET_INVALID_PARAM;
+
+        if (strncmp(split, "section:", 8) == 0) {
+            hashConfig.target2.type = TARGET_SECTION;
+            ret = handle_section_extract(split + 8, &hashConfig.target2.section);
+        }
+        else if (strncmp(split, "range:", 6) == 0) {
+            hashConfig.target2.type = TARGET_RANGE;
+            // not yet handled
+        }
+        else {
+            hashConfig.target2.type = TARGET_FILE;
+            // not yet handled
+        }
+    } else {
+        hashConfig.cmdType = HASHCMD_HASH_TARGET;
+    }
+
+    if (strncmp(buf, "section:", 8) == 0) {
+        hashConfig.target1.type = TARGET_SECTION;
+        ret = handle_section_extract(buf + 8, &hashConfig.target1.section);
+    }
+    else if (strncmp(buf, "range:", 6) == 0) {
+        hashConfig.target1.type = TARGET_RANGE;
+        // not yet handled
+    }
+    else {
+        hashConfig.target1.type = TARGET_FILE;
+        // not yet handled
+    }
 
     return ret;
 }
@@ -548,7 +585,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
     FormatConfig tempFormatConfig = {0};
 
-    int status;
+    int status = RET_SUCCESS;
 
    // iterate over arguments
     for (int i = 1; i < argc - 2; i++) {
@@ -948,7 +985,11 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 if (pRsrcDataDir->VirtualAddress) {
                     DWORD versionInfoRva = 0, versionInfoSize = 0;
 
-                    if (extract_version_resource(peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir, peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize) == RET_NO_VALUE) {
+                    status = extract_version_resource(
+                        peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir,
+                        peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize);
+                    
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr,"[!] Version Info was not found\n");
                         break;
                     }
@@ -960,9 +1001,11 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                     } else {
                         DWORD versionInfoFO = 0;
 
-                        if (rva_to_offset(versionInfoRva, peCtx->sections, numberOfSections, &versionInfoFO) != RET_SUCCESS) {
+                        status = rva_to_offset(versionInfoRva, peCtx->sections, numberOfSections, &versionInfoFO);
+                        if (status != RET_SUCCESS) {
                             break;
                         }
+
                         if (print_range(peCtx->fileHandle, versionInfoFO, versionInfoSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Version Info\n");
                         }
@@ -997,7 +1040,8 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                         DWORD stringTableSize;
 
                         // Calculate offset to string table
-                        if (get_string_table_size(peCtx->fileHandle, stringTableOffset, fileSize, &stringTableSize) != RET_SUCCESS) {
+                        status = get_string_table_size(peCtx->fileHandle, stringTableOffset, fileSize, &stringTableSize);
+                        if (status != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to get the size of COFF String Table\n");
                             break;
                         }
@@ -1038,9 +1082,10 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
             case CMD_VA2FILE:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
-                    ULONGLONG VA = convert_to_hex(argv[i]);
-                    if (va_to_fileOff_cmd(VA, peCtx->sections, numberOfSections, imageBase) != RET_SUCCESS) {
+                    ULONGLONG VA = convert_to_hex(argv[++i]);
+
+                    status = va_to_fileOff_cmd(VA, peCtx->sections, numberOfSections, imageBase);
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to convert VA=0x%llX to file offset\n", VA);
                     }
                 }
@@ -1048,8 +1093,8 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
             case CMD_FORMAT:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
-                    if (parse_format_arg(argv[i], FALSE, &config) != RET_SUCCESS) {
+                    status = parse_format_arg(argv[++i], FALSE, &config);
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid format: %s\n", argv[i]);
                     }
                 }
@@ -1057,12 +1102,11 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
             case CMD_TEMP_FORMAT:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
-    
                     // save the format config state
                     tempFormatConfig = config.formatConfig;
 
-                    if (parse_format_arg(argv[i], TRUE, &config) != RET_SUCCESS) {
+                    status = parse_format_arg(argv[++i], TRUE, &config);
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid format: %s\n", argv[i]);
                     }
                 }
@@ -1072,13 +1116,13 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 char *regexFilter;
 
                 if (argv[i + 1] && argv[i + 1][0] != '\0' && strncmp(argv[i + 1], "rgex:", strlen("rgex:")) == 0) {
-                    regexFilter = argv[i + 1] + strlen("rgex:");
-                    i++;
+                    regexFilter = argv[++i] + strlen("rgex:");
                 } else {
                     regexFilter = NULL;
                 }
 
-                if (dump_pe_strings(peCtx->fileHandle, regexFilter) != RET_SUCCESS) {
+                status = dump_pe_strings(peCtx->fileHandle, regexFilter);
+                if (status != RET_SUCCESS) {
                     fprintf(stderr, "[!] Failed to dump file strings\n");
                 }
 
@@ -1087,15 +1131,19 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
             case CMD_EXTRACT:
                 // handle extraction of data
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
-                    if (parse_extract_arg(argv[i], &config) != RET_SUCCESS) {
+
+                    status = parse_extract_arg(argv[++i], &config);
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid Extract Command: %s\n", argv[i]);
                         break;
                     }
-                    if (execute_extract(
+
+                    status = execute_extract(
                         peCtx->fileHandle, peCtx->sections, numberOfSections,
                         PointerToSymbolTable, NumberOfSymbols, dataDirs, peCtx->dirs,
-                        fileSize, imageBase, is64bit, &config, file_section_list) != RET_SUCCESS) {
+                        fileSize, imageBase, is64bit, &config, file_section_list);
+                    
+                    if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to execute extraction\n");
                     }
                 }
@@ -1103,13 +1151,18 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
             case CMD_HASH:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
+
+                    status = parse_hash_arg(argv[++i], &config);
+                    if (status != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Invalid hash command: %s\n", argv[i]);
+                        break;
+                    }
+
                 }
                 break;
 
             case CMD_HASH_COMPARE:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                    i++;
                 }                    
                 break;
 

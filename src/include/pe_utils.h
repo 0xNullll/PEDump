@@ -81,6 +81,12 @@ typedef struct _FileSectionList{
     WORD capacity;         // Allocated capacity for the array
 } FileSectionList, *PFileSectionList;
 
+// Reports a malformed condition in PE parsing or analysis.
+// reason  : description of the error or anomaly
+// context : context string (e.g., section or function name)
+// file    : source file where the issue was detected
+// line    : line number in the source file
+// Returns RET_CODE indicating reporting status
 RET_CODE ReportMalformed
 (
     IN const char *reason,
@@ -98,12 +104,21 @@ LONGLONG get_file_size
 );
 
 
+// Reads the entire contents of a file into a dynamically allocated buffer.
+// peFile  : pointer to an open FILE
+// outSize : pointer to receive the size of the read data
+// Returns a pointer to the allocated buffer containing the file data
 UCHAR* read_entire_file_fp
 (
     IN  FILE* peFile,
     OUT PULONGLONG outSize
 );
 
+// Extracts the DLL name from a forwarder string (e.g., "DLLName.Function").
+// forwarderName : forwarder string containing DLL and function
+// outDllName    : buffer to receive the extracted DLL name
+// strSize       : size of the outDllName buffer
+// Returns RET_CODE indicating success or failure
 RET_CODE get_dll_from_forwarder
 (
     IN  const char *forwarderName,
@@ -492,10 +507,16 @@ BOOL is_import_library_present
     IN const char *dllName
 );
 
+// Searches for a regular expression pattern within a text string.
+// Uses Unix regex if running on a Unix system, otherwise uses a simple implementation of Unix regex.
+// pattern : regex pattern to search for
+// text    : text string to search within
+// Returns 1 if a match is found, 0 otherwise
 int regex_search
 (
     IN const char* pattern,
     IN const char* text
 );
+
 
 #endif

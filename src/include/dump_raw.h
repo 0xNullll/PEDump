@@ -5,7 +5,7 @@
 #include "pe_structs.h"
 #include "file_defs.h"
 #include "pe_utils.h"
-#include "cmds.h"
+#include "cmd_types.h"
 
 // === Hex dump macros ===
 

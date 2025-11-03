@@ -6,13 +6,15 @@
 int main(void) {
 
     // Fake argc/argv
-    int argc = 4;
+    int argc = 5;
     char *argv[] = {
         "PEdump", // argv[0] = program name
         // "-h",
         // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-        "-s",
+        "-H",
+        // "-x",
+        "section:.text",
         // "--strings",
         // "rgex:.*\\.exe",
         // "-x",

@@ -6,7 +6,8 @@
 #include "file_defs.h"
 #include "struct_io.h"
 #include "pe_parser.h"
-#include "cmds.h"
+#include "dump_data_dirs.h"
+#include "cmd_types.h"
 #include "dump_raw.h"
 #include "dump_misc.h"
 
@@ -133,6 +134,16 @@ RET_CODE section_process_extract
     OUT PWORD outSectionIdx
 );
 
+// Checks if a given export entry matches the extraction configuration.
+// extractConfig  : pointer to extraction configuration
+// funcRva        : Relative Virtual Address of the function
+// nameRva        : Relative Virtual Address of the function name
+// ordinal        : export ordinal
+// name           : export name string
+// forwardName    : forwarder name string (if any)
+// ExportDllName  : name of the DLL exporting the function
+// forwardDllName : name of the DLL the function is forwarded to (if any)
+// Returns        : TRUE if the export matches the configuration, FALSE otherwise
 BOOL check_export_match
 (
     IN const PExtractConfig extractConfig,
@@ -145,6 +156,15 @@ BOOL check_export_match
     IN const char *forwardDllName
 );
 
+// Processes the export directory of a PE file to extract matching exports.
+// peFile         : pointer to the open PE file
+// sections       : array of section headers
+// numberOfSections : number of sections in the PE file
+// expDirData     : pointer to the export data directory
+// expDesc        : pointer to the export directory descriptor
+// extractConfig  : extraction configuration
+// outMatchesList : pointer to a MATCH_LIST to store found matches
+// Returns        : RET_CODE indicating success or failure
 RET_CODE export_process_extract
 (
     IN FILE *peFile,
@@ -192,6 +212,20 @@ RET_CODE import_process_extract
     OUT PMATCH_LIST outMatchesList
 );
 
+// Executes the full extraction process on a PE file, including exports, imports, and data directories.
+// peFile          : pointer to the open PE file
+// sections        : array of section headers
+// numberOfSections: number of sections in the PE file
+// symTableOffset  : file offset to the symbol table
+// NumberOfSymbols : number of symbols in the symbol table
+// dataDirs        : pointer to the PE's data directories
+// dirs            : pointer to PEDataDirectories structure
+// fileSize        : size of the PE file
+// imageBase       : base address of the image
+// is64bit         : nonzero if the PE file is 64-bit
+// config          : pointer to extraction configuration
+// fileSectionList : list of file sections
+// Returns         : RET_CODE indicating success or failure of the extraction
 RET_CODE execute_extract
 (
     IN FILE *peFile,
