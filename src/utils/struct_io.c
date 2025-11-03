@@ -79,69 +79,75 @@ void free_match_list(MATCH_LIST *list) {
 }
 
 
-void add_section(PFileSectionList list, DWORD offset, DWORD size, const char* name) {
+RET_CODE add_section(PFileSectionList list, DWORD offset, DWORD size, const char* name) {
+    if (!list || !name) return RET_ERROR;
+
+    // Reallocate if needed
     if (list->count >= list->capacity) {
-        list->capacity = list->capacity ? list->capacity * 2 : 4;
-        list->sections = realloc(list->sections, list->capacity * sizeof(FileSection));
+        WORD newCap = list->capacity ? list->capacity * 2 : 4;
+        FileSection *tmp = realloc(list->sections, newCap * sizeof(FileSection));
+        if (!tmp) return RET_BUFFER_OVERFLOW; // out-of-memory
+        list->sections = tmp;
+        list->capacity = newCap;
     }
+
+    // Copy values
     list->sections[list->count].offset = offset;
     list->sections[list->count].size = size;
     list->sections[list->count].endOffset = offset + size;
-    list->sections[list->count].name = strdup(name); // allocate and copy string
+
+    // Duplicate string safely
+    // list->sections[list->count].name = strdup(name);
+    // if (!list->sections[list->count].name) return RET_ERROR; // strdup failed
+
+    size_t nameLen = strlen(name) + 1;
+    list->sections[list->count].name = malloc(nameLen);
+    if (!list->sections[list->count].name) return RET_ERROR;
+    memcpy(list->sections[list->count].name, name, nameLen);
+
     list->count++;
+    return RET_SUCCESS;
 }
 
 void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
     if (!peCtx || !peCtx->dosHeader || !outList) return;
 
+    // Init output
     outList->sections = NULL;
     outList->count = 0;
     outList->capacity = 0;
 
-    FILE *peFile = peCtx->fileHandle;
-    int is64bit  = peCtx->is64Bit;
+    int is64bit = peCtx->is64Bit;
     LONGLONG fileSize = peCtx->fileSize;
     DWORD ntOffset = (DWORD)peCtx->dosHeader->e_lfanew;
     DWORD foOfEntryPoint = 0;
 
-    // --- Pick headers directly ---
     PIMAGE_NT_HEADERS32 nt32 = peCtx->nt32;
     PIMAGE_NT_HEADERS64 nt64 = peCtx->nt64;
     PIMAGE_SECTION_HEADER sections = peCtx->sections;
 
-    if ((!is64bit && !nt32) || (is64bit && !nt64) || !sections)
-        return;
+    if ((!is64bit && !nt32) || (is64bit && !nt64) || !sections) return;
 
-    // --- Common header info ---
-    PIMAGE_FILE_HEADER fileHdr = is64bit
-        ? &nt64->FileHeader
-        : &nt32->FileHeader;
-
+    PIMAGE_FILE_HEADER fileHdr = is64bit ? &nt64->FileHeader : &nt32->FileHeader;
     WORD numberOfSections = fileHdr->NumberOfSections;
 
     // --- DOS Header ---
-    add_section(outList, 0, sizeof(IMAGE_DOS_HEADER), "DOS Header");
+    if (add_section(outList, 0, sizeof(IMAGE_DOS_HEADER), "DOS Header") != RET_SUCCESS) goto cleanup;
 
     // --- Rich Header ---
     if (peCtx->richHeader) {
-        add_section(outList, peCtx->richHeader->richHdrOff,
-                    peCtx->richHeader->richHdrSize, "RICH Header");
+        if (add_section(outList, peCtx->richHeader->richHdrOff,
+                        peCtx->richHeader->richHdrSize, "RICH Header") != RET_SUCCESS) goto cleanup;
     }
 
     // --- NT Headers ---
     DWORD fileHeaderSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER);
-    DWORD optionalHeaderSize = is64bit
-        ? sizeof(IMAGE_OPTIONAL_HEADER64)
-        : sizeof(IMAGE_OPTIONAL_HEADER32);
+    DWORD optionalHeaderSize = is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64)
+                                       : sizeof(IMAGE_OPTIONAL_HEADER32);
     DWORD ntHeadersSize = fileHeaderSize + optionalHeaderSize;
 
-    add_section(outList, ntOffset, ntHeadersSize,
-                is64bit ? "NT Headers 64" : "NT Headers 32");
-    add_section(outList, ntOffset + sizeof(DWORD),
-                sizeof(IMAGE_FILE_HEADER), "File Header");
-    add_section(outList, ntOffset + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER),
-                optionalHeaderSize,
-                is64bit ? "Optional Header 64" : "Optional Header 32");
+    if (add_section(outList, ntOffset, ntHeadersSize,
+                    is64bit ? "NT Headers 64" : "NT Headers 32") != RET_SUCCESS) goto cleanup;
 
     // --- Optional Header + Entry Point ---
     DWORD epRva = 0;
@@ -158,44 +164,30 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
     if (epRva && rva_to_offset(epRva, sections, numberOfSections, &foOfEntryPoint) != RET_SUCCESS)
         foOfEntryPoint = 0;
 
-    // --- COFF Symbol Table + String Table ---
-    if (fileHdr->PointerToSymbolTable && fileHdr->NumberOfSymbols) {
-        DWORD pointerToSymbolTable = fileHdr->PointerToSymbolTable;
-        DWORD numberOfSymbols = fileHdr->NumberOfSymbols;
-
-        DWORD symTableSize = numberOfSymbols * sizeof(IMAGE_SYMBOL);
-        add_section(outList, pointerToSymbolTable, symTableSize, "COFF Symbol Table");
-
-        DWORD stringTableOffset = pointerToSymbolTable + symTableSize;
-        DWORD stringTableSize = 0;
-
-        if (get_string_table_size(peFile, stringTableOffset, fileSize, &stringTableSize) == RET_SUCCESS &&
-            stringTableSize > 0) {
-            add_section(outList, stringTableOffset, stringTableSize, "COFF String Table");
-        }
-    }
-
     // --- Sections ---
     DWORD lastSectionEnd = 0;
     DWORD maxOffset = 0;
 
     for (WORD i = 0; i < numberOfSections; i++) {
-        char secName[32] = {0};
+        char secName[64] = {0};
+        // ensure null termination
         strncpy(secName, (char*)sections[i].Name, 8);
-        strcat(secName, " section");
+        secName[8] = '\0';
+        strncat(secName, " section", sizeof(secName) - strlen(secName) - 1);
+
 
         DWORD secStart = sections[i].PointerToRawData;
         DWORD secSize  = sections[i].SizeOfRawData;
         DWORD secEnd   = secStart + secSize;
 
-        // Mark entry point
+        // Entry point marker
         if (foOfEntryPoint >= secStart && foOfEntryPoint < secEnd) {
-            strcat(secName, " * Entry Point");
             DWORD epSize = (secEnd - foOfEntryPoint > 16) ? 16 : (secEnd - foOfEntryPoint);
-            add_section(outList, foOfEntryPoint, epSize, "Entry Point");
+            if (add_section(outList, foOfEntryPoint, epSize, "Entry Point") != RET_SUCCESS) goto cleanup;
+            strncat(secName, " * Entry Point", sizeof(secName) - strlen(secName) - 1);
         }
 
-        add_section(outList, secStart, secSize, secName);
+        if (add_section(outList, secStart, secSize, secName) != RET_SUCCESS) goto cleanup;
 
         if (secEnd > lastSectionEnd) lastSectionEnd = secEnd;
         if (secEnd > maxOffset) maxOffset = secEnd;
@@ -226,7 +218,7 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
                 DWORD usable = (dirSize > (ULONG)fileSize - secOff)
                                  ? ((ULONG)fileSize - secOff)
                                  : dirSize;
-                add_section(outList, secOff, usable, name);
+                if (add_section(outList, secOff, usable, name) != RET_SUCCESS) goto cleanup;
                 endOffset = secOff + usable;
             } else {
                 if (rva_to_offset(dataDirs[i].VirtualAddress, sections,
@@ -237,7 +229,7 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
                 DWORD usable = (dirSize > (ULONG)fileSize - fo)
                                  ? ((ULONG)fileSize - fo)
                                  : dirSize;
-                add_section(outList, fo, usable, name);
+                if (add_section(outList, fo, usable, name) != RET_SUCCESS) goto cleanup;
                 endOffset = fo + usable;
             }
 
@@ -254,13 +246,23 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
         add_section(outList, maxOffset, (ULONG)fileSize - maxOffset,
                     "Overlay (after all data)");
     }
+
+    return;
+
+cleanup:
+    free_sections(outList);
+    return;
 }
 
 void free_sections(PFileSectionList list) {
-    for (WORD i = 0; i < list->count; i++) {
-        SAFE_FREE(list->sections[i].name);
+    if (!list) return;
+
+    if (list->sections) {
+        for (WORD i = 0; i < list->count; i++) {
+            SAFE_FREE(list->sections[i].name);  // only free allocated memory
+        }
+        SAFE_FREE(list->sections);
     }
-    SAFE_FREE(list->sections);
 }
 
 
@@ -284,20 +286,18 @@ void freePEContext(PPEContext peContext) {
     if (!peContext)
         return;
 
-    // Free nested directory allocations
     if (peContext->dirs) {
         freePEDataDirectories(peContext->dirs);
         SAFE_FREE(peContext->dirs);
     }
 
-    // Free individual headers if allocated
     SAFE_FREE(peContext->dosHeader);
+    SAFE_FREE(peContext->richHeader->Entries);
     SAFE_FREE(peContext->richHeader);
     SAFE_FREE(peContext->nt32);
     SAFE_FREE(peContext->nt64);
     SAFE_FREE(peContext->sections);
 
-    // Reset core metadata fields
     peContext->numberOfSections = 0;
     peContext->imageBase = 0;
     peContext->sizeOfImage = 0;

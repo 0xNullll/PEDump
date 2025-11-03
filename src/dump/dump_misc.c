@@ -72,7 +72,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
         i++;
     }
 
-    free(fileBuffer);
+    SAFE_FREE(fileBuffer);
     return RET_SUCCESS;
 }
 

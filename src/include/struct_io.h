@@ -59,8 +59,8 @@ void free_match_list
 // offset : section file offset
 // size   : section size
 // name   : section name (string)
-// Returns: void
-void add_section
+// Returns: RET_SUCESS on sucess, otherwise RET_ERROR or RET_BUFFER_OVERFLOW
+RET_CODE add_section
 (
     INOUT PFileSectionList  list,
     IN    DWORD             offset,
