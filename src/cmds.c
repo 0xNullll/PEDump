@@ -57,6 +57,7 @@ CommandEntry g_command_table[] = {
     {NULL,                 NULL,  CMD_UNKNOWN}
 };
 
+
 BOOL isCmdValid(int argc) {
     if (argc < 2) {
         print_help();
@@ -404,34 +405,6 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
     return RET_SUCCESS;
 }
 
-// typedef enum {
-//     TARGET_NONE = 0,
-//     TARGET_FILE,
-//     TARGET_SECTION,
-//     TARGET_RANGE,
-// } TargetType;
-
-// typedef struct _Target{
-//     TargetType type; // Type of target (section, range, etc.)
-
-//     union {
-//         SectionExtract section;
-//     };
-
-//     ULONGLONG start; // Range start (for hash-range or compare)
-//     ULONGLONG end;   // Range end (for hash-range or compare)
-// } Target, *PTarget;
-
-// typedef struct _HashConfig{
-//     HashCommandType cmdType; // Type of hash command
-//     HashAlg alg;             // Hash algorithm to use
-
-//     Target target1;          // First target (or only target)
-//     Target target2;          // Second target (for comparisons)
-
-//     char file1[MAX_PATH_LENGTH]; // File path for first file
-//     char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
-// } HashConfig, *PHashConfig;
 
 RET_CODE parse_range_arg(const char *arg, PULONGLONG rangeStart, PULONGLONG rangeEnd) {
     if (!arg || !rangeStart || !rangeEnd)
@@ -595,6 +568,7 @@ cleanup:
     }
     return ret;
 }
+
 
 RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
     if (!peCtx || !peCtx->valid) {
