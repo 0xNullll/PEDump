@@ -4,7 +4,7 @@ void initPEContext(FILE *peFile, const char *fileName, PPEContext peCtx) {
     if (!peCtx)
         return;
 
-    memset(peCtx, 0, sizeof(PEContext));
+    memset(peCtx, 0, sizeof(*peCtx));
 
     // Associate the file handle immediately
     peCtx->fileHandle = peFile;
@@ -95,10 +95,6 @@ RET_CODE add_section(PFileSectionList list, DWORD offset, DWORD size, const char
     list->sections[list->count].offset = offset;
     list->sections[list->count].size = size;
     list->sections[list->count].endOffset = offset + size;
-
-    // Duplicate string safely
-    // list->sections[list->count].name = strdup(name);
-    // if (!list->sections[list->count].name) return RET_ERROR; // strdup failed
 
     size_t nameLen = strlen(name) + 1;
     list->sections[list->count].name = malloc(nameLen);

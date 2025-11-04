@@ -128,10 +128,45 @@ RET_CODE parse_extract_arg
     OUT PConfig c
 );
 
-RET_CODE parse_hash_arg
+// Parses a range argument from the command line.
+// arg        : String specifying the range (e.g. "0x100-0x200" or "0x150").
+// rangeStart : Output pointer receiving the parsed start offset.
+// rangeEnd   : Output pointer receiving the parsed end offset (same as start if single value).
+// Returns    : RET_SUCCESS on success, RET_ERROR otherwise.
+RET_CODE parse_range_arg
 (
     IN  const char *arg,
-    OUT PConfig c
+    OUT PULONGLONG rangeStart,
+    OUT PULONGLONG rangeEnd
+);
+
+// Parses and initializes hash configuration arguments.
+// arg : Command-line argument specifying the hash type, algorithm, etc
+// hc  : Pointer to the hash configuration storing parsed options and targets.
+// Returns: RET_SUCCESS on success, RET_ERROR otherwise.
+RET_CODE parse_hash_config
+(
+    IN  const char *arg,
+    OUT PHashConfig hc
+);
+
+// Parses and prepares PE file targets for hashing or comparison.
+// At least one of (fileName1, peCtx1) must be provided.
+// If comparison mode is active, (fileName2 or peCtx2) must also be provided.
+//
+// fileName1 : Optional. Path to the primary PE file.
+// fileName2 : Optional. Path to the secondary PE file (for compare mode).
+// peCtx1    : Optional. Existing context for the primary PE file.
+// peCtx2    : Optional. Existing context for the secondary PE file.
+// hc        : Pointer to the hash configuration storing parsed options and targets.
+// Returns   : RET_SUCCESS on success, RET_ERROR otherwise.
+RET_CODE parse_hash_targets
+(
+    IN    const char *fileName1, // optional
+    IN    const char *fileName2, // optional
+    IN    PPEContext  peCtx1,    // optional
+    IN    PPEContext  peCtx2,    // optional
+    INOUT PHashConfig hc
 );
 
 // Handles all parsed commands and dispatches the corresponding operations.

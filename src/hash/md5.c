@@ -194,22 +194,3 @@ void md5_to_hex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
         sprintf(out + i * 2, "%02x", digest[i]);
     out[32] = '\0';
 }
-
-uint8_t *compute_md5_file(const char *filename, uint8_t out[MD5_DIGEST_LENGTH]) {
-    FILE *f = fopen(filename, "rb");
-    if (!f) return NULL;
-
-    MD5_CTX ctx;
-    MD5Init(&ctx);
-
-    uint8_t buffer[1024];
-    size_t n;
-    while ((n = fread(buffer, 1, sizeof(buffer), f)) > 0) {
-        MD5Update(&ctx, buffer, n);
-    }
-
-    fclose(f);
-    MD5Final(&ctx, out);
-    return out;
-}
-

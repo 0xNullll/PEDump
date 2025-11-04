@@ -216,8 +216,8 @@ typedef struct _Target{
         SectionExtract section;
     };
 
-    ULONGLONG start; // Range start (for hash-range or compare)
-    ULONGLONG end;   // Range end (for hash-range or compare)
+    ULONGLONG rangeStart; // for hash-range or compare
+    ULONGLONG rangeEnd;   // for hash-range or compare
 } Target, *PTarget;
 
 typedef enum {
@@ -228,20 +228,21 @@ typedef enum {
 
 typedef enum {
     HASHCMD_NONE = 0,
-    HASHCMD_HASH_TARGET,   // single target (file, section, or range)
-    HASHCMD_COMPARE_TARGETS
+    HASHCMD_HASH_TARGET,        // single target (file, section, or range)
+    HASHCMD_COMPARE_TARGETS,    // compare between different files or targets
+    HASHCMD_COMPARE_INTERNAL    // compare within the same file
 } HashCommandType;
 
 
-typedef struct _HashConfig{
-    HashCommandType cmdType; // Type of hash command
-    HashAlg alg;             // Hash algorithm to use
+typedef struct _HashConfig {
+    HashCommandType mode;     // Hash command mode (single / compare)
+    HashAlg algorithm;        // Hash algorithm to use
 
-    Target target1;          // First target (or only target)
-    Target target2;          // Second target (for comparisons)
+    Target primaryTarget;     // Main target (file, section, or range)
+    Target secondaryTarget;   // Optional target (for comparison mode)
 
-    char file1[MAX_PATH_LENGTH]; // File path for first file
-    char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
+    PPEContext primaryCtx;    // Parsed PE context for the first file
+    PPEContext secondaryCtx;  // Parsed PE context for the second file (optional)
 } HashConfig, *PHashConfig;
 
 typedef struct _Config{

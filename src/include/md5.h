@@ -126,16 +126,6 @@ void md5_to_hex
     INOUT char          out[33]
 );
 
-// Computes the MD5 digest of a file.
-// filename : path to the file
-// out      : buffer to receive 16-byte MD5 digest
-// Returns  : pointer to the out buffer
-uint8_t *compute_md5_file
-(
-    IN  const char *filename,
-    OUT uint8_t     out[MD5_DIGEST_LENGTH]
-);
-
 // Compares two MD5 digests.
 // a, b : 16-byte digests to compare
 // Returns 1 if equal, 0 otherwise

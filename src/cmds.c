@@ -433,77 +433,166 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
 //     char file2[MAX_PATH_LENGTH]; // File path for second file (for compare)
 // } HashConfig, *PHashConfig;
 
-RET_CODE parse_hash_arg(const char *arg, PConfig c) {
-    RET_CODE ret = RET_INVALID_PARAM;
+RET_CODE parse_range_arg(const char *arg, PULONGLONG rangeStart, PULONGLONG rangeEnd) {
+    if (!arg || !rangeStart || !rangeEnd)
+        return RET_INVALID_PARAM;
 
-    HashConfig hashConfig = {0};
-
-    if (!arg) {
-        c->hashConfig = hashConfig;
-        return ret;
+    const char *dash = strchr(arg, '-');
+    if (!dash) {
+        fprintf(stderr, "[!!!] Invalid range format (expected start-end)\n");
+        return RET_INVALID_PARAM;
     }
+
+    // Split temporarily
+    char startStr[32] = {0};
+    char endStr[32] = {0};
+
+    ULONGLONG startLen = (ULONGLONG)(dash - arg);
+    ULONGLONG endLen = strlen(dash + 1);
+
+    // Basic sanity check
+    if (startLen == 0 || endLen == 0 ||
+        startLen >= sizeof(startStr) || endLen >= sizeof(endStr)) {
+        fprintf(stderr, "[!!!] Invalid range format length\n");
+        return RET_INVALID_PARAM;
+    }
+
+    memcpy(startStr, arg, startLen);
+    memcpy(endStr, dash + 1, endLen);
+
+    *rangeStart = convert_to_hex(startStr);
+    *rangeEnd   = convert_to_hex(endStr);
+
+    return RET_SUCCESS;
+}
+
+RET_CODE parse_hash_config(const char *arg, HashConfig *hc) {
+    if (!hc)
+        return RET_INVALID_PARAM;
+
+    RET_CODE ret = RET_SUCCESS;
+    memset(hc, 0, sizeof(HashConfig));
+
+    if (!arg || !*arg)
+        return RET_INVALID_PARAM;
 
     // Copy arg safely
     char buf[564];
     strncpy(buf, arg, sizeof(buf) - 1);
     buf[sizeof(buf) - 1] = '\0';
 
+    // Parse algorithm after '@'
     char *alg = strchr(buf, '@');
     if (alg) {
-        alg = '\0';
-
-        alg++;
-        if (!alg || strncmp(alg, "md5", 3) == 0) {
-            hashConfig.alg = ALG_MD5;
-        }
-        else if (strncmp(alg, "sha1", 4) == 0) {
-            hashConfig.alg = ALG_SHA1;
-        }
-        else if (strncmp(alg, "sha265", 6) == 0) {
-            hashConfig.alg = ALG_SHA256; 
-        }
+        *alg++ = '\0';
+        if (strncmp(alg, "sha1", 4) == 0)
+            hc->algorithm = ALG_SHA1;
+        else if (strncmp(alg, "sha256", 6) == 0)
+            hc->algorithm = ALG_SHA256;
+        else
+            hc->algorithm = ALG_MD5; // default
     } else {
-        hashConfig.alg = ALG_MD5;
+        hc->algorithm = ALG_MD5;
     }
 
-    char *split = strstr(buf, "::"); // check if its comperation or single
+    // Detect comparison (::)
+    char *split = strstr(buf, "::");
     if (split) {
-        hashConfig.cmdType = HASHCMD_COMPARE_TARGETS;
-
-       split = '\0';
-    
+        *split = '\0';
         split += 2;
-        if (!split) return RET_INVALID_PARAM;
+        hc->mode = HASHCMD_COMPARE_TARGETS;
 
+        // Parse secondary target
         if (strncmp(split, "section:", 8) == 0) {
-            hashConfig.target2.type = TARGET_SECTION;
-            ret = handle_section_extract(split + 8, &hashConfig.target2.section);
+            hc->secondaryTarget.type = TARGET_SECTION;
+            ret = handle_section_extract(split + 8, &hc->secondaryTarget.section);
+        } else if (strncmp(split, "range:", 6) == 0) {
+            hc->secondaryTarget.type = TARGET_RANGE;
+            ret = parse_range_arg(split + 6, &hc->secondaryTarget.rangeStart, &hc->secondaryTarget.rangeEnd);
+        } else {
+            hc->secondaryTarget.type = TARGET_FILE;
         }
-        else if (strncmp(split, "range:", 6) == 0) {
-            hashConfig.target2.type = TARGET_RANGE;
-            // not yet handled
-        }
-        else {
-            hashConfig.target2.type = TARGET_FILE;
-            // not yet handled
-        }
+
+        if (ret != RET_SUCCESS)
+            return ret;
     } else {
-        hashConfig.cmdType = HASHCMD_HASH_TARGET;
+        hc->mode = HASHCMD_HASH_TARGET;
     }
 
+    // Parse primary target
     if (strncmp(buf, "section:", 8) == 0) {
-        hashConfig.target1.type = TARGET_SECTION;
-        ret = handle_section_extract(buf + 8, &hashConfig.target1.section);
-    }
-    else if (strncmp(buf, "range:", 6) == 0) {
-        hashConfig.target1.type = TARGET_RANGE;
-        // not yet handled
-    }
-    else {
-        hashConfig.target1.type = TARGET_FILE;
-        // not yet handled
+        hc->primaryTarget.type = TARGET_SECTION;
+        ret = handle_section_extract(buf + 8, &hc->primaryTarget.section);
+    } else if (strncmp(buf, "range:", 6) == 0) {
+        hc->primaryTarget.type = TARGET_RANGE;
+        ret = parse_range_arg(buf + 6, &hc->primaryTarget.rangeStart, &hc->primaryTarget.rangeEnd);
+    } else {
+        hc->primaryTarget.type = TARGET_FILE;
     }
 
+    return ret;
+}
+
+RET_CODE parse_hash_targets(
+    const char *fileName1,
+    const char *fileName2,
+    PPEContext  peCtx1,
+    PPEContext  peCtx2,
+    PHashConfig hc) {
+
+    RET_CODE ret = RET_INVALID_PARAM;
+
+    if (!hc || (!fileName1 && !fileName2))
+        return ret;
+
+    FILE *peFile1 = NULL;
+    FILE *peFile2 = NULL;
+    PPEContext pPeCtx1 = NULL;
+    PPEContext pPeCtx2 = NULL;
+
+    // Handle first file
+    if (fileName1) {
+        // If only one file but not in single-hash mode, switch to internal compare
+        if (hc->mode != HASHCMD_HASH_TARGET && !fileName2)
+                hc->mode = HASHCMD_COMPARE_INTERNAL;
+
+        if (peCtx1) {
+            pPeCtx1 = peCtx1;
+            ret = RET_SUCCESS;
+        } else {
+            ret = loadPEContext(fileName1, &pPeCtx1, &peFile1);
+            if (ret != RET_SUCCESS)
+                goto cleanup;
+        }
+    }
+
+    // Handle second file
+    if (fileName2) {
+        if (hc->mode != HASHCMD_COMPARE_TARGETS)
+                hc->mode = HASHCMD_COMPARE_TARGETS;
+
+        if (peCtx2) {
+            pPeCtx2 = peCtx2;
+            ret = RET_SUCCESS;
+        } else {
+            ret = loadPEContext(fileName2, &pPeCtx2, &peFile2);
+            if (ret != RET_SUCCESS)
+                goto cleanup;
+        }
+    }
+
+    // Assign loaded contexts
+    hc->primaryCtx   = pPeCtx1;
+    hc->secondaryCtx = pPeCtx2;
+
+    return RET_SUCCESS;
+
+cleanup:
+    // Only clean up non-main resources (first file)
+    if (hc->mode == HASHCMD_COMPARE_TARGETS && peFile1) {
+        freePEContext(pPeCtx1);
+        fclose(peFile1);
+    }
     return ret;
 }
 
@@ -585,7 +674,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
     FormatConfig tempFormatConfig = {0};
 
-    int status = RET_SUCCESS;
+    RET_CODE status = RET_SUCCESS;
 
    // iterate over arguments
     for (int i = 1; i < argc - 2; i++) {
@@ -1152,22 +1241,70 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
             case CMD_HASH:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
 
-                    status = parse_hash_arg(argv[++i], &config);
+                    status = parse_hash_config(argv[++i], &config.hashConfig);
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Invalid hash command: %s\n", argv[i]);
                         break;
                     }
 
+                    // Single file target
+                    if (argv[i + 1] && argv[i + 1][0] != '\0') {
+                        status = parse_hash_targets(argv[++i], NULL, peCtx, NULL, &config.hashConfig);
+                        if (status != RET_SUCCESS) {
+                            fprintf(stderr, "[!] Invalid hash command: %s %s\n", argv[i - 1], argv[i]);
+                            break;
+                        }
+                    }
+
+                    // handle dumping and extracting the rest of the info
                 }
                 break;
 
             case CMD_HASH_COMPARE:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
-                }                    
+
+                    status = parse_hash_config(argv[++i], &config.hashConfig);
+                    if (status != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Invalid compare command: %s\n", argv[i]);
+                        break;
+                    }
+
+                    // Three possible cases:
+                    // 1. Two file args → external compare
+                    // 2. One file arg  → internal compare
+                    // 3. None → invalid
+
+                    const char *file1 = NULL;
+                    const char *file2 = NULL;
+
+                    if (argv[i + 1] && argv[i + 1][0] != '\0') {
+                        file1 = argv[++i];
+
+                        if (argv[i + 1] && argv[i + 1][0] != '\0')
+                            file2 = argv[++i]; // optional
+                    }
+
+                    if (!file1) {
+                        fprintf(stderr, "[!] Missing file argument(s) for compare command\n");
+                        break;
+                    }
+
+                    // file2 may be NULL → internal compare
+                    status = parse_hash_targets(file1, file2, NULL, peCtx, &config.hashConfig);
+                    if (status != RET_SUCCESS) {
+                        if (file2)
+                            fprintf(stderr, "[!] Invalid compare command: %s %s %s\n", argv[i - 2], argv[i - 1], argv[i]);
+                        else
+                            fprintf(stderr, "[!] Invalid compare command: %s %s\n", argv[i - 1], argv[i]);
+                        break;
+                    }
+
+                    // handle dumping and extracting the rest of the info
+                }
                 break;
 
             default:
-                fprintf(stderr, "Error: Unhandled command code %d. Please report this.\n", command);
+                fprintf(stderr, "[!!!] Unhandled command code %d. Please report this.\n", command);
                 break;
         }
     }

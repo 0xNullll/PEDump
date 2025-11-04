@@ -6,17 +6,16 @@
 int main(void) {
 
     // Fake argc/argv
-    int argc = 5;
+    int argc = 6;
     char *argv[] = {
         "PEdump", // argv[0] = program name
         // "-h",
         // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-        "-x",
-        "import:ntdll.dll",
-        // "-H",
         // "-x",
-        // "section:.text",
+        // "import:ntdll.dll",
+        "-cc",
+        "section:.text::section:.text",
         // "--strings",
         // "rgex:.*\\.exe",
         // "-x",
@@ -24,6 +23,7 @@ int main(void) {
         // "import:@4",
         // "-h",
         "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
+        "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
         NULL
     };
 
@@ -33,46 +33,34 @@ int main(void) {
     }
 
     if (!isCmdValid(argc)) {
-        perror("Error invalid command file\n");
+        perror("[!] invalid command file\n");
         return RET_ERROR;
     }
 
     char *fileName = argv[argc - 2]; 
 
-    FILE *peFile = fopen(fileName, "rb");
-    if (!peFile) {
-        perror("Error opening file");
-        return 1;
-    }
-
-    PEContext peCtx;
-    initPEContext(peFile, fileName, &peCtx);
-
+    FILE *peFile = NULL;
+    PPEContext peCtx = NULL;
     int status = RET_SUCCESS;
 
-    if (!isPE(peFile)) {
-        fprintf(stderr, "[!] File is not a valid PE\n");
-        status = RET_ERROR;
-        goto cleanup;
+    status = loadPEContext(fileName, &peCtx, &peFile);
+    if (status != RET_SUCCESS) {
+        fprintf(stderr, "[!] Failed to load PE context from file: %s\n", fileName);
+        return status;
     }
 
-    if (parsePE(&peCtx) != RET_SUCCESS) {
-        fprintf(stderr, "[!] Failed to parse PE\n");
-        status = RET_ERROR;
-        goto cleanup;
-    }
-
-    if (handle_commands(argc, argv, &peCtx) != RET_SUCCESS) {
+    // Now just handle your logic
+    status = handle_commands(argc, argv, peCtx);
+    if (status != RET_SUCCESS) {
         fprintf(stderr, "[!] Invalid command\n");
-        status = RET_ERROR;
-        goto cleanup;    
+        goto cleanup;
     }
 
-    // If you reach here, parsing succeeded
+    // for debuging
     printf("PE parsing completed successfully.\n");
 
 cleanup:
-    freePEContext(&peCtx);
+    freePEContext(peCtx);
     fclose(peFile);
     return status;
 }
