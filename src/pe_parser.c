@@ -945,3 +945,41 @@ RET_CODE parsePE(PPEContext peCtx) {
     peCtx->valid = 1;
     return RET_SUCCESS;
 }
+
+RET_CODE loadPEContext(const char *fileName, PPEContext *outCtx, FILE **outFile) {
+    if (!fileName || !outCtx || !outFile)
+        return RET_INVALID_PARAM;
+
+    FILE *file = fopen(fileName, "rb");
+    if (!file)
+        return RET_ERROR;
+
+    if (!isPE(file)) {
+        fprintf(stderr, "[!] File is not a valid PE: %s\n", fileName);
+        fclose(file);
+        return RET_ERROR;
+    }
+
+    // Allocate the PEContext before initializing
+    *outCtx = (PPEContext)malloc(sizeof(PEContext));
+    if (!*outCtx) {
+        fprintf(stderr, "[!] Memory allocation failed for PEContext\n");
+        fclose(file);
+        return RET_ERROR;
+    }
+
+    // Initialize with file data
+    initPEContext(file, fileName, *outCtx);
+
+    RET_CODE ret = parsePE(*outCtx);
+    if (ret != RET_SUCCESS) {
+        fprintf(stderr, "[!] Failed to parse PE: %s\n", fileName);
+        freePEContext(*outCtx);
+        *outCtx = NULL;
+        fclose(file);
+        return ret;
+    }
+
+    *outFile = file;
+    return RET_SUCCESS;
+}

@@ -3,6 +3,7 @@
 
 #include "libs.h"
 #include "pe_structs.h"
+#include "struct_io.h"
 #include "file_defs.h"
 #include "pe_utils.h"
 #include "dump_pe_flags.h"
@@ -344,6 +345,13 @@ RET_CODE parse_all_data_directories
 RET_CODE parsePE
 (
     OUT PPEContext  peCtx
+);
+
+RET_CODE loadPEContext
+(
+    IN  const char  *fileName,
+    OUT PPEContext  *outCtx,
+    OUT FILE       **outFile
 );
 
 #endif
