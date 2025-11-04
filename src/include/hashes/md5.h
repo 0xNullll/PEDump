@@ -1,22 +1,87 @@
-#include "../include/md5.h"
+#ifndef MD5_IMP_H
+#define MD5_IMP_H
+
+#include "../libs.h"
+
+// MD5 constants
+#define MD5_DIGEST_LENGTH 16
+
+#define INIT_DATA_A 0x67452301UL
+#define INIT_DATA_B 0xefcdab89UL
+#define INIT_DATA_C 0x98badcfeUL
+#define INIT_DATA_D 0x10325476UL
+
+// Rotation amounts
+#define S11 7
+#define S12 12
+#define S13 17
+#define S14 22
+#define S21 5
+#define S22 9
+#define S23 14
+#define S24 20
+#define S31 4
+#define S32 11
+#define S33 16
+#define S34 23
+#define S41 6
+#define S42 10
+#define S43 15
+#define S44 21
+
+// Basic MD5 functions
+#define F(x, y, z) (((x) & (y)) | ((~(x)) & (z)))
+#define G(x, y, z) (((x) & (z)) | ((y) & (~(z))))
+#define H(x, y, z) ((x) ^ (y) ^ (z))
+#define I(x, y, z) ((y) ^ ((x) | (~(z))))
+
+// Left rotate macro
+#define ROTATE_LEFT(x, n) (((x) << (n)) | ((x) >> (32-(n))))
+
+// Round transformations
+#define FF(a, b, c, d, x, s, ac) { \
+    (a) += F((b), (c), (d)) + (x) + (uint32_t)(ac); \
+    (a) = ROTATE_LEFT((a), (s)); \
+    (a) += (b); \
+}
+#define GG(a, b, c, d, x, s, ac) { \
+    (a) += G((b), (c), (d)) + (x) + (uint32_t)(ac); \
+    (a) = ROTATE_LEFT((a), (s)); \
+    (a) += (b); \
+}
+#define HH(a, b, c, d, x, s, ac) { \
+    (a) += H((b), (c), (d)) + (x) + (uint32_t)(ac); \
+    (a) = ROTATE_LEFT((a), (s)); \
+    (a) += (b); \
+}
+#define II(a, b, c, d, x, s, ac) { \
+    (a) += I((b), (c), (d)) + (x) + (uint32_t)(ac); \
+    (a) = ROTATE_LEFT((a), (s)); \
+    (a) += (b); \
+}
+
+// MD5 context
+typedef struct {
+    uint32_t state[4];   // A, B, C, D
+    uint64_t bitlen;     // total bits processed
+    uint8_t buffer[64];  // data buffer
+    size_t buffer_len;   // current buffer length in bytes
+} MD5_CTX;
 
 static const uint8_t PADDING[64] = { 0x80, 0 };
 
-// Memory set macro (no endianness issue)
-static void Encode(uint8_t *output, const uint32_t *input, unsigned int len) {
-    unsigned int i, j;
-    for (i = 0, j = 0; j < len; i++, j += 4) {
-        output[j]   = (uint8_t)( input[i]        & 0xff);
-        output[j+1] = (uint8_t)((input[i] >> 8)  & 0xff);
+// Endianness-safe encode/decode
+static inline void Encode(uint8_t *output, const uint32_t *input, unsigned int len) {
+    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
+        output[j]   = (uint8_t)(input[i] & 0xff);
+        output[j+1] = (uint8_t)((input[i] >> 8) & 0xff);
         output[j+2] = (uint8_t)((input[i] >> 16) & 0xff);
         output[j+3] = (uint8_t)((input[i] >> 24) & 0xff);
     }
 }
 
-// Memory set macro (no endianness issue)
-static void Decode(uint32_t *output, const uint8_t *input, unsigned int len) {
-    unsigned int i, j;
-    for (i = 0, j = 0; j < len; i++, j += 4) {
+static inline void Decode(uint32_t *output, const uint8_t *input, unsigned int len) {
+    for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
         output[i] = ((uint32_t)input[j]) |
                     ((uint32_t)input[j+1] << 8) |
                     ((uint32_t)input[j+2] << 16) |
@@ -24,74 +89,24 @@ static void Decode(uint32_t *output, const uint8_t *input, unsigned int len) {
     }
 }
 
-#define MD5_MEMCPY(dest, src, len) memcpy(dest, src, len)
-#define MD5_MEMSET(dest, val, len) memset(dest, val, len)
-#define MD5_DECODE(dest, src, len) Decode(dest, src, len)
-#define MD5_ENCODE(dest, src, len) Encode(dest, src, len)
-
-int MD5Init(MD5_CTX *c) {
-    if (!c) return 0;
-    c->bitlen = 0;
-    c->buffer_len = 0;   // << important
-    c->state[0] = INIT_DATA_A;
-    c->state[1] = INIT_DATA_B;
-    c->state[2] = INIT_DATA_C;
-    c->state[3] = INIT_DATA_D;
+// Context initialization
+static inline int MD5Init(MD5_CTX *ctx) {
+    if (!ctx) return 0;
+    ctx->bitlen = 0;
+    ctx->buffer_len = 0;
+    ctx->state[0] = INIT_DATA_A;
+    ctx->state[1] = INIT_DATA_B;
+    ctx->state[2] = INIT_DATA_C;
+    ctx->state[3] = INIT_DATA_D;
     return 1;
 }
 
-void MD5Update(MD5_CTX *ctx, const uint8_t *data, size_t len) {
-    size_t i = 0;
-
-    while (i < len) {
-        size_t space = 64 - ctx->buffer_len;
-        size_t to_copy = (len - i < space) ? len - i : space;
-
-        MD5_MEMCPY(ctx->buffer + ctx->buffer_len, data + i, to_copy);
-        ctx->buffer_len += to_copy;
-        ctx->bitlen += to_copy * 8; // total bits
-        i += to_copy;
-
-        if (ctx->buffer_len == 64) {
-            MD5Transform(ctx->state, ctx->buffer);
-            ctx->buffer_len = 0;
-        }
-    }
-}
-
-void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
-    uint8_t bits[8];
-    size_t index, padLen;
-
-    // Save number of bits
-    bits[0] = (uint8_t)(ctx->bitlen & 0xff);
-    bits[1] = (uint8_t)((ctx->bitlen >> 8) & 0xff);
-    bits[2] = (uint8_t)((ctx->bitlen >> 16) & 0xff);
-    bits[3] = (uint8_t)((ctx->bitlen >> 24) & 0xff);
-    bits[4] = (uint8_t)((ctx->bitlen >> 32) & 0xff);
-    bits[5] = (uint8_t)((ctx->bitlen >> 40) & 0xff);
-    bits[6] = (uint8_t)((ctx->bitlen >> 48) & 0xff);
-    bits[7] = (uint8_t)((ctx->bitlen >> 56) & 0xff);
-
-    // Pad out to 56 mod 64
-    index = ctx->buffer_len;
-    padLen = (index < 56) ? (56 - index) : (120 - index);
-    MD5Update(ctx, PADDING, padLen);
-
-    // Append length (before padding)
-    MD5Update(ctx, bits, 8);
-
-    // Store state in digest (little-endian)
-    Encode(digest, ctx->state, 16);
-
-    // Zeroize sensitive information
-    MD5_MEMSET(ctx, 0, sizeof(*ctx));
-}
+// Transform function prototype
 
 void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
     uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
-    MD5_DECODE(x, block, 64);
+    Decode(x, block, 64);
 
     // Round 1
     FF (a, b, c, d, x[ 0], S11, 0xd76aa478); // 1
@@ -172,25 +187,62 @@ void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
     state[3] += d;
 
     // Zeroize sensitive information.
-    MD5_MEMSET(x, 0, sizeof (x));
+    memset(x, 0, sizeof (x));
 }
 
-uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
+// Update MD5 with data
+static inline void MD5Update(MD5_CTX *ctx, const uint8_t *data, size_t len) {
+    size_t i = 0;
+    while (i < len) {
+        size_t space = 64 - ctx->buffer_len;
+        size_t to_copy = (len - i < space) ? len - i : space;
+        memcpy(ctx->buffer + ctx->buffer_len, data + i, to_copy);
+        ctx->buffer_len += to_copy;
+        ctx->bitlen += to_copy * 8;
+        i += to_copy;
+        if (ctx->buffer_len == 64) {
+            MD5Transform(ctx->state, ctx->buffer);
+            ctx->buffer_len = 0;
+        }
+    }
+}
+
+// Finalize MD5 and produce digest
+static inline void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
+    uint8_t bits[8];
+    for (int i = 0; i < 8; i++)
+        bits[i] = (uint8_t)((ctx->bitlen >> (8*i)) & 0xFF);
+
+    size_t index = ctx->buffer_len;
+    size_t padLen = (index < 56) ? (56 - index) : (120 - index);
+    MD5Update(ctx, PADDING, padLen);
+    MD5Update(ctx, bits, 8);
+    Encode(digest, ctx->state, 16);
+    memset(ctx, 0, sizeof(*ctx));
+}
+
+// Convenience single-call MD5
+static inline uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
     MD5_CTX ctx;
     static uint8_t default_md[MD5_DIGEST_LENGTH];
-
     if (!md) md = default_md;
     if (!MD5Init(&ctx)) return NULL;
-
     MD5Update(&ctx, data, len);
     MD5Final(&ctx, md);
-
     return md;
 }
 
-
-void md5_to_hex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
+// Convert MD5 digest to hex string
+static inline void md5_to_hex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
     for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
         sprintf(out + i * 2, "%02x", digest[i]);
     out[32] = '\0';
 }
+
+// Compare two MD5 digests
+static inline int md5_compare(const uint8_t a[MD5_DIGEST_LENGTH],
+                              const uint8_t b[MD5_DIGEST_LENGTH]) {
+    return memcmp(a, b, MD5_DIGEST_LENGTH);
+}
+
+#endif // MD5_IMP_H
