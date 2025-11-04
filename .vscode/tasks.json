@@ -47,23 +47,23 @@
                 // "-O3",
                 // "-O0",
                 // "-s",
-                "${workspaceFolder}\\dump\\dump_misc.c",
-                "${workspaceFolder}\\dump\\dump_raw.c",
-                "${workspaceFolder}\\dump\\dump_pe_flags.c",
-                "${workspaceFolder}\\dump\\dump_data_dirs.c",
-                "${workspaceFolder}\\dump\\dump_headers.c",
+                "${workspaceFolder}\\src\\dump\\dump_misc.c",
+                "${workspaceFolder}\\src\\dump\\dump_pe_flags.c",
+                "${workspaceFolder}\\src\\dump\\dump_data_dirs.c",
+                "${workspaceFolder}\\src\\dump\\dump_headers.c",
+                "${workspaceFolder}\\src\\dump\\dump_raw.c",
 
-                "${workspaceFolder}\\hash\\md5.c",
+                "${workspaceFolder}\\src\\hashes\\hash_compute.c",
 
-                "${workspaceFolder}\\ThirdParty\\tiny_regex.c",
+                "${workspaceFolder}\\src\\ThirdParty\\tiny_regex.c",
 
-                "${workspaceFolder}\\utils\\pe_utils.c",
-                "${workspaceFolder}\\utils\\struct_io.c",
+                "${workspaceFolder}\\src\\utils\\pe_utils.c",
+                "${workspaceFolder}\\src\\utils\\struct_io.c",
 
-                "${workspaceFolder}\\pe_parser.c",
-                "${workspaceFolder}\\cmds.c",
-                "${workspaceFolder}\\pe_extract.c",
-                "${workspaceFolder}\\main.c",
+                "${workspaceFolder}\\src\\pe_parser.c",
+                "${workspaceFolder}\\src\\cmds.c",
+                "${workspaceFolder}\\src\\pe_extract.c",
+                "${workspaceFolder}\\src\\main.c",
                 
                 "-o",
                 "${workspaceFolder}\\pedump.exe"
