@@ -134,10 +134,10 @@ RET_CODE dump_pe_overview(
     printf("PE Overview : %s\n", filePath);
     printf("----------------------------------------------------------------------\n");
     printf("File Size              : %lld bytes\n", fileSize);
-    printf("Architecture           : %s %s\n", is64bit ? "x64" : "x86", file_header_machine_to_string(machine));
+    printf("Architecture           : %s %s\n", is64bit ? "x64" : "x86", fileHeaderMachineToString(machine));
     printf("PE Type                : %s\n", peTypeInfo.extension);
-    printf("Subsystem              : %s\n", subsystem_type_flag_to_string(subsystem));
-    printf("Subsystem Type         : %s\n", subsystem_version_flag_to_string(majorSubsystemVersion, minorSubsystemVersion));
+    printf("Subsystem              : %s\n", subSystemTypeFlagToString(subsystem));
+    printf("Subsystem Type         : %s\n", subSystemVersionFlagToString(majorSubsystemVersion, minorSubsystemVersion));
     printf("Image Base             : 0x%llX\n", imageBase);
     printf("Address Of Entry Point : 0x%llX\n", imageBase + addressOfEntryPoint);
     printf("Linker Version         : %u.%u\n", majorLinker, minorLinker);
@@ -435,3 +435,94 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
     fflush(stdout);
     return;
 }
+
+// === mode 1 ===
+
+// section
+// [HASH INFO]
+// Algorithm : SHA256 (256-bit)
+// Target    : Section .rdata
+// Data Size : 6656 bytes
+// File      : C:\samples\calc.exe
+// Digest    : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
+
+// range
+// [HASH INFO]
+// Algorithm : MD5 (128-bit)
+// Target    : Range 0x95A00–0x96000
+// Data Size : 1536 bytes
+// File      : C:\samples\infected.exe
+// Digest    : 9e107d9d372bb6826bd81d3542a419d6
+
+// 3. file
+// [HASH INFO]
+// Algorithm : SHA1 (160-bit)
+// Target    : Entire file
+// Data Size : 9830400 bytes
+// File      : C:\samples\kernel32.dll
+// Digest    : da39a3ee5e6b4b0d3255bfef95601890afd80709
+
+// === mode 2 ===
+
+// 1. Section vs Section
+// [HASH COMPARE]
+// Algorithm : SHA256 (256-bit)
+// Mode      : Section vs Section
+// File A    : C:\samples\calc_v1.exe (.rdata, 6656 bytes)
+// File B    : C:\samples\calc_v2.exe (.rdata, 6656 bytes)
+// Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
+// Digest B  : 9e107d9d372bb6826bd81d3542a419d6
+// Result    : DIFFERENT
+
+// 2. Range vs Range
+// [HASH COMPARE]
+// Algorithm : SHA1 (160-bit)
+// Mode      : Range vs Range
+// File A    : C:\samples\infected.exe (0x12000–0x13FFF, 8192 bytes)
+// File B    : C:\samples\clean.exe    (0x12000–0x13FFF, 8192 bytes)
+// Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
+// Digest B  : 9b74c9897bac770ffc029102a200c5de
+// Result    : DIFFERENT
+
+// 3. file vs file
+// [HASH COMPARE]
+// Algorithm : MD5 (128-bit)
+// Mode      : File vs File
+// File A    : C:\samples\kernel32_v1.dll (9830400 bytes)
+// File B    : C:\samples\kernel32_v2.dll (9830400 bytes)
+// Digest A  : e2fc714c4727ee9395f324cd2e7f331f
+// Digest B  : e2fc714c4727ee9395f324cd2e7f331f
+// Result    : MATCH
+
+// === mode 3 ===
+
+// 1. Section vs Section
+// [HASH COMPARE]
+// Algorithm : SHA256 (256-bit)
+// Mode      : Section vs Section (same file)
+// File      : C:\samples\calc.exe
+// Target A  : .text (12288 bytes)
+// Target B  : .rdata (6656 bytes)
+// Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
+// Digest B  : 9e107d9d372bb6826bd81d3542a419d6
+// Result    : DIFFERENT
+
+// 2. Range vs Range
+// Algorithm : SHA1 (160-bit)
+// Mode      : Range vs Range (same file)
+// File      : C:\samples\infected.exe
+// Target A  : 0x4000–0x5FFF (8192 bytes)
+// Target B  : 0x9000–0xAFFF (8192 bytes)
+// Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
+// Digest B  : 9b74c9897bac770ffc029102a200c5de
+// Result    : DIFFERENT
+
+// 3. Section vs Range
+// Algorithm : MD5 (128-bit)
+// Mode      : Section vs Range (same file)
+// File      : C:\samples\driver.sys
+// Target A  : .data (4096 bytes)
+// Target B  : 0x8A000–0x8B200 (4608 bytes)
+// Digest A  : e2fc714c4727ee9395f324cd2e7f331f
+// Digest B  : 7d793037a0760186574b0282f2f435e7
+// Result    : DIFFERENT

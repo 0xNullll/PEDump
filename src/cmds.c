@@ -1201,13 +1201,13 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                         break;
                     }
 
-                    status = execute_extract(
+                    status = perform_extract(
                         peCtx->fileHandle, peCtx->sections, numberOfSections,
                         PointerToSymbolTable, NumberOfSymbols, dataDirs, peCtx->dirs,
                         fileSize, imageBase, is64bit, &config, file_section_list);
                     
                     if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to execute extraction\n");
+                        fprintf(stderr, "[!] Failed to perform extraction\n");
                     }
                 }
                 break;
@@ -1228,8 +1228,14 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                             fprintf(stderr, "[!] Invalid hash command: %s %s\n", argv[i - 1], argv[i]);
                             break;
                         }
+                    } else {
+                            fprintf(stderr, "[!] Invalid hash command: %s %s\n", argv[i - 1], argv[i]);
                     }
 
+                    status = perform_hash_extract(&config.hashConfig);
+                    if (status != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to perform hash extraction\n");
+                    }
                     // handle dumping and extracting the rest of the info
                 }
                 break;
@@ -1273,8 +1279,16 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                         break;
                     }
 
+                    status = perform_hash_extract(&config.hashConfig);
+                    if (status != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to perform comperation extraction\n");
+                    }
+
                     // handle dumping and extracting the rest of the info
                 }
+
+                freePEContext(config.hashConfig.primaryCtx);
+
                 break;
 
             default:

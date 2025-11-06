@@ -110,7 +110,7 @@ static void SHA1Final(SHA_CTX *ctx, uint8_t *digest) {
     }
 
     // Append original message length in bits (big-endian)
-    block[56] = (total_bits >> 56) & 0xFF;
+    block[56] = (uint8_t)((total_bits >> 56) & 0xFF);
     block[57] = (total_bits >> 48) & 0xFF;
     block[58] = (total_bits >> 40) & 0xFF;
     block[59] = (total_bits >> 32) & 0xFF;
@@ -122,19 +122,19 @@ static void SHA1Final(SHA_CTX *ctx, uint8_t *digest) {
     SHA1ProcessBlock(ctx, block);
 
     // Output hash (big-endian)
-    digest[0]  = (ctx->h0 >> 24) & 0xFF; digest[1]  = (ctx->h0 >> 16) & 0xFF;
+    digest[0]  = (uint8_t)((ctx->h0 >> 24) & 0xFF); digest[1]  = (ctx->h0 >> 16) & 0xFF;
     digest[2]  = (ctx->h0 >> 8) & 0xFF;  digest[3]  = ctx->h0 & 0xFF;
 
-    digest[4]  = (ctx->h1 >> 24) & 0xFF; digest[5]  = (ctx->h1 >> 16) & 0xFF;
+    digest[4]  = (uint8_t)((ctx->h1 >> 24) & 0xFF); digest[5]  = (ctx->h1 >> 16) & 0xFF;
     digest[6]  = (ctx->h1 >> 8) & 0xFF;  digest[7]  = ctx->h1 & 0xFF;
 
-    digest[8]  = (ctx->h2 >> 24) & 0xFF; digest[9]  = (ctx->h2 >> 16) & 0xFF;
+    digest[8]  = (uint8_t)((ctx->h2 >> 24) & 0xFF); digest[9]  = (ctx->h2 >> 16) & 0xFF;
     digest[10] = (ctx->h2 >> 8) & 0xFF;  digest[11] = ctx->h2 & 0xFF;
 
-    digest[12] = (ctx->h3 >> 24) & 0xFF; digest[13] = (ctx->h3 >> 16) & 0xFF;
+    digest[12] = (uint8_t)((ctx->h3 >> 24) & 0xFF); digest[13] = (ctx->h3 >> 16) & 0xFF;
     digest[14] = (ctx->h3 >> 8) & 0xFF;  digest[15] = ctx->h3 & 0xFF;
 
-    digest[16] = (ctx->h4 >> 24) & 0xFF; digest[17] = (ctx->h4 >> 16) & 0xFF;
+    digest[16] = (uint8_t)((ctx->h4 >> 24) & 0xFF); digest[17] = (ctx->h4 >> 16) & 0xFF;
     digest[18] = (ctx->h4 >> 8) & 0xFF;  digest[19] = ctx->h4 & 0xFF;
 }
 
@@ -159,7 +159,7 @@ static void SHA1Update(SHA_CTX *ctx, const uint8_t *data, size_t len) {
 }
 
 // Wrapper function for SHA-1
-void SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
+static void SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
     SHA_CTX ctx;
 
     SHA1Init(&ctx);          // initialize context
@@ -168,14 +168,14 @@ void SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
 }
 
 // Convert SHA-1 digest to hex string
-static inline void sha1_to_hex(const uint8_t digest[SHA1_DIGEST_LENGTH], char out[41]) {
+static void SHA1ToHex(const uint8_t digest[SHA1_DIGEST_LENGTH], char out[41]) {
     for (int i = 0; i < SHA1_DIGEST_LENGTH; i++)
         sprintf(out + i * 2, "%02x", digest[i]);
     out[40] = '\0';
 }
 
 // Compare two SHA-1 digests
-static inline int sha1_compare(const uint8_t a[SHA1_DIGEST_LENGTH],
+static inline int SHA1Compare(const uint8_t a[SHA1_DIGEST_LENGTH],
                                const uint8_t b[SHA1_DIGEST_LENGTH]) {
     return memcmp(a, b, SHA1_DIGEST_LENGTH);
 }

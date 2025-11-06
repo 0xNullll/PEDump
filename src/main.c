@@ -6,7 +6,7 @@
 int main(void) {
 
     // Fake argc/argv
-    int argc = 6;
+    int argc = 5;
     char *argv[] = {
         "PEdump", // argv[0] = program name
         // "-h",
@@ -14,8 +14,9 @@ int main(void) {
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
         // "-x",
         // "import:ntdll.dll",
-        "-cc",
-        "section:.text::section:.text",
+        "-H",
+        "file",
+        // "section:.text::section:.text",
         // "--strings",
         // "rgex:.*\\.exe",
         // "-x",
@@ -23,7 +24,7 @@ int main(void) {
         // "import:@4",
         // "-h",
         "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
-        "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
+        // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
         NULL
     };
 

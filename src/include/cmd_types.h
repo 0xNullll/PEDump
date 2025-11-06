@@ -218,6 +218,9 @@ typedef struct _Target{
 
     ULONGLONG rangeStart; // for hash-range or compare
     ULONGLONG rangeEnd;   // for hash-range or compare
+
+    PBYTE     buffer;     // Pointer to loaded data
+    ULONGLONG bufferSize; // Size of the data in bytes
 } Target, *PTarget;
 
 typedef enum {

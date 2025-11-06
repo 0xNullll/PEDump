@@ -678,7 +678,7 @@ RET_CODE dump_rsrc_entries(
             fread(&dataEntry, sizeof(dataEntry), 1, peFile);
 
             // Print entry
-            printf("%sEntry: (Lang=0x%lX -> %s, named=", INDENT(level), (ULONG)entries_array[i].Id, Get_resource_Lang_Name(entries_array[i].Id));
+            printf("%sEntry: (Lang=0x%lX -> %s, named=", INDENT(level), (ULONG)entries_array[i].Id, getResourceLangName(entries_array[i].Id));
             if (entries_array[i].NameIsString) {
                 if (isUnicode) {
                     WCHAR *wstr = (WCHAR*)stringBuf;
@@ -864,7 +864,7 @@ RET_CODE dump_rsrc_dir(
         }
 
         char nameBuf[256];
-        const char* subDirId = get_resource_type_name(rsrcEntriesDir[i].Id);
+        const char* subDirId = getResourceTypeName(rsrcEntriesDir[i].Id);
 
         if (strcmp(subDirId, "UNKNOWN") == 0) {
             if (rsrcEntriesDir[i].NameIsString) {
@@ -1473,12 +1473,12 @@ void print_ARM64_entries(PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG 
             entries[i].BeginAddress,
             entries[i].UnwindData,
             entries[i].Flag,
-            get_arm64_flag_to_string(entries[i].Flag),
+            getArm64FlagToString(entries[i].Flag),
             entries[i].FunctionLength,
             entries[i].RegF,
             entries[i].RegI,
             entries[i].H,
-            get_arm64_cr_to_string(entries[i].CR),
+            getArm64CrToString(entries[i].CR),
             entries[i].FrameSize);
     }
 
@@ -1710,8 +1710,8 @@ RET_CODE dump_security_dir(FILE *peFile, PIMAGE_DATA_DIRECTORY securityDirData) 
             certNumber,
             start + offset,
             cert->dwLength,
-            cert->wRevision, get_certificate_revision_flag(cert->wRevision),
-            cert->wCertificateType, get_certificate_type_flag(cert->wCertificateType));
+            cert->wRevision, getCertRevisionFlag(cert->wRevision),
+            cert->wCertificateType, getCertTypeFlag(cert->wCertificateType));
 
         printf("\n");
         print_centered_header("CertData", '-', 95);
@@ -1803,7 +1803,7 @@ RET_CODE dump_reloc_dir(
             ULONGLONG entryVA = blockVA + off;
 
             printf("  %-8u  0x%04X    0x%016llX  %s\n",
-                   i, off, entryVA, get_reloc_type_name(type));
+                   i, off, entryVA, getRelocTypeName(type));
         }
 
         printf("  --------------------------------------------------------\n");
@@ -2511,7 +2511,7 @@ RET_CODE dump_debug_dir( // NOT FINISHED YET
 
     for (DWORD i = 0; i < totalEntries; i++) {
 
-        printf("[%0*ld] Type Name: %s (FO=%lX)\n", maxDigit, i + 1, get_debug_type_name(debugDir[i].Type), foBase);
+        printf("[%0*ld] Type Name: %s (FO=%lX)\n", maxDigit, i + 1, getDebugTypeName(debugDir[i].Type), foBase);
 
         DWORD ts = debugDir[i].TimeDateStamp;
 

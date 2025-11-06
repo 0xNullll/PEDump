@@ -273,7 +273,7 @@ printf("%s[%0*lu] Auxiliary Weak External Symbol (FO=%lX)\n",
         INDENT(level + 1),
         weakExtSym->TagIndex,
         weakExtSym->Characteristics,
-        get_weak_extern_characteristics_flag(weakExtSym->Characteristics));
+        getWeakExternCharFlag(weakExtSym->Characteristics));
 }
 
 void print_aux_symbol_file(
@@ -328,7 +328,7 @@ void print_aux_symbol_sec_def(
     printf("%sSelection           : %u %s\n",
            INDENT(level + 1),
            (unsigned)auxSym->Section.Selection,
-           get_comdat_selec_name(auxSym->Section.Selection));
+           getComdatSelectName(auxSym->Section.Selection));
 }
 
 void print_clr_token(
@@ -360,8 +360,8 @@ void print_clr_token(
 
 void print_symbol_value(PIMAGE_SYMBOL sym, PIMAGE_SECTION_HEADER sections, WORD numberOfSections) {
     const char* sectionName = get_symbol_sectionName(sym->SectionNumber, sections, numberOfSections);
-    const char* typeName    = get_symbol_type(sym->Type);
-    const char* className   = get_symbol_class_name(sym->StorageClass);
+    const char* typeName    = getSymbolType(sym->Type);
+    const char* className   = getSymbolClassName(sym->StorageClass);
 
     DWORD valueOffset = 0, valueRVA = 0;
     if (sym->Value) {
@@ -600,7 +600,7 @@ RET_CODE dump_file_header(
     
     printf("\t\t\t\t\t\t\t\t+ %04X  %-*s\n\n",
             fileHeader->Machine, MAX_STR_LEN_FILE_HEADER_MACHINE,
-            file_header_machine_to_string(fileHeader->Machine));
+            fileHeaderMachineToString(fileHeader->Machine));
 
     printf("%016llX  %08lX  [2]\t\tNumber of sections      : %04X      (%u)\n\n", 
     vaBase, foBase, fileHeader->NumberOfSections, (unsigned)fileHeader->NumberOfSections);
@@ -798,7 +798,7 @@ RET_CODE dump_optional_header(
     printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
             is64bit ? opt64->MajorOperatingSystemVersion : opt32->MajorOperatingSystemVersion,
             MAX_STR_LEN_OS_VERSION,
-            os_version_to_string(
+            osVersionToString(
                 is64bit ? opt64->MajorOperatingSystemVersion : opt32->MajorOperatingSystemVersion,
                 is64bit ? opt64->MinorOperatingSystemVersion : opt32->MinorOperatingSystemVersion));
 
@@ -815,7 +815,7 @@ RET_CODE dump_optional_header(
     printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
             is64bit ? opt64->MajorImageVersion : opt32->MinorImageVersion,
             MAX_STR_LEN_IMAGE_VERSION,
-            image_version_to_string(
+            imageVersionToString(
                 is64bit ? opt64->MajorImageVersion : opt32->MajorImageVersion,
                 is64bit ? opt64->MinorImageVersion: opt32->MinorImageVersion));
 
@@ -832,7 +832,7 @@ RET_CODE dump_optional_header(
     printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
             is64bit ? opt64->MajorSubsystemVersion : opt32->MinorSubsystemVersion,
             MAX_STR_LEN_SUBSYSTEM_VERSION_FLAG,
-            subsystem_version_flag_to_string(
+            subSystemVersionFlagToString(
                 is64bit ? opt64->MajorSubsystemVersion : opt32->MajorSubsystemVersion,
                 is64bit ? opt64->MinorSubsystemVersion: opt32->MinorSubsystemVersion));
 
@@ -869,7 +869,7 @@ RET_CODE dump_optional_header(
     printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n\n",
             is64bit ? opt64->Subsystem : opt32->Subsystem,
             MAX_STR_LEN_SUBSYSTEM_TYPE_FLAG,
-            subsystem_type_flag_to_string(is64bit ? opt64->Subsystem : opt32->Subsystem));
+            subSystemTypeFlagToString(is64bit ? opt64->Subsystem : opt32->Subsystem));
         
     printf("%016llX  %08lX  [2]\t\tDLL Characteristics        : %04X\n",
     vaBase, foBase,

@@ -1,6 +1,6 @@
 #include "../include/dump_pe_flags.h"
 
-const char* file_header_machine_to_string(WORD machine) {
+const char* fileHeaderMachineToString(WORD machine) {
     switch (machine) {
         case IMAGE_FILE_MACHINE_UNKNOWN:     return "IMAGE_FILE_MACHINE_UNKNOWN";
         case IMAGE_FILE_MACHINE_ALPHA:       return "IMAGE_FILE_MACHINE_ALPHA";
@@ -40,7 +40,7 @@ const char* file_header_machine_to_string(WORD machine) {
     }
 }
 
-const char* os_version_to_string(WORD major, WORD minor) {
+const char* osVersionToString(WORD major, WORD minor) {
     switch ((major << 16) | minor) {
         case IMAGE_OS_WIN31:   return "IMAGE_OS_WIN31";
         case IMAGE_OS_WIN35:   return "IMAGE_OS_WIN35";
@@ -58,7 +58,7 @@ const char* os_version_to_string(WORD major, WORD minor) {
     }
 }
 
-const char* image_version_to_string(WORD major, WORD minor) {
+const char* imageVersionToString(WORD major, WORD minor) {
     switch ((major << 16) | minor) {
         case IMAGE_VER_DEFAULT: return "IMAGE_VER_DEFAULT";
         case IMAGE_VER_1_0:     return "IMAGE_VER_1_0";
@@ -75,7 +75,7 @@ const char* image_version_to_string(WORD major, WORD minor) {
     }
 }
 
-const char* subsystem_version_flag_to_string(WORD major, WORD minor) {
+const char* subSystemVersionFlagToString(WORD major, WORD minor) {
     switch ((major << 16) | minor) {
         case IMAGE_SUBSYS_DEFAULT:     return "IMAGE_SUBSYS_DEFAULT";
         case IMAGE_SUBSYS_NT3_0:      return "IMAGE_SUBSYS_NT3_0";
@@ -93,7 +93,7 @@ const char* subsystem_version_flag_to_string(WORD major, WORD minor) {
     }
 }
 
-const char* subsystem_type_flag_to_string(WORD subsystem) {
+const char* subSystemTypeFlagToString(WORD subsystem) {
     switch (subsystem) {
         case IMAGE_SUBSYSTEM_UNKNOWN:                  return "IMAGE_SUBSYSTEM_UNKNOWN";
         case IMAGE_SUBSYSTEM_NATIVE:                   return "IMAGE_SUBSYSTEM_NATIVE";
@@ -113,7 +113,7 @@ const char* subsystem_type_flag_to_string(WORD subsystem) {
     }
 }
 
-const char* get_resource_type_name(WORD type) {
+const char* getResourceTypeName(WORD type) {
     switch(type) {
         case 1:   return "CURSOR";
         case 2:   return "BITMAP";
@@ -143,7 +143,7 @@ const char* get_resource_type_name(WORD type) {
     }
 }
 
-const char* Get_resource_Lang_Name(WORD langId) {
+const char* getResourceLangName(WORD langId) {
     switch (langId) {
         case 0x409: return "English (United States)";
         case 0x809: return "English (United Kingdom)";
@@ -173,7 +173,7 @@ const char* Get_resource_Lang_Name(WORD langId) {
     }
 }
 
-const char* get_reloc_type_name(WORD type) {
+const char* getRelocTypeName(WORD type) {
     switch(type) {
         case IMAGE_REL_BASED_ABSOLUTE:           return "ABSOLUTE";
         case IMAGE_REL_BASED_HIGH:               return "HIGH";
@@ -197,7 +197,7 @@ const char* get_reloc_type_name(WORD type) {
     }
 }
 
-const char* get_debug_type_name(DWORD type) {
+const char* getDebugTypeName(DWORD type) {
     switch(type) {
         case IMAGE_DEBUG_TYPE_UNKNOWN:                return "UNKNOWN";
         case IMAGE_DEBUG_TYPE_COFF:                   return "COFF";
@@ -222,7 +222,7 @@ const char* get_debug_type_name(DWORD type) {
     }
 }
 
-const char* get_symbol_type(DWORD type) {
+const char* getSymbolType(DWORD type) {
     BYTE MSB = (type >> 4) & 0xf; // derived type
     BYTE LSB = type & 0xf;        // base type
 
@@ -279,7 +279,7 @@ const char* get_symbol_type(DWORD type) {
     return symType;
 }
 
-const char* get_symbol_class_name(DWORD symClass) {
+const char* getSymbolClassName(DWORD symClass) {
     switch(symClass) {
         // Special / function markers
         case IMAGE_SYM_CLASS_END_OF_FUNCTION: return "IMAGE_SYM_CLASS_END_OF_FUNCTION - End of Function";
@@ -323,7 +323,7 @@ const char* get_symbol_class_name(DWORD symClass) {
     }
 }
 
-const char* get_weak_extern_characteristics_flag(DWORD characteristics) {
+const char* getWeakExternCharFlag(DWORD characteristics) {
     // Mask only the low 2 bits
     switch (characteristics & 0x3) {
         case WEAK_EXTERN_NOLIBRARY:       return "WEAK_EXTERN_NOLIBRARY";
@@ -334,7 +334,7 @@ const char* get_weak_extern_characteristics_flag(DWORD characteristics) {
     }
 }
 
-const char* get_comdat_selec_name(WORD Number) {
+const char* getComdatSelectName(WORD Number) {
     switch (Number) {
         case 0:                                return "";
         case IMAGE_COMDAT_SELECT_NODUPLICATES: return "(NODUPLICATES)";
@@ -364,7 +364,7 @@ const char* getExceptionEntryType(WORD machine) {
         return "Unknown entry type";
 }
 
-const char* get_arm64_flag_to_string(DWORD flag) {
+const char* getArm64FlagToString(DWORD flag) {
     switch (flag) {
         case 0: return "PdataRefToFullXdata";
         case 1: return "PdataPackedUnwindFunction";
@@ -373,7 +373,7 @@ const char* get_arm64_flag_to_string(DWORD flag) {
     }
 }
 
-const char* get_arm64_cr_to_string(DWORD cr) {
+const char* getArm64CrToString(DWORD cr) {
     switch (cr) {
         case 0: return "PdataCrUnchained";
         case 1: return "PdataCrUnchainedSavedLr";
@@ -383,7 +383,7 @@ const char* get_arm64_cr_to_string(DWORD cr) {
     }
 }
 
-const char *get_certificate_revision_flag(WORD revision) {
+const char* getCertRevisionFlag(WORD revision) {
     switch (revision) {
         case WIN_CERT_REVISION_1_0: return "WIN_CERT_REVISION_1_0";
         case WIN_CERT_REVISION_2_0: return "WIN_CERT_REVISION_2_0";
@@ -391,7 +391,7 @@ const char *get_certificate_revision_flag(WORD revision) {
     }
 }
 
-const char *get_certificate_type_flag(WORD type) {
+const char* getCertTypeFlag(WORD type) {
     switch (type) {
         case WIN_CERT_TYPE_X509:             return "WIN_CERT_TYPE_X509";
         case WIN_CERT_TYPE_PKCS_SIGNED_DATA: return "WIN_CERT_TYPE_PKCS_SIGNED_DATA";
@@ -464,7 +464,7 @@ const char* GetDriverSubtypeString(DWORD dwFileSubtype) {
     }
 }
 
-const char *GetFontSubtypeString(DWORD dwFileSubtype) {
+const char* GetFontSubtypeString(DWORD dwFileSubtype) {
     switch (dwFileSubtype) {
         case VFT2_UNKNOWN:       return "VFT2_UNKNOWN";
         case VFT2_FONT_RASTER:   return "VFT2_FONT_RASTER";
@@ -474,7 +474,7 @@ const char *GetFontSubtypeString(DWORD dwFileSubtype) {
     }
 }
 
-const char *getViLangName(WORD langID) {
+const char* getViLangName(WORD langID) {
     switch (langID) {
         case 0x0401: return "Arabic";
         case 0x0402: return "Bulgarian";
@@ -525,7 +525,7 @@ const char *getViLangName(WORD langID) {
     }
 }
 
-const char *getViCharsetName(WORD charsetID) {
+const char* getViCharsetName(WORD charsetID) {
     switch (charsetID) {
         case 0: return "7-bit ASCII";
         case 932: return "Japan (Shift - JIS X-0208)";

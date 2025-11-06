@@ -114,10 +114,10 @@ RET_CODE identify_pe_type(
 }
 
 
-RET_CODE section_process_extract(
+RET_CODE extract_section(
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
-    PExtractConfig extractConfig,
+    PSectionExtract sectionCfg,
     PDWORD outFo,
     PDWORD outSize,
     PWORD outSectionIdx) {
@@ -126,26 +126,26 @@ RET_CODE section_process_extract(
 
     BYTE match = 0;  // reset here each iteration
     for (WORD i = 0; i < numberOfSections && !match; i++) {
-        if (extractConfig->section.useName) {
-            if (memcmp(extractConfig->section.name, sections[i].Name,
-                       sizeof(extractConfig->section.name)) == 0) {
+        if (sectionCfg->useName) {
+            if (memcmp(sectionCfg->name, sections[i].Name,
+                       sizeof(sectionCfg->name)) == 0) {
                 match = 1;
             }
         }
-        else if (extractConfig->section.useIdx) {
-            if (extractConfig->section.index == (ULONG)i + 1) {
+        else if (sectionCfg->useIdx) {
+            if (sectionCfg->index == (ULONG)i + 1) {
                 match = 1;
             }
         }
-        else if (extractConfig->section.useRva) {
-            if (extractConfig->section.addr.rva >= sections[i].VirtualAddress &&
-                extractConfig->section.addr.rva < sections[i].VirtualAddress + max(sections[i].Misc.VirtualSize, sections[i].SizeOfRawData)) {
+        else if (sectionCfg->useRva) {
+            if (sectionCfg->addr.rva >= sections[i].VirtualAddress &&
+                sectionCfg->addr.rva < sections[i].VirtualAddress + max(sections[i].Misc.VirtualSize, sections[i].SizeOfRawData)) {
                 match = 1;
             }
         }
-        else if (extractConfig->section.useFo) {
-            if (extractConfig->section.addr.fo >= sections[i].PointerToRawData &&
-                extractConfig->section.addr.fo < sections[i].PointerToRawData + sections[i].SizeOfRawData) {
+        else if (sectionCfg->useFo) {
+            if (sectionCfg->addr.fo >= sections[i].PointerToRawData &&
+                sectionCfg->addr.fo < sections[i].PointerToRawData + sections[i].SizeOfRawData) {
                 match = 1;
             }
         }
@@ -161,34 +161,34 @@ RET_CODE section_process_extract(
     return status; // no match after full loop
 }
 
-BOOL check_export_match(
-    const PExtractConfig extractConfig,
+BOOL match_export_entry(
+    const PExportExtract expCfg,
     DWORD funcRva, DWORD nameRva, ULONGLONG ordinal,
     const char *name, const char *forwardName, const char *ExportDllName, const char *forwardDllName) {
     
-    if (extractConfig->export.useRva && (extractConfig->export.rva == funcRva || extractConfig->export.rva == nameRva)) return TRUE;
-    if (extractConfig->export.useOrdinal && extractConfig->export.ordinal == ordinal) return TRUE;
+    if (expCfg->useRva && (expCfg->rva == funcRva || expCfg->rva == nameRva)) return TRUE;
+    if (expCfg->useOrdinal && expCfg->ordinal == ordinal) return TRUE;
 
-    if (extractConfig->export.useName &&
-        strncmp(extractConfig->export.funcName, name, sizeof(extractConfig->export.funcName)) == 0) return TRUE;
+    if (expCfg->useName &&
+        strncmp(expCfg->funcName, name, sizeof(expCfg->funcName)) == 0) return TRUE;
 
-    if (extractConfig->export.useForwarder && 
-        strncmp(extractConfig->export.forwarderName, forwardName, sizeof(extractConfig->export.forwarderName)) == 0) return TRUE;
+    if (expCfg->useForwarder && 
+        strncmp(expCfg->forwarderName, forwardName, sizeof(expCfg->forwarderName)) == 0) return TRUE;
 
-    if (extractConfig->export.useDll && (
-        strncmp(extractConfig->export.dllName, ExportDllName, sizeof(extractConfig->export.dllName)) == 0 ||
-        strncmp(extractConfig->export.dllName, forwardDllName, sizeof(extractConfig->export.dllName)) == 0 )) return TRUE;
+    if (expCfg->useDll && (
+        strncmp(expCfg->dllName, ExportDllName, sizeof(expCfg->dllName)) == 0 ||
+        strncmp(expCfg->dllName, forwardDllName, sizeof(expCfg->dllName)) == 0 )) return TRUE;
 
     return FALSE;
 }
 
-RET_CODE export_process_extract(
+RET_CODE extract_exports(
     FILE *peFile,
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
     PIMAGE_DATA_DIRECTORY expDirData,
     PIMAGE_EXPORT_DIRECTORY expDir,
-    PExtractConfig extractConfig,
+    PExportExtract expCfg,
     PMATCH_LIST outMatchesList) {
 
     if (!peFile || !expDirData || !expDir) return RET_INVALID_PARAM;
@@ -253,7 +253,7 @@ RET_CODE export_process_extract(
 
         // Resolve forwarder name (if forwarder RVA)
         bool isForwarded = false;
-        if (strncmp(extractConfig->export.dllName, ExportDllName, sizeof(extractConfig->export.dllName)) != 0 &&
+        if (strncmp(expCfg->dllName, ExportDllName, sizeof(expCfg->dllName)) != 0 &&
             funcRVA >= expDirData->VirtualAddress &&
             funcRVA < expDirData->VirtualAddress + expDirData->Size) {
             DWORD fwdOffset;
@@ -267,17 +267,17 @@ RET_CODE export_process_extract(
             }
         }
 
-        if (check_export_match(extractConfig, funcRVA, nameRVA, funcIdx + expDir->Base, funcName, forwardName, ExportDllName, forwardDllName)) {
-            if (extractConfig->export.useDll)
+        if (match_export_entry(expCfg, funcRVA, nameRVA, funcIdx + expDir->Base, funcName, forwardName, ExportDllName, forwardDllName)) {
+            if (expCfg->useDll)
                 ExportMatch.type |= EXPORT_TYPE_DLL_NAME;
 
-            if (extractConfig->export.useName)
+            if (expCfg->useName)
                 ExportMatch.type |= EXPORT_TYPE_NAME;
 
-            if (extractConfig->export.useOrdinal)
+            if (expCfg->useOrdinal)
                 ExportMatch.type |= EXPORT_TYPE_ORDINAL;
 
-            if (extractConfig->export.useRva)
+            if (expCfg->useRva)
                 ExportMatch.type |= EXPORT_TYPE_RVA;
                 
             ExportMatch.isForwarded = isForwarded;
@@ -320,25 +320,25 @@ cleanup:
     return status;
 }
 
-BOOL check_import_match(const PExtractConfig extractConfig,  ULONGLONG ordinal, WORD hint, const char *funcName, const char *dllName) {
-    if (extractConfig->import.useOrdinal && extractConfig->import.ordinal == ordinal) return TRUE;
-    if (extractConfig->import.useHint && extractConfig->import.hint == hint) return TRUE;
+BOOL match_import_entry(const PImportExtract impCfg,  ULONGLONG ordinal, WORD hint, const char *funcName, const char *dllName) {
+    if (impCfg->useOrdinal && impCfg->ordinal == ordinal) return TRUE;
+    if (impCfg->useHint && impCfg->hint == hint) return TRUE;
 
-    if (extractConfig->import.useName &&
-        strncmp(extractConfig->import.funcName, funcName, sizeof(extractConfig->import.funcName)) == 0) return TRUE;
-    if (extractConfig->import.useDll &&
-        strncmp(extractConfig->import.dllName, dllName, sizeof(extractConfig->import.dllName)) == 0) return TRUE;
+    if (impCfg->useName &&
+        strncmp(impCfg->funcName, funcName, sizeof(impCfg->funcName)) == 0) return TRUE;
+    if (impCfg->useDll &&
+        strncmp(impCfg->dllName, dllName, sizeof(impCfg->dllName)) == 0) return TRUE;
 
     return FALSE;
 }
 
-RET_CODE import_process_extract(
+RET_CODE extract_imports(
     FILE *peFile,
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
     PIMAGE_IMPORT_DESCRIPTOR impDesc,
     int is64bit,
-    PExtractConfig extractConfig,
+    PImportExtract impCfg,
     PMATCH_LIST outMatchesList) {
 
     if (!peFile || !impDesc) return RET_INVALID_PARAM;
@@ -356,7 +356,7 @@ RET_CODE import_process_extract(
         }
 
         // Skip DLLs if not global and DLL doesn't match
-        if (!extractConfig->import.isGlobal && STREQI(extractConfig->import.dllName, dllName) != 0) {
+        if (!impCfg->isGlobal && STREQI(impCfg->dllName, dllName) != 0) {
             continue;
         }
 
@@ -385,7 +385,7 @@ RET_CODE import_process_extract(
             // calculate the RVA directly
             DWORD currentThunkRVA = impDesc[i].FirstThunk + (DWORD)(entry * thunkSize);
 
-            if (extractConfig->import.isGlobal || extractConfig->import.useDll) importMatch.isGlobal = 1;
+            if (impCfg->isGlobal || impCfg->useDll) importMatch.isGlobal = 1;
 
             if (is64bit) {
                 IMAGE_THUNK_DATA64 thunk64 = {0};
@@ -394,11 +394,11 @@ RET_CODE import_process_extract(
 
                 if (IMAGE_SNAP_BY_ORDINAL64(thunk64.u1.Ordinal)) {
                     ordinal = IMAGE_ORDINAL64(thunk64.u1.Ordinal);
-                    if (check_import_match(extractConfig, ordinal, 0, "", dllName)) {
+                    if (match_import_entry(impCfg, ordinal, 0, "", dllName)) {
                         strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
                         strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
                         importMatch.ordinal = (WORD)ordinal;
-                        importMatch.type = extractConfig->import.useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
+                        importMatch.type = impCfg->useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
                         importMatch.rawOrd = thunk64.u1.Ordinal;
                         importMatch.thunkDataRVA = 0;
                         importMatch.thunkRVA = currentThunkRVA;
@@ -409,13 +409,13 @@ RET_CODE import_process_extract(
                                                   sections, numberOfSections, &hint, name))
                         continue;
 
-                    if (check_import_match(extractConfig, 0, hint, name, dllName)) {
+                    if (match_import_entry(impCfg, 0, hint, name, dllName)) {
                         strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
                         strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
                         importMatch.hint = hint;
                         importMatch.type =
-                            extractConfig->import.useName ? IMPORT_TYPE_NAME :
-                            (extractConfig->import.useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
+                            impCfg->useName ? IMPORT_TYPE_NAME :
+                            (impCfg->useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
                         importMatch.rawOrd = 0;
                         importMatch.thunkDataRVA = (DWORD)thunk64.u1.AddressOfData;
                         importMatch.thunkRVA = currentThunkRVA;
@@ -431,11 +431,11 @@ RET_CODE import_process_extract(
 
                 if (IMAGE_SNAP_BY_ORDINAL32(thunk32.u1.Ordinal)) {
                     ordinal = IMAGE_ORDINAL32(thunk32.u1.Ordinal);
-                    if (check_import_match(extractConfig, ordinal, 0, "", dllName)) {
+                    if (match_import_entry(impCfg, ordinal, 0, "", dllName)) {
                         strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
                         strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
                         importMatch.ordinal = (WORD)ordinal;
-                        importMatch.type = extractConfig->import.useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
+                        importMatch.type = impCfg->useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
                         importMatch.rawOrd = thunk32.u1.Ordinal;
                         importMatch.thunkDataRVA = 0;
                         importMatch.thunkRVA = currentThunkRVA;
@@ -446,13 +446,13 @@ RET_CODE import_process_extract(
                                                   sections, numberOfSections, &hint, name))
                         continue;
 
-                    if (check_import_match(extractConfig, 0, hint, name, dllName)) {
+                    if (match_import_entry(impCfg, 0, hint, name, dllName)) {
                         strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
                         strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
                         importMatch.hint = hint;
                         importMatch.type =
-                            extractConfig->import.useName ? IMPORT_TYPE_NAME :
-                            (extractConfig->import.useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
+                            impCfg->useName ? IMPORT_TYPE_NAME :
+                            (impCfg->useHint ? IMPORT_TYPE_HINT : IMPORT_TYPE_DLL_NAME);
                         importMatch.rawOrd = 0;
                         importMatch.thunkDataRVA = thunk32.u1.AddressOfData;
                         importMatch.thunkRVA = currentThunkRVA;
@@ -479,7 +479,7 @@ cleanup:
     return status;
 }
 
-RET_CODE execute_extract(
+RET_CODE perform_extract(
     FILE *peFile,
     PIMAGE_SECTION_HEADER sections,
     WORD numberOfSections,
@@ -502,7 +502,7 @@ RET_CODE execute_extract(
 
     switch (config->extractConfig.kind) {
         case EXTRACT_SECTION:
-            status = section_process_extract(sections, numberOfSections, &config->extractConfig, &inFo, &inSize, &dataDirIndex); 
+            status = extract_section(sections, numberOfSections, &config->extractConfig.section, &inFo, &inSize, &dataDirIndex); 
             
             if (status != RET_SUCCESS) {
                 fprintf(stderr,"[!!] Section info not found\n");
@@ -525,9 +525,9 @@ RET_CODE execute_extract(
             MatchList = calloc(1, sizeof(MATCH_LIST));
             if (!MatchList) return RET_ERROR;
 
-            status = export_process_extract(
+            status = extract_exports(
                 peFile, sections, numberOfSections, &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT], dirs->exportDir,
-                &config->extractConfig, MatchList);
+                &config->extractConfig.export, MatchList);
 
             if (status != RET_SUCCESS) {
                 free_match_list(MatchList);
@@ -547,9 +547,9 @@ RET_CODE execute_extract(
             MatchList = calloc(1, sizeof(MATCH_LIST));
             if (!MatchList) return RET_ERROR;
 
-            status = import_process_extract(
+            status = extract_imports(
                 peFile, sections, numberOfSections, dirs->importDir,
-                is64bit, &config->extractConfig, MatchList);
+                is64bit, &config->extractConfig.import, MatchList);
 
             if (status != RET_SUCCESS) {
                 free_match_list(MatchList);
@@ -667,4 +667,53 @@ RET_CODE extract_version_resource(
     }
 
     return RET_NO_VALUE; // no VERSIONINFO resource found
+}
+
+// typedef enum {
+//     TARGET_NONE = 0,
+//     TARGET_FILE,
+//     TARGET_SECTION,
+//     TARGET_RANGE,
+// } TargetType;
+
+// TODO: make a small function that dynamically allocate memory depending on the type and compute the hash at the same time
+RET_CODE perform_hash_extract(PHashConfig hashCfg) {
+    int status = RET_ERROR;
+
+    if (hashCfg->primaryCtx) {
+        switch (hashCfg->primaryTarget.type) {
+            case TARGET_FILE:
+
+                hashCfg->primaryTarget.buffer = (PBYTE)read_entire_file_fp(hashCfg->primaryCtx->fileHandle, &hashCfg->primaryTarget.bufferSize);
+
+                break;
+
+            case TARGET_SECTION:
+                break;
+
+            case TARGET_RANGE:
+                break;
+
+            default:
+                break;
+        } 
+    }
+
+    switch (hashCfg->algorithm) {
+    case ALG_MD5:
+
+        break;
+
+    case ALG_SHA1:
+
+        break;
+
+    case ALG_SHA256:
+        break;
+
+    default:
+        break;
+    }
+
+    return status;
 }

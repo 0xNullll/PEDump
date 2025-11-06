@@ -9,75 +9,75 @@
 // Converts a machine type to a human-readable string
 // machine : IMAGE_FILE_HEADER.Machine value
 // Returns : const char* string describing the machine type (e.g., "x86", "x64")
-const char* file_header_machine_to_string(IN WORD machine);
+const char* fileHeaderMachineToString(IN WORD machine);
 #define MAX_STR_LEN_FILE_HEADER_MACHINE 35
 
 // Converts an OS version (Major.Minor) to a string
 // major : Major OS version number
 // minor : Minor OS version number
 // Returns : const char* string representing the OS version flag
-const char* os_version_to_string(IN WORD major, IN WORD minor);
+const char* osVersionToString(IN WORD major, IN WORD minor);
 #define MAX_STR_LEN_OS_VERSION 20
 
 // Converts an Image version (Major.Minor) to a string
 // major : Major Image version number
 // minor : Minor Image version number
 // Returns : const char* string representing the Image version flag
-const char* image_version_to_string(IN WORD major, IN WORD minor);
+const char* imageVersionToString(IN WORD major, IN WORD minor);
 #define MAX_STR_LEN_IMAGE_VERSION 20
 
 // Converts a Subsystem version (Major.Minor) to a string
 // major : Major Subsystem version
 // minor : Minor Subsystem version
 // Returns : const char* string representing the Subsystem version flag
-const char* subsystem_version_flag_to_string(IN WORD major, IN WORD minor);
+const char* subSystemVersionFlagToString(IN WORD major, IN WORD minor);
 #define MAX_STR_LEN_SUBSYSTEM_VERSION_FLAG 25
 
 // Converts a Subsystem type to a string
 // subsystem : IMAGE_OPTIONAL_HEADER.Subsystem value
 // Returns   : const char* string representing the Subsystem type flag
-const char* subsystem_type_flag_to_string(IN WORD subsystem);
+const char* subSystemTypeFlagToString(IN WORD subsystem);
 #define MAX_STR_LEN_SUBSYSTEM_TYPE_FLAG 45
 
 // Retrieves a string representation of a PE resource type
 // type    : WORD value identifying the resource type (e.g., RT_ICON, RT_VERSION)
 // Returns : const char* describing the resource type (e.g., "ICON", "VERSION")
-const char* get_resource_type_name(IN WORD type);
+const char* getResourceTypeName(IN WORD type);
 
 // Retrieves a human-readable name for a resource language ID
 // langId  : Language identifier (e.g., 0x409 for English - US)
 // Returns : const char* describing the language name
-const char* Get_resource_Lang_Name(IN WORD langId);
+const char* getResourceLangName(IN WORD langId);
 
 // Converts a relocation type to a string
 // type    : WORD relocation type (IMAGE_REL_BASED_* constants)
 // Returns : const char* with relocation type name
-const char* get_reloc_type_name(IN WORD type);
+const char* getRelocTypeName(IN WORD type);
 
 // Converts a debug directory type to a string
 // type    : DWORD debug type (IMAGE_DEBUG_TYPE_* constants)
 // Returns : const char* with debug type name
-const char* get_debug_type_name(IN DWORD type);
+const char* getDebugTypeName(IN DWORD type);
 
 // Converts a COFF symbol type into a descriptive string (base + derived)
 // type    : Symbol type value (combination of base/derived types)
 // Returns : const char* describing both base and derived type (e.g., "INT, POINTER")
-const char* get_symbol_type(IN DWORD type);
+const char* getSymbolType(IN DWORD type);
 
 // Converts a COFF symbol class constant into a readable description
 // symClass : Symbol class (IMAGE_SYM_CLASS_* constants)
 // Returns  : const char* descriptive string
-const char* get_symbol_class_name(IN DWORD symClass);
+const char* getSymbolClassName(IN DWORD symClass);
 
 // Converts a weak external’s characteristics flag into a descriptive name
 // characteristics : DWORD flag (low 2 bits define the kind)
 // Returns         : const char* flag description
-const char* get_weak_extern_characteristics_flag(IN DWORD characteristics);
+const char* getWeakExternCharFlag(IN DWORD characteristics);
 
 // Converts a COMDAT selection type into a descriptive string
 // Number : COMDAT selection type (IMAGE_COMDAT_SELECT_* constants)
 // Returns: const char* with selection description
-const char* get_comdat_selec_name(IN WORD Number);
+const char* getComdatSelectName(IN WORD Number);
 
 // Determines the exception directory entry type based on the machine architecture
 // machine : IMAGE_FILE_HEADER.Machine value
@@ -87,22 +87,22 @@ const char* getExceptionEntryType(IN WORD machine);
 // Converts an ARM64 unwind flag to a descriptive string
 // flag    : ARM64 unwind flag value
 // Returns : const char* with flag description
-const char* get_arm64_flag_to_string(IN DWORD flag);
+const char* getArm64FlagToString(IN DWORD flag);
 
 // Converts an ARM64 control record (CR) type to a descriptive string
 // cr      : ARM64 control record type
 // Returns : const char* describing the control record
-const char* get_arm64_cr_to_string(IN DWORD cr);
+const char* getArm64CrToString(IN DWORD cr);
 
 // Converts a certificate revision constant to a string
 // revision : WIN_CERT_REVISION_* constant
 // Returns  : const char* with revision description
-const char *get_certificate_revision_flag(IN WORD revision);
+const char* getCertRevisionFlag(IN WORD revision);
 
 // Converts a certificate type constant to a string
 // type    : WIN_CERT_TYPE_* constant
 // Returns : const char* describing the certificate type
-const char *get_certificate_type_flag(IN WORD type);
+const char* getCertTypeFlag(IN WORD type);
 
 // Determines hash algorithm type based on digest size
 // size    : Hash digest size in bytes (e.g., 16, 20, 32)
@@ -127,17 +127,17 @@ const char* GetDriverSubtypeString(IN DWORD dwFileSubtype);
 // Converts a font file subtype flag into a descriptive name
 // dwFileSubtype : Font subtype (VFT2_FONT_* constants)
 // Returns       : const char* describing the font type
-const char *GetFontSubtypeString(IN DWORD dwFileSubtype);
+const char* GetFontSubtypeString(IN DWORD dwFileSubtype);
 
 // Converts a version info language ID to a readable language name
 // langID : Language ID from VERSIONINFO resource
 // Returns: const char* describing the language
-const char *getViLangName(IN WORD langID);
+const char* getViLangName(IN WORD langID);
 
 // Converts a charset ID from VERSIONINFO to readable charset name
 // charsetID : Character set identifier (e.g., 1252, 932)
 // Returns   : const char* describing the charset
-const char *getViCharsetName(IN WORD charsetID);
+const char* getViCharsetName(IN WORD charsetID);
 
 // -----------------------------
 //  Object Type Legend
