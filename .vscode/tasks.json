@@ -53,8 +53,6 @@
                 "${workspaceFolder}\\src\\dump\\dump_headers.c",
                 "${workspaceFolder}\\src\\dump\\dump_raw.c",
 
-                "${workspaceFolder}\\src\\hashes\\hash_compute.c",
-
                 "${workspaceFolder}\\src\\ThirdParty\\tiny_regex.c",
 
                 "${workspaceFolder}\\src\\utils\\pe_utils.c",

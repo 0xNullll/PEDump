@@ -103,7 +103,7 @@ static inline int MD5Init(MD5_CTX *ctx) {
 
 // Transform function prototype
 
-void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
+static void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
     uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
 
     Decode(x, block, 64);
@@ -191,7 +191,7 @@ void MD5Transform(uint32_t state[4], const uint8_t block[64]) {
 }
 
 // Update MD5 with data
-static inline void MD5Update(MD5_CTX *ctx, const uint8_t *data, size_t len) {
+static void MD5Update(MD5_CTX *ctx, const uint8_t *data, size_t len) {
     size_t i = 0;
     while (i < len) {
         size_t space = 64 - ctx->buffer_len;
@@ -208,7 +208,7 @@ static inline void MD5Update(MD5_CTX *ctx, const uint8_t *data, size_t len) {
 }
 
 // Finalize MD5 and produce digest
-static inline void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
+static void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
     uint8_t bits[8];
     for (int i = 0; i < 8; i++)
         bits[i] = (uint8_t)((ctx->bitlen >> (8*i)) & 0xFF);
@@ -222,7 +222,7 @@ static inline void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
 }
 
 // Convenience single-call MD5
-static inline uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
+static uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
     MD5_CTX ctx;
     static uint8_t default_md[MD5_DIGEST_LENGTH];
     if (!md) md = default_md;
@@ -233,14 +233,14 @@ static inline uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
 }
 
 // Convert MD5 digest to hex string
-static inline void md5_to_hex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
+static void MD5ToHex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
     for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
         sprintf(out + i * 2, "%02x", digest[i]);
     out[32] = '\0';
 }
 
 // Compare two MD5 digests
-static inline int md5_compare(const uint8_t a[MD5_DIGEST_LENGTH],
+static inline int MD5Compare(const uint8_t a[MD5_DIGEST_LENGTH],
                               const uint8_t b[MD5_DIGEST_LENGTH]) {
     return memcmp(a, b, MD5_DIGEST_LENGTH);
 }

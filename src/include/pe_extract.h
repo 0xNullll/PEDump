@@ -10,6 +10,8 @@
 #include "cmd_types.h"
 #include "dump_raw.h"
 #include "dump_misc.h"
+#include "hashes/md5.h"
+#include "hashes/sha1.h"
 
 typedef enum _PE_MAIN_TYPE {
     PE_TYPE_UNKNOWN = 0,
@@ -32,7 +34,6 @@ typedef struct _PETypeInfo {
     BYTE hasExports    : 1;
     BYTE hasImports    : 1;
     BYTE hasSignature  : 1;
-    BYTE reserved      : 2;   // keep alignment to 8 bits
 
     PE_MAIN_TYPE mainType;
 
@@ -104,38 +105,38 @@ typedef struct _MATCH_LIST{
 // Returns           : RET_CODE indicating success or failure
 RET_CODE identify_pe_type
 (
-    IN  const char *filePath,
+    IN  const char            *filePath,
     IN  PIMAGE_DATA_DIRECTORY dataDirs,
     IN  PIMAGE_SECTION_HEADER sections,
-    IN  WORD numberOfSections,
-    IN  WORD fileFlags,
-    IN  DWORD addrOfEntryPoint,
-    IN  WORD subsystem,
-    IN  WORD majorSubVer,
-    IN  WORD minorSubVer,
-    OUT PPETypeInfo outPetypeinfo
+    IN  WORD                  numberOfSections,
+    IN  WORD                  fileFlags,
+    IN  DWORD                 addrOfEntryPoint,
+    IN  WORD                  subsystem,
+    IN  WORD                  majorSubVer,
+    IN  WORD                  minorSubVer,
+    OUT PPETypeInfo           outPetypeinfo
 );
 
 // Processes PE sections to extract data based on extraction configuration.
 // sections          : pointer to array of section headers
 // numberOfSections  : number of sections in the PE
-// extractConfig     : pointer to extraction configuration
+// sectionCfg        : pointer to section extraction configuration
 // outfo             : output pointer for the file offset of extracted section
 // outSize           : output pointer for the size of extracted section
 // outSectionIdx     : output pointer for index of the section extracted
 // Returns           : RET_CODE indicating success or failure
-RET_CODE section_process_extract
+RET_CODE extract_section
 (
     IN  PIMAGE_SECTION_HEADER sections,
-    IN  WORD numberOfSections,
-    IN  PExtractConfig extractConfig,
-    IN  PDWORD outfo,
-    OUT PDWORD outSize,
-    OUT PWORD outSectionIdx
+    IN  WORD                  numberOfSections,
+    IN  PSectionExtract       sectionCfg,
+    IN  PDWORD                outfo,
+    OUT PDWORD                outSize,
+    OUT PWORD                 outSectionIdx
 );
 
-// Checks if a given export entry matches the extraction configuration.
-// extractConfig  : pointer to extraction configuration
+// Match if a given export entry matches the extraction configuration.
+// expCfg         : pointer to export extraction configuration
 // funcRva        : Relative Virtual Address of the function
 // nameRva        : Relative Virtual Address of the function name
 // ordinal        : export ordinal
@@ -144,52 +145,52 @@ RET_CODE section_process_extract
 // ExportDllName  : name of the DLL exporting the function
 // forwardDllName : name of the DLL the function is forwarded to (if any)
 // Returns        : TRUE if the export matches the configuration, FALSE otherwise
-BOOL check_export_match
+BOOL match_export_entry
 (
-    IN const PExtractConfig extractConfig,
-    IN DWORD funcRva,
-    IN DWORD nameRva,
-    IN ULONGLONG ordinal,
-    IN const char *name,
-    IN const char *forwardName,
-    IN const char *ExportDllName,
-    IN const char *forwardDllName
+    IN const PExportExtract expCfg,
+    IN DWORD                funcRva,
+    IN DWORD                nameRva,
+    IN ULONGLONG            ordinal,
+    IN const char           *name,
+    IN const char           *forwardName,
+    IN const char           *ExportDllName,
+    IN const char           *forwardDllName
 );
 
 // Processes the export directory of a PE file to extract matching exports.
-// peFile         : pointer to the open PE file
-// sections       : array of section headers
+// peFile           : pointer to the open PE file
+// sections         : array of section headers
 // numberOfSections : number of sections in the PE file
-// expDirData     : pointer to the export data directory
-// expDesc        : pointer to the export directory descriptor
-// extractConfig  : extraction configuration
-// outMatchesList : pointer to a MATCH_LIST to store found matches
-// Returns        : RET_CODE indicating success or failure
-RET_CODE export_process_extract
+// expDirData       : pointer to the export data directory
+// expDesc          : pointer to the export directory descriptor
+// expCfg           : pointer to export extraction configuration
+// outMatchesList   : pointer to a MATCH_LIST to store found matches
+// Returns          : RET_CODE indicating success or failure
+RET_CODE extract_exports
 (
-    IN FILE *peFile,
-    IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
-    IN PIMAGE_DATA_DIRECTORY expDirData,
-    IN PIMAGE_EXPORT_DIRECTORY expDesc,
-    IN PExtractConfig extractConfig,
-    OUT PMATCH_LIST outMatchesList
+    IN FILE                     *peFile,
+    IN PIMAGE_SECTION_HEADER    sections,
+    IN WORD                     numberOfSections,
+    IN PIMAGE_DATA_DIRECTORY    expDirData,
+    IN PIMAGE_EXPORT_DIRECTORY  expDesc,
+    IN PExportExtract           expCfg,
+    OUT PMATCH_LIST             outMatchesList
 );
 
-// Checks if an imported function matches the given extraction criteria (name, dll name, hint, or ordinal).
-// extractConfig     : pointer to extraction configuration
-// ordinal           : function ordinal from import table
-// hint              : function hint from import table
-// funcName          : function name from import table
-// dllName           : dll name from import table
-// Returns           : TRUE if the function matches the extraction criteria, FALSE otherwise
-BOOL check_import_match
+// Match if an imported function matches the given extraction criteria (name, dll name, hint, or ordinal).
+// impCfg   : pointer to import extraction configuration
+// ordinal  : function ordinal from import table
+// hint     : function hint from import table
+// funcName : function name from import table
+// dllName  : dll name from import table
+// Returns  : TRUE if the function matches the extraction criteria, FALSE otherwise
+BOOL match_import_entry
 (
-    IN const PExtractConfig extractConfig,
-    IN ULONGLONG ordinal,
-    IN WORD hint,
-    IN const char *funcName,
-    IN const char *dllName
+    IN const PImportExtract impCfg,
+    IN ULONGLONG            ordinal,
+    IN WORD                 hint,
+    IN const char           *funcName,
+    IN const char           *dllName
 );
 
 // Processes PE import descriptors to extract matching imported functions based on configuration.
@@ -198,18 +199,18 @@ BOOL check_import_match
 // numberOfSections  : number of sections in the PE
 // impDesc           : pointer to the import descriptor table
 // is64bit           : non-zero if the target PE is 64-bit, zero otherwise
-// extractConfig     : pointer to extraction configuration defining match rules
+// impCfg            : pointer to import extraction configuration
 // outMatchesList    : output pointer to a list where matched imports are stored
 // Returns           : RET_CODE indicating success or failure
-RET_CODE import_process_extract
+RET_CODE extract_imports
 (
-    IN  FILE *peFile,
-    IN  PIMAGE_SECTION_HEADER sections,
-    IN  WORD numberOfSections,
+    IN  FILE                     *peFile,
+    IN  PIMAGE_SECTION_HEADER    sections,
+    IN  WORD                     numberOfSections,
     IN  PIMAGE_IMPORT_DESCRIPTOR impDesc,
-    IN  int is64bit,
-    IN  PExtractConfig extractConfig,
-    OUT PMATCH_LIST outMatchesList
+    IN  int                      is64bit,
+    IN  PImportExtract           impCfg,
+    OUT PMATCH_LIST              outMatchesList
 );
 
 // Executes the full extraction process on a PE file, including exports, imports, and data directories.
@@ -226,20 +227,20 @@ RET_CODE import_process_extract
 // config          : pointer to extraction configuration
 // fileSectionList : list of file sections
 // Returns         : RET_CODE indicating success or failure of the extraction
-RET_CODE execute_extract
+RET_CODE perform_extract
 (
-    IN FILE *peFile,
+    IN FILE                  *peFile,
     IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
-    IN DWORD symTableOffset,
-    IN DWORD NumberOfSymbols,
+    IN WORD                  numberOfSections,
+    IN DWORD                 symTableOffset,
+    IN DWORD                 NumberOfSymbols,
     IN PIMAGE_DATA_DIRECTORY dataDirs,
-    IN PPEDataDirectories dirs,
-    IN LONGLONG fileSize,
-    IN ULONGLONG imageBase,
-    IN int is64bit,
-    IN PConfig config,
-    IN PFileSectionList fileSectionList
+    IN PPEDataDirectories    dirs,
+    IN LONGLONG              fileSize,
+    IN ULONGLONG             imageBase,
+    IN int                   is64bit,
+    IN PConfig               config,
+    IN PFileSectionList      fileSectionList
 );
 
 // Extracts the version resource from a PE file.
@@ -254,14 +255,18 @@ RET_CODE execute_extract
 // Returns           : RET_CODE indicating success or failure
 RET_CODE extract_version_resource
 (
-    IN  FILE *peFile,
-    IN  PIMAGE_SECTION_HEADER sections,
-    IN  WORD numberOfSections,
-    IN  PIMAGE_DATA_DIRECTORY rsrcDataDir,
-    IN  PIMAGE_RESOURCE_DIRECTORY rsrcDir,
+    IN  FILE                            *peFile,
+    IN  PIMAGE_SECTION_HEADER           sections,
+    IN  WORD                            numberOfSections,
+    IN  PIMAGE_DATA_DIRECTORY           rsrcDataDir,
+    IN  PIMAGE_RESOURCE_DIRECTORY       rsrcDir,
     IN  PIMAGE_RESOURCE_DIRECTORY_ENTRY rsrcEntriesDir,
-    OUT PDWORD outDataRVA,
-    OUT PDWORD outSize
+    OUT PDWORD                          outDataRVA,
+    OUT PDWORD                          outSize
+);
+
+RET_CODE perform_hash_extract(
+    IN PHashConfig hashCfg
 );
 
 #endif
