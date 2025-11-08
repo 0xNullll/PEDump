@@ -12,6 +12,7 @@
 #include "dump_misc.h"
 #include "hashes/md5.h"
 #include "hashes/sha1.h"
+#include "hashes/sha256.h"
 
 typedef enum _PE_MAIN_TYPE {
     PE_TYPE_UNKNOWN = 0,
@@ -263,6 +264,20 @@ RET_CODE extract_version_resource
     IN  PIMAGE_RESOURCE_DIRECTORY_ENTRY rsrcEntriesDir,
     OUT PDWORD                          outDataRVA,
     OUT PDWORD                          outSize
+);
+
+RET_CODE load_target_buffer
+(
+    IN    PPEContext ctx,
+    INOUT PTarget    target
+);
+
+RET_CODE compute_hash
+(
+    IN  PTarget target,
+    IN  WORD algorithm,
+    OUT PUCHAR outHash,
+    OUT PULONGLONG outLen
 );
 
 RET_CODE perform_hash_extract(

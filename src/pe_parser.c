@@ -284,7 +284,7 @@ RET_CODE parse_section_headers(FILE *peFile, PIMAGE_SECTION_HEADER *sections, WO
 }
 
 void* parse_table_from_rva(
-    FILE *peFile, DWORD rva, DWORD elementSize, DWORD count,
+    FILE *peFile, DWORD rva, ULONGLONG elementSize, DWORD count,
     PIMAGE_SECTION_HEADER sections, WORD numberOfSection) {
 
     DWORD fileOffset;
@@ -313,7 +313,7 @@ void* parse_table_from_rva(
     return array;
 }
 
-void* parse_table_from_fo(FILE *peFile, DWORD fo, DWORD elementSize, DWORD count) {
+void* parse_table_from_fo(FILE *peFile, DWORD fo, ULONGLONG elementSize, DWORD count) {
 
     if (FSEEK64(peFile, fo, SEEK_SET) != 0) {
         fprintf(stderr, "[!!] failed to seek to file offset %08lX\n", fo);
