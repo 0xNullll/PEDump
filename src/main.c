@@ -15,7 +15,7 @@ int main(void) {
         // "-x",
         // "import:ntdll.dll",
         "-H",
-        "file",
+        "file@sha1",
         // "section:.text::section:.text",
         // "--strings",
         // "rgex:.*\\.exe",

@@ -118,8 +118,12 @@ RET_CODE parse_section_headers
 // Returns        : pointer to allocated array containing the table, or NULL on failure
 void* parse_table_from_rva
 (
-    IN FILE *peFile, IN DWORD rva, IN DWORD  elementSize, IN DWORD count,
-    IN PIMAGE_SECTION_HEADER sections, IN WORD numberOfSection
+    IN FILE *peFile,
+    IN DWORD rva,
+    IN ULONGLONG elementSize,
+    IN DWORD count,
+    IN PIMAGE_SECTION_HEADER sections,
+    IN WORD numberOfSection
 );
 // Reads a table from the PE file given its file offset (FO), element size, and element count.
 // peFile       : Pointer to the opened PE file.
@@ -129,10 +133,10 @@ void* parse_table_from_rva
 // Returns      : Pointer to the allocated buffer containing the table data.
 void *parse_table_from_fo
 (
-    IN FILE *peFile,
-    IN DWORD fo,
-    IN DWORD elementSize,
-    IN DWORD count
+    IN FILE     *peFile,
+    IN DWORD     fo,
+    IN ULONGLONG elementSize,
+    IN DWORD     count
 );
 
 // Fills a buffer with entries resolved from an RVA range within the PE file.

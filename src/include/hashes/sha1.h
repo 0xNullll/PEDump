@@ -3,8 +3,8 @@
 
 #include "../libs.h"
 
-#define SHA1_LBLOCK 16  // 16 words per 512-bit block
-#define SHA1_DIGEST_LENGTH 20
+#define SHA1_LBLOCK 16          // 16 words per 512-bit block
+#define SHA1_DIGEST_LENGTH 20   // 160-bit hash output
 
 // SHA-1 context structure
 typedef struct SHAstate_st {
@@ -159,12 +159,15 @@ static void SHA1Update(SHA_CTX *ctx, const uint8_t *data, size_t len) {
 }
 
 // Wrapper function for SHA-1
-static void SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
+static inline bool SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
+    if (!data || !digest)
+        return false;    
+    
     SHA_CTX ctx;
-
     SHA1Init(&ctx);          // initialize context
     SHA1Update(&ctx, data, len); // process buffer
     SHA1Final(&ctx, digest); // finalize and output 20-byte digest
+    return true;
 }
 
 // Convert SHA-1 digest to hex string

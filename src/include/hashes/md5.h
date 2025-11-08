@@ -90,15 +90,13 @@ static inline void Decode(uint32_t *output, const uint8_t *input, unsigned int l
 }
 
 // Context initialization
-static inline int MD5Init(MD5_CTX *ctx) {
-    if (!ctx) return 0;
+static inline void MD5Init(MD5_CTX *ctx) {
     ctx->bitlen = 0;
     ctx->buffer_len = 0;
     ctx->state[0] = INIT_DATA_A;
     ctx->state[1] = INIT_DATA_B;
     ctx->state[2] = INIT_DATA_C;
     ctx->state[3] = INIT_DATA_D;
-    return 1;
 }
 
 // Transform function prototype
@@ -221,15 +219,17 @@ static void MD5Final(MD5_CTX *ctx, uint8_t digest[16]) {
     memset(ctx, 0, sizeof(*ctx));
 }
 
+
 // Convenience single-call MD5
-static uint8_t *MD5(const uint8_t *data, size_t len, uint8_t *md) {
+static inline bool MD5(const uint8_t *data, size_t len, uint8_t *md) {
+    if (!data || !md)
+        return false;
+
     MD5_CTX ctx;
-    static uint8_t default_md[MD5_DIGEST_LENGTH];
-    if (!md) md = default_md;
-    if (!MD5Init(&ctx)) return NULL;
+    MD5Init(&ctx);
     MD5Update(&ctx, data, len);
     MD5Final(&ctx, md);
-    return md;
+    return true;
 }
 
 // Convert MD5 digest to hex string

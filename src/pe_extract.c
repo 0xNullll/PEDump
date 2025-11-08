@@ -669,51 +669,193 @@ RET_CODE extract_version_resource(
     return RET_NO_VALUE; // no VERSIONINFO resource found
 }
 
-// typedef enum {
-//     TARGET_NONE = 0,
-//     TARGET_FILE,
-//     TARGET_SECTION,
-//     TARGET_RANGE,
-// } TargetType;
 
-// TODO: make a small function that dynamically allocate memory depending on the type and compute the hash at the same time
+RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
+    RET_CODE status = RET_ERROR;
+
+    if (!ctx || !target)
+        return status;
+
+    switch (target->type) {
+
+        case TARGET_FILE:
+            target->buffer = (PBYTE)read_entire_file_fp(
+                ctx->fileHandle,
+                &target->bufferSize
+            );
+
+            if (!target->buffer && target->bufferSize == 0) {
+                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+                return status;
+            }
+
+            break;
+
+        case TARGET_SECTION: {
+            DWORD inFo = 0, inSize = 0;
+            WORD dataDirIndex = 0;
+
+            status = extract_section(
+                ctx->sections,
+                ctx->numberOfSections,
+                &target->section,
+                &inFo,
+                &inSize,
+                &dataDirIndex
+            );
+
+            target->bufferSize = (ULONGLONG)inSize;
+
+            if (status != RET_SUCCESS) {
+                fprintf(stderr, "[!!] Failed to locate the target section\n");
+                return status;
+            }
+
+            target->buffer = (PBYTE)parse_table_from_fo(
+                ctx->fileHandle,
+                inFo,
+                target->bufferSize,
+                1
+            );
+
+            if (!target->buffer && target->bufferSize == 0) {
+                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+                return status;
+            }
+
+            break;
+        }
+
+        case TARGET_RANGE:
+            target->buffer = (PBYTE)parse_table_from_fo(
+                ctx->fileHandle,
+                (DWORD)target->rangeStart,
+                target->rangeEnd,
+                1
+            );
+
+            if (!target->buffer && target->bufferSize == 0) {
+                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+                return status;
+            }
+            break;
+
+        default:
+            fprintf(stderr, "[!!] Unknown target type (%d) passed to load_target_buffer\n", target->type);
+            return status;
+    }
+
+    return RET_SUCCESS;
+}
+
+RET_CODE compute_hash(PTarget target, WORD algorithm, PUCHAR outHash, PULONGLONG outLen) {
+    RET_CODE status = RET_ERROR;
+
+    if (!target || !target->buffer || target->bufferSize == 0 || !outHash || !outLen)
+        return status;
+
+    switch (algorithm) {
+
+        case ALG_MD5: {
+            UCHAR md5_digest[MD5_DIGEST_LENGTH];
+            memset(md5_digest, 0, sizeof(md5_digest));
+
+            if (!MD5(target->buffer, target->bufferSize, md5_digest)) {
+                fprintf(stderr, "[!!] Failed to compute MD5 hash\n");
+                return status;
+            }
+
+            memcpy(outHash, md5_digest, MD5_DIGEST_LENGTH);
+            *outLen = MD5_DIGEST_LENGTH;
+            break;
+        }
+
+        case ALG_SHA1: {
+            UCHAR sha1_digest[SHA1_DIGEST_LENGTH];
+            memset(sha1_digest, 0, sizeof(sha1_digest));
+
+            if (!SHA1(target->buffer, target->bufferSize, sha1_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA1 hash\n");
+                return status;
+            }
+
+            memcpy(outHash, sha1_digest, SHA1_DIGEST_LENGTH);
+            *outLen = SHA1_DIGEST_LENGTH;
+            break;
+        }
+
+        case ALG_SHA256: {
+            // UCHAR sha256_digest[SHA256_DIGEST_LENGTH];
+            // memset(sha256_digest, 0, sizeof(sha256_digest));
+            //
+            // if (!SHA256(target->buffer, target->bufferSize, sha256_digest)) {
+            //     fprintf(stderr, "[!!] Failed to compute SHA256 hash\n");
+            //     return status;
+            // }
+            //
+            // memcpy(outHash, sha256_digest, SHA256_DIGEST_LENGTH);
+            // *outLen = SHA256_DIGEST_LENGTH;
+            break;
+        }
+
+        default:
+            fprintf(stderr, "[!!] Unknown algorithm type (%d) passed to compute_hash\n", algorithm);
+            return status;
+    }
+
+    return RET_SUCCESS;
+}
+
 RET_CODE perform_hash_extract(PHashConfig hashCfg) {
-    int status = RET_ERROR;
+    RET_CODE status = RET_ERROR;
+
+    if (!hashCfg->primaryCtx && !hashCfg->secondaryCtx)
+        return status;
+
+    UCHAR hashIn[SHA256_DIGEST_LENGTH] = {0}; // buffer for all hash types
+    ULONGLONG lenIn = 0;
 
     if (hashCfg->primaryCtx) {
-        switch (hashCfg->primaryTarget.type) {
-            case TARGET_FILE:
+        status = load_target_buffer(hashCfg->primaryCtx, &hashCfg->primaryTarget);
+        if (status != RET_SUCCESS) goto mem_cleanup;
 
-                hashCfg->primaryTarget.buffer = (PBYTE)read_entire_file_fp(hashCfg->primaryCtx->fileHandle, &hashCfg->primaryTarget.bufferSize);
+        status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm, hashIn, &lenIn);
+        if (status != RET_SUCCESS) goto alg_cleanup;
 
-                break;
-
-            case TARGET_SECTION:
-                break;
-
-            case TARGET_RANGE:
-                break;
-
-            default:
-                break;
-        } 
+        // Print hash
+        printf("[+] Primary hash (%llu bytes): ", lenIn);
+        for (ULONGLONG i = 0; i < lenIn; i++)
+            printf("%02x", hashIn[i]);
+        printf("\n");
     }
 
-    switch (hashCfg->algorithm) {
-    case ALG_MD5:
+    if (hashCfg->secondaryCtx) {
+        status = load_target_buffer(hashCfg->secondaryCtx, &hashCfg->secondaryTarget);
+        if (status != RET_SUCCESS) goto mem_cleanup;
+    
+        status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm, hashIn, &lenIn);
+        if (status != RET_SUCCESS) goto alg_cleanup;
 
-        break;
-
-    case ALG_SHA1:
-
-        break;
-
-    case ALG_SHA256:
-        break;
-
-    default:
-        break;
+        // Print hash
+        printf("[+] Secondary hash (%llu bytes): ", lenIn);
+        for (ULONGLONG i = 0; i < lenIn; i++)
+            printf("%02x", hashIn[i]);
+        printf("\n");
     }
 
+    SAFE_FREE(hashCfg->primaryTarget.buffer);
+    SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    return RET_SUCCESS;
+
+mem_cleanup:
+    SAFE_FREE(hashCfg->primaryTarget.buffer);
+    SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+    return status;
+
+alg_cleanup:
+    SAFE_FREE(hashCfg->primaryTarget.buffer);
+    SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    fprintf(stderr, "[!!] Failed to compute a hash\n");
     return status;
 }
