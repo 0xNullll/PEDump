@@ -288,7 +288,8 @@ void freePEContext(PPEContext peContext) {
     }
 
     SAFE_FREE(peContext->dosHeader);
-    SAFE_FREE(peContext->richHeader->Entries);
+    if (peContext->richHeader)
+        SAFE_FREE(peContext->richHeader->Entries);
     SAFE_FREE(peContext->richHeader);
     SAFE_FREE(peContext->nt32);
     SAFE_FREE(peContext->nt64);

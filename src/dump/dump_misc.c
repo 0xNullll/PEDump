@@ -76,6 +76,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
     return RET_SUCCESS;
 }
 
+// update by making it take the PECONTEXT stracture
 RET_CODE dump_pe_overview(
     const char *filePath,
     PIMAGE_NT_HEADERS32 nt32,
@@ -436,35 +437,30 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
     return;
 }
 
-// === mode 1 ===
-
-// section
+// 🧩 Mode 1 — Hash Generation
 // [HASH INFO]
 // Algorithm : SHA256 (256-bit)
-// Target    : Section .rdata
-// Data Size : 6656 bytes
+// Target    : Section (.rdata, 6656 bytes)
 // File      : C:\samples\calc.exe
 // Digest    : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
+// ----------------------------------------------------
 
-// range
 // [HASH INFO]
 // Algorithm : MD5 (128-bit)
-// Target    : Range 0x95A00–0x96000
-// Data Size : 1536 bytes
+// Target    : Range (0x95A00–0x96000, 1536 bytes)
 // File      : C:\samples\infected.exe
 // Digest    : 9e107d9d372bb6826bd81d3542a419d6
+// ----------------------------------------------------
 
-// 3. file
 // [HASH INFO]
 // Algorithm : SHA1 (160-bit)
-// Target    : Entire file
-// Data Size : 9830400 bytes
+// Target    : File (entire, 9830400 bytes)
 // File      : C:\samples\kernel32.dll
 // Digest    : da39a3ee5e6b4b0d3255bfef95601890afd80709
+// ----------------------------------------------------
 
-// === mode 2 ===
 
-// 1. Section vs Section
+// ⚖️ Mode 2 — File-to-File Comparison
 // [HASH COMPARE]
 // Algorithm : SHA256 (256-bit)
 // Mode      : Section vs Section
@@ -473,8 +469,8 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
 // Digest B  : 9e107d9d372bb6826bd81d3542a419d6
 // Result    : DIFFERENT
+// ----------------------------------------------------
 
-// 2. Range vs Range
 // [HASH COMPARE]
 // Algorithm : SHA1 (160-bit)
 // Mode      : Range vs Range
@@ -483,8 +479,8 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
 // Digest B  : 9b74c9897bac770ffc029102a200c5de
 // Result    : DIFFERENT
+// ----------------------------------------------------
 
-// 3. file vs file
 // [HASH COMPARE]
 // Algorithm : MD5 (128-bit)
 // Mode      : File vs File
@@ -493,10 +489,10 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : e2fc714c4727ee9395f324cd2e7f331f
 // Digest B  : e2fc714c4727ee9395f324cd2e7f331f
 // Result    : MATCH
+// ----------------------------------------------------
 
-// === mode 3 ===
 
-// 1. Section vs Section
+// 🧠 Mode 3 — Intra-File Comparison
 // [HASH COMPARE]
 // Algorithm : SHA256 (256-bit)
 // Mode      : Section vs Section (same file)
@@ -506,8 +502,9 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
 // Digest B  : 9e107d9d372bb6826bd81d3542a419d6
 // Result    : DIFFERENT
+// ----------------------------------------------------
 
-// 2. Range vs Range
+// [HASH COMPARE]
 // Algorithm : SHA1 (160-bit)
 // Mode      : Range vs Range (same file)
 // File      : C:\samples\infected.exe
@@ -516,8 +513,9 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
 // Digest B  : 9b74c9897bac770ffc029102a200c5de
 // Result    : DIFFERENT
+// ----------------------------------------------------
 
-// 3. Section vs Range
+// [HASH COMPARE]
 // Algorithm : MD5 (128-bit)
 // Mode      : Section vs Range (same file)
 // File      : C:\samples\driver.sys
@@ -526,3 +524,124 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 // Digest A  : e2fc714c4727ee9395f324cd2e7f331f
 // Digest B  : 7d793037a0760186574b0282f2f435e7
 // Result    : DIFFERENT
+// ----------------------------------------------------
+
+void print_target_desc(const char* label, PTarget target, int level) {
+    printf("%s%-*s: ", INDENT(level), LABEL_WIDTH, label);
+    if (!target || target->bufferSize == 0) {
+        printf("<NOT PRESENT>\n");
+        return;
+    }
+
+    switch (target->type) {
+        case TARGET_FILE:
+            printf("File (entire, %llu bytes)\n", target->bufferSize);
+            break;
+        case TARGET_SECTION:
+            printf("Section (%s, %llu bytes)\n", target->section.name, target->bufferSize);
+            break;
+        case TARGET_RANGE:
+            printf("Range (0x%llX-0x%llX, %llu bytes)\n", target->rangeStart, target->rangeEnd, target->bufferSize);
+            break;
+        case TARGET_RICH_HEADER:
+            printf("Rich Header (%llu bytes)\n", target->bufferSize);
+            break;
+        default:
+            printf("<UNKNOWN TYPE>\n");
+            break;
+    }
+}
+
+void print_digest_line(const char* label, PTarget target, int level) {
+    printf("%s%-*s: ", INDENT(level), LABEL_WIDTH, label);
+    if (!target || !target->hashPresent || target->hashLen == 0) {
+        printf("<NOT PRESENT>\n");
+        return;
+    }
+
+    for (ULONGLONG i = 0; i < target->hashLen; i++)
+        printf("%02x", target->hash[i]);
+    printf("\n");
+}
+
+void dump_extracted_hash(PHashConfig hashCfg, int level) {
+    if (!hashCfg) return;
+
+    printf("%s[HASH %s]\n", INDENT(level),
+           hashCfg->mode == HASHCMD_HASH_TARGET ? "INFO" : "COMPARE");
+
+    // --- Algorithm ---
+    const char* algoName = "UNKNOWN";
+    unsigned bitLen = 0;
+    switch (hashCfg->algorithm) {
+        case ALG_MD5:  algoName = "MD5";  bitLen = MD5_DIGEST_LENGTH * 8; break;
+        case ALG_SHA1: algoName = "SHA1"; bitLen = SHA1_DIGEST_LENGTH * 8; break;
+        default: bitLen = 0; break;
+    }
+    printf("%s%-*s: %s (%u-bit)\n", INDENT(level), LABEL_WIDTH, "Algorithm", algoName, bitLen);
+
+    // --- Targets ---
+    if (hashCfg->mode == HASHCMD_HASH_TARGET) {
+        putchar('\n');
+
+        printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "File",
+               hashCfg->primaryCtx ? hashCfg->primaryCtx->filePath : "(null)");
+        print_target_desc("Target", &hashCfg->primaryTarget, level);
+    } else {
+        printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "Mode",
+               hashCfg->mode == HASHCMD_COMPARE_INTERNAL ? "Internal Compare" : "Target Compare");
+
+        const char* fileA = hashCfg->primaryCtx ? hashCfg->primaryCtx->filePath : "(null)";
+        const char* fileB = hashCfg->secondaryCtx ? hashCfg->secondaryCtx->filePath : "(null)";
+
+        putchar('\n');
+
+        if (hashCfg->mode == HASHCMD_COMPARE_TARGETS) {
+            printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "File A", fileA);
+            print_target_desc("Target A", &hashCfg->primaryTarget, level);
+
+            putchar('\n');
+
+            printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "File B", fileB);
+            print_target_desc("Target B", &hashCfg->secondaryTarget, level);
+        } else { // Internal compare
+            printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "File", fileA);
+            print_target_desc("Target A", &hashCfg->primaryTarget, level);
+            print_target_desc("Target B", &hashCfg->secondaryTarget, level);
+        }
+    }
+
+    putchar('\n');
+
+    // --- Digests ---
+    print_digest_line(hashCfg->mode == HASHCMD_COMPARE_TARGETS ? "Digest A" : "Digest", &hashCfg->primaryTarget, level);
+    if (hashCfg->mode != HASHCMD_HASH_TARGET)
+        print_digest_line(hashCfg->mode == HASHCMD_COMPARE_TARGETS ? "Digest B" : "Digest", &hashCfg->secondaryTarget, level);
+
+    // --- Comparison result ---
+    if (hashCfg->mode != HASHCMD_HASH_TARGET) {
+        bool match = false;
+        if (hashCfg->primaryTarget.hashPresent && hashCfg->secondaryTarget.hashPresent) {
+            if (hashCfg->algorithm == ALG_MD5)
+                match = (MD5Compare(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA1)
+                match = (SHA1Compare(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+        }
+        printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "Result", match ? "MATCH" : "DIFFERENT");
+    }
+
+    // --- Footer ---
+    ULONGLONG footerLen = 0;
+    if (hashCfg->primaryTarget.hashPresent)
+        footerLen = hashCfg->primaryTarget.hashLen * 2;
+    else if (hashCfg->secondaryTarget.hashPresent)
+        footerLen = hashCfg->secondaryTarget.hashLen * 2;
+
+    // printf("%s%-*s", INDENT(level), LABEL_WIDTH, ""); // align with labels
+    printf("%s------------", INDENT(level));
+    for (ULONGLONG i = 0; i < footerLen; i++)
+        putchar('-');
+    putchar('\n');
+
+    fflush(stdout);
+}
