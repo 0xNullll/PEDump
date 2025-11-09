@@ -476,7 +476,9 @@ RET_CODE parse_hash_config(const char *arg, HashConfig *hc) {
         hc->mode = HASHCMD_COMPARE_TARGETS;
 
         // Parse secondary target
-        if (strncmp(split, "section:", 8) == 0) {
+        if (strncmp(split, "richheader", 10) == 0) {
+            hc->secondaryTarget.type = TARGET_RICH_HEADER;
+        } else if (strncmp(split, "section:", 8) == 0) {
             hc->secondaryTarget.type = TARGET_SECTION;
             ret = handle_section_extract(split + 8, &hc->secondaryTarget.section);
         } else if (strncmp(split, "range:", 6) == 0) {
@@ -493,7 +495,9 @@ RET_CODE parse_hash_config(const char *arg, HashConfig *hc) {
     }
 
     // Parse primary target
-    if (strncmp(buf, "section:", 8) == 0) {
+    if (strncmp(buf, "richheader", 10) == 0) {
+        hc->primaryTarget.type = TARGET_RICH_HEADER;
+    } else if (strncmp(buf, "section:", 8) == 0) {
         hc->primaryTarget.type = TARGET_SECTION;
         ret = handle_section_extract(buf + 8, &hc->primaryTarget.section);
     } else if (strncmp(buf, "range:", 6) == 0) {

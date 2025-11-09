@@ -15,7 +15,8 @@ int main(void) {
         // "-x",
         // "import:ntdll.dll",
         "-H",
-        "file@sha1",
+        // "file@sha1",
+        "richheader",
         // "section:.text::section:.text",
         // "--strings",
         // "rgex:.*\\.exe",
@@ -25,6 +26,7 @@ int main(void) {
         // "-h",
         "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
         // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
+        // "C:/Program Files/CrystalDiskMark9/unins000.exe",
         NULL
     };
 

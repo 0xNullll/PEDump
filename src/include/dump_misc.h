@@ -15,6 +15,8 @@
 
 #define IS_ASCII_PRINTABLE(c) ((c) >= 0x20 && (c) <= 0x7E)
 
+#define LABEL_WIDTH 10
+
 // Dumps strings from a PE file, optionally filtering them using a regex pattern.
 // If regexFilter is provided, only strings matching the pattern are returned.
 // peFile      : pointer to the open PE file
@@ -57,11 +59,11 @@ RET_CODE dump_pe_overview
 // level             : output indentation depth for formatting
 void dump_extracted_exports
 (
-    IN PMATCH_LIST MatchList,
+    IN PMATCH_LIST           MatchList,
     IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
-    IN ULONGLONG imageBase,
-    IN int level
+    IN WORD                  numberOfSections,
+    IN ULONGLONG             imageBase,
+    IN int                   level
 );
 
 // Dumps information about extracted imported functions to the console or log output.
@@ -72,11 +74,31 @@ void dump_extracted_exports
 // level             : output indentation depth for formatting
 void dump_extracted_imports
 (
-    IN PMATCH_LIST MatchList,
+    IN PMATCH_LIST           MatchList,
     IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
-    IN ULONGLONG imageBase,
+    IN WORD                  numberOfSections,
+    IN ULONGLONG             imageBase,
+    IN int                   level
+);
+
+void print_target_desc
+(
+    IN const char* label,
+    IN PTarget target,
     IN int level
+);
+
+void print_digest_line
+(
+    IN const char* label,
+    IN PTarget target,
+    IN int level
+);
+
+void dump_extracted_hash
+(
+    IN PHashConfig hashCfg,
+    IN int         level
 );
 
 #endif

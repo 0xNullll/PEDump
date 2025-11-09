@@ -265,16 +265,17 @@ RET_CODE parse_section_headers(FILE *peFile, PIMAGE_SECTION_HEADER *sections, WO
         memcpy(secName, sec->Name, 8);
         secName[8] = '\0';
 
-        // Zero raw size
-        if (sec->SizeOfRawData == 0) {
-            REPORT_MALFORMED("Section has zero raw size", secName);
+        // Raise error if both raw size and virtual size are zero
+        if (sec->SizeOfRawData == 0 && sec->Misc.VirtualSize == 0) {
+            return REPORT_MALFORMED("Section has zero raw size AND zero virtual size", secName);
         }
 
-        else if (sec->SizeOfRawData > fileSize) {
+        // Raw size exceeds file
+        if (sec->SizeOfRawData > fileSize) {
             REPORT_MALFORMED("Section raw size exceeds file size (invalid or corrupted section)", secName);
         }
 
-        // Packed section: VirtualSize=0 but raw data exists
+        // Packed section: VirtualSize=0 but raw data exists (warn only)
         if (sec->Misc.VirtualSize == 0 && sec->SizeOfRawData > 0) {
             REPORT_MALFORMED("VirtualSize=0 but raw data exists (possible packed section)", secName);
         }

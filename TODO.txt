@@ -45,6 +45,7 @@
 - [x] Implement search command (string/regex) with match offsets + format/output support
 - [-] Implement hashing feature: compute MD5, SHA1, SHA256 for full file or individual sections
 - [-] Implement hash comparison: compare hashes of files or sections using multiple algorithms
+- [ ] Extend -cc / compare command to accept multiple files with a single target
 
 ## CLEANUP & POLISH
 - [-] Polish functions

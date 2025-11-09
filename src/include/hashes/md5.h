@@ -232,13 +232,6 @@ static inline bool MD5(const uint8_t *data, size_t len, uint8_t *md) {
     return true;
 }
 
-// Convert MD5 digest to hex string
-static void MD5ToHex(const uint8_t digest[MD5_DIGEST_LENGTH], char out[33]) {
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
-        sprintf(out + i * 2, "%02x", digest[i]);
-    out[32] = '\0';
-}
-
 // Compare two MD5 digests
 static inline int MD5Compare(const uint8_t a[MD5_DIGEST_LENGTH],
                               const uint8_t b[MD5_DIGEST_LENGTH]) {

@@ -1221,21 +1221,22 @@ RET_CODE dump_section_headers(
         memcpy(secName, sections[i].Name, 8);
         secName[8] = '\0';
 
+        // If raw size is zero, just print a note and skip
         if (sections[i].SizeOfRawData == 0) {
-            REPORT_MALFORMED("Section has zero raw size", secName);
+            printf("[!] Section '%s' has zero raw size, skipping dump\n", secName);
             continue;
         }
 
-        else if (sections[i].SizeOfRawData > fileSize) {
+        // Raw size larger than file size
+        if (sections[i].SizeOfRawData > fileSize) {
             REPORT_MALFORMED("Section raw size exceeds file size (invalid or corrupted section)", secName);
             continue;
         }
 
-        // Packed section: VirtualSize=0 but raw data exists
+        // Packed section: VirtualSize=0 but raw data exists (warn only)
         if (sections[i].Misc.VirtualSize == 0 && sections[i].SizeOfRawData > 0) {
             REPORT_MALFORMED("VirtualSize=0 but raw data exists (possible packed section)", secName);
         }
-
 
         if (print_section_header(peFile,
                                  symTableOffset,

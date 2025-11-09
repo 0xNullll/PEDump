@@ -170,13 +170,6 @@ static inline bool SHA1(const uint8_t *data, size_t len, uint8_t *digest) {
     return true;
 }
 
-// Convert SHA-1 digest to hex string
-static void SHA1ToHex(const uint8_t digest[SHA1_DIGEST_LENGTH], char out[41]) {
-    for (int i = 0; i < SHA1_DIGEST_LENGTH; i++)
-        sprintf(out + i * 2, "%02x", digest[i]);
-    out[40] = '\0';
-}
-
 // Compare two SHA-1 digests
 static inline int SHA1Compare(const uint8_t a[SHA1_DIGEST_LENGTH],
                                const uint8_t b[SHA1_DIGEST_LENGTH]) {

@@ -205,11 +205,14 @@ typedef struct _ExtractConfig{
 typedef enum {
     TARGET_NONE = 0,
     TARGET_FILE,
-    TARGET_SECTION,
     TARGET_RANGE,
+    TARGET_RICH_HEADER,
+    TARGET_SECTION
 } TargetType;
 
-typedef struct _Target{
+#define MAX_HASH_SIZE 32  // SHA256 digest length (in bytes)
+
+typedef struct _Target {
     TargetType type; // Type of target (section, range, etc.)
 
     union {
@@ -221,6 +224,10 @@ typedef struct _Target{
 
     PBYTE     buffer;     // Pointer to loaded data
     ULONGLONG bufferSize; // Size of the data in bytes
+
+    BOOL      hashPresent;         // TRUE if the target data exists and can be hashed
+    UCHAR     hash[MAX_HASH_SIZE]; // Fixed-size buffer for computed hash
+    ULONGLONG hashLen;             // Actual length of the hash used
 } Target, *PTarget;
 
 typedef enum {

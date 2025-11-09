@@ -689,6 +689,34 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
                 return status;
             }
 
+            target->hashPresent = true;
+            break;
+
+        case TARGET_RICH_HEADER:
+            if (!ctx->richHeader || ctx->richHeader->richHdrSize == 0) {
+                target->buffer = NULL;
+                target->bufferSize = 0;
+                target->hashPresent = false;
+                break;
+            }
+
+            // Read the raw Rich header from the file
+            target->buffer = (PBYTE)parse_table_from_fo(
+                ctx->fileHandle,
+                ctx->richHeader->richHdrOff,
+                ctx->richHeader->richHdrOff + ctx->richHeader->richHdrSize,
+                1
+            );
+
+            if (!target->buffer) {
+                fprintf(stderr, "[!!] Failed to read raw Rich header from file\n");
+                target->bufferSize = 0;
+                target->hashPresent = false;
+                break;
+            }
+
+            target->bufferSize = ctx->richHeader->richHdrSize;
+            target->hashPresent = true;
             break;
 
         case TARGET_SECTION: {
@@ -723,6 +751,7 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
                 return status;
             }
 
+            target->hashPresent = true;
             break;
         }
 
@@ -738,6 +767,8 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
                 fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
                 return status;
             }
+
+            target->hashPresent = true;
             break;
 
         default:
@@ -749,58 +780,46 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
 }
 
 RET_CODE compute_hash(PTarget target, WORD algorithm, PUCHAR outHash, PULONGLONG outLen) {
-    RET_CODE status = RET_ERROR;
+    if (!target || !outHash || !outLen)
+        return RET_INVALID_PARAM;
 
-    if (!target || !target->buffer || target->bufferSize == 0 || !outHash || !outLen)
-        return status;
+    // If the target is empty / not present, skip hashing
+    if (!target->hashPresent || !target->buffer || target->bufferSize == 0) {
+        *outLen = 0;
+        return RET_SUCCESS; // not an error; just mark it as missing
+    }
 
     switch (algorithm) {
-
         case ALG_MD5: {
-            UCHAR md5_digest[MD5_DIGEST_LENGTH];
-            memset(md5_digest, 0, sizeof(md5_digest));
-
+            UCHAR md5_digest[MD5_DIGEST_LENGTH] = {0};
             if (!MD5(target->buffer, target->bufferSize, md5_digest)) {
                 fprintf(stderr, "[!!] Failed to compute MD5 hash\n");
-                return status;
+                return RET_ERROR;
             }
-
             memcpy(outHash, md5_digest, MD5_DIGEST_LENGTH);
             *outLen = MD5_DIGEST_LENGTH;
             break;
         }
 
         case ALG_SHA1: {
-            UCHAR sha1_digest[SHA1_DIGEST_LENGTH];
-            memset(sha1_digest, 0, sizeof(sha1_digest));
-
+            UCHAR sha1_digest[SHA1_DIGEST_LENGTH] = {0};
             if (!SHA1(target->buffer, target->bufferSize, sha1_digest)) {
                 fprintf(stderr, "[!!] Failed to compute SHA1 hash\n");
-                return status;
+                return RET_ERROR;
             }
-
             memcpy(outHash, sha1_digest, SHA1_DIGEST_LENGTH);
             *outLen = SHA1_DIGEST_LENGTH;
             break;
         }
 
         case ALG_SHA256: {
-            // UCHAR sha256_digest[SHA256_DIGEST_LENGTH];
-            // memset(sha256_digest, 0, sizeof(sha256_digest));
-            //
-            // if (!SHA256(target->buffer, target->bufferSize, sha256_digest)) {
-            //     fprintf(stderr, "[!!] Failed to compute SHA256 hash\n");
-            //     return status;
-            // }
-            //
-            // memcpy(outHash, sha256_digest, SHA256_DIGEST_LENGTH);
-            // *outLen = SHA256_DIGEST_LENGTH;
+            // Implement SHA256 here when ready
             break;
         }
 
         default:
             fprintf(stderr, "[!!] Unknown algorithm type (%d) passed to compute_hash\n", algorithm);
-            return status;
+            return RET_ERROR;
     }
 
     return RET_SUCCESS;
@@ -812,36 +831,23 @@ RET_CODE perform_hash_extract(PHashConfig hashCfg) {
     if (!hashCfg->primaryCtx && !hashCfg->secondaryCtx)
         return status;
 
-    UCHAR hashIn[SHA256_DIGEST_LENGTH] = {0}; // buffer for all hash types
-    ULONGLONG lenIn = 0;
-
     if (hashCfg->primaryCtx) {
         status = load_target_buffer(hashCfg->primaryCtx, &hashCfg->primaryTarget);
         if (status != RET_SUCCESS) goto mem_cleanup;
 
-        status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm, hashIn, &lenIn);
+        status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm, hashCfg->primaryTarget.hash, &hashCfg->primaryTarget.hashLen);
         if (status != RET_SUCCESS) goto alg_cleanup;
-
-        // Print hash
-        printf("[+] Primary hash (%llu bytes): ", lenIn);
-        for (ULONGLONG i = 0; i < lenIn; i++)
-            printf("%02x", hashIn[i]);
-        printf("\n");
     }
 
     if (hashCfg->secondaryCtx) {
         status = load_target_buffer(hashCfg->secondaryCtx, &hashCfg->secondaryTarget);
         if (status != RET_SUCCESS) goto mem_cleanup;
     
-        status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm, hashIn, &lenIn);
+        status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm, hashCfg->secondaryTarget.hash, &hashCfg->secondaryTarget.hashLen);
         if (status != RET_SUCCESS) goto alg_cleanup;
-
-        // Print hash
-        printf("[+] Secondary hash (%llu bytes): ", lenIn);
-        for (ULONGLONG i = 0; i < lenIn; i++)
-            printf("%02x", hashIn[i]);
-        printf("\n");
     }
+
+    dump_extracted_hash(hashCfg, 0);
 
     SAFE_FREE(hashCfg->primaryTarget.buffer);
     SAFE_FREE(hashCfg->secondaryTarget.buffer);
