@@ -43,7 +43,7 @@
 - [x] Allow raw dump line ranges: -1 = last line, start-end = specific lines, default = all lines
 - [x] Dump all printable strings with metadata (offset, size, type: Unicode/ASCII)
 - [x] Implement search command (string/regex) with match offsets + format/output support
-- [-] Implement hashing feature: compute MD5, SHA1, SHA256 for full file or individual sections
+- [x] Implement hashing feature: compute MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA512_224 and SHA512_256 for full file or individual sections
 - [-] Implement hash comparison: compare hashes of files or sections using multiple algorithms
 - [ ] Extend -cc / compare command to accept multiple files with a single target
 
