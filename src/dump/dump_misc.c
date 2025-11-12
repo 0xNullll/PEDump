@@ -574,8 +574,14 @@ void dump_extracted_hash(PHashConfig hashCfg, int level) {
     const char* algoName = "UNKNOWN";
     unsigned bitLen = 0;
     switch (hashCfg->algorithm) {
-        case ALG_MD5:  algoName = "MD5";  bitLen = MD5_DIGEST_LENGTH * 8; break;
-        case ALG_SHA1: algoName = "SHA1"; bitLen = SHA1_DIGEST_LENGTH * 8; break;
+        case ALG_MD5:        algoName = "MD5";        bitLen = MD5_DIGEST_SIZE * 8; break;
+        case ALG_SHA1:       algoName = "SHA1";       bitLen = SHA1_DIGEST_SIZE * 8; break;
+        case ALG_SHA224:     algoName = "SHA224";     bitLen = SHA224_DIGEST_SIZE * 8; break;
+        case ALG_SHA256:     algoName = "SHA256";     bitLen = SHA256_DIGEST_SIZE * 8; break;
+        case ALG_SHA384:     algoName = "SHA384";     bitLen = SHA384_DIGEST_SIZE * 8; break;
+        case ALG_SHA512:     algoName = "SHA512";     bitLen = SHA512_DIGEST_SIZE * 8; break;
+        case ALG_SHA512_224: algoName = "SHA512_224"; bitLen = SHA512_224_DIGEST_SIZE * 8; break;
+        case ALG_SHA512_256: algoName = "SHA512_256"; bitLen = SHA512_256_DIGEST_SIZE * 8; break;
         default: bitLen = 0; break;
     }
     printf("%s%-*s: %s (%u-bit)\n", INDENT(level), LABEL_WIDTH, "Algorithm", algoName, bitLen);
@@ -625,7 +631,19 @@ void dump_extracted_hash(PHashConfig hashCfg, int level) {
             if (hashCfg->algorithm == ALG_MD5)
                 match = (MD5Compare(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
             else if (hashCfg->algorithm == ALG_SHA1)
-                match = (SHA1Compare(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+                match = (SHA1CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA224)
+                match = (SHA224CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA256)
+                match = (SHA256CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA384)
+                match = (SHA384CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA512)
+                match = (SHA512CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA512_224)
+                match = (SHA512_224CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
+            else if (hashCfg->algorithm == ALG_SHA512_256)
+                match = (SHA512_256CompareOrder(hashCfg->primaryTarget.hash, hashCfg->secondaryTarget.hash) == 0);
         }
         printf("%s%-*s: %s\n", INDENT(level), LABEL_WIDTH, "Result", match ? "MATCH" : "DIFFERENT");
     }
@@ -645,3 +663,4 @@ void dump_extracted_hash(PHashConfig hashCfg, int level) {
 
     fflush(stdout);
 }
+

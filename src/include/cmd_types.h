@@ -210,7 +210,7 @@ typedef enum {
     TARGET_SECTION
 } TargetType;
 
-#define MAX_HASH_SIZE 32  // SHA256 digest length (in bytes)
+#define MAX_HASH_SIZE 64  // SHA512 digest length (in bytes)
 
 typedef struct _Target {
     TargetType type; // Type of target (section, range, etc.)
@@ -222,6 +222,7 @@ typedef struct _Target {
     ULONGLONG rangeStart; // for hash-range or compare
     ULONGLONG rangeEnd;   // for hash-range or compare
 
+    bool ownsBuffer;
     PBYTE     buffer;     // Pointer to loaded data
     ULONGLONG bufferSize; // Size of the data in bytes
 
@@ -233,7 +234,12 @@ typedef struct _Target {
 typedef enum {
     ALG_MD5 = 0,
     ALG_SHA1,
-    ALG_SHA256
+    ALG_SHA224,
+    ALG_SHA256,
+    ALG_SHA384,
+    ALG_SHA512,
+    ALG_SHA512_256,
+    ALG_SHA512_224
 } HashAlg;
 
 typedef enum {

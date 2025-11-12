@@ -10,9 +10,8 @@
 #include "cmd_types.h"
 #include "dump_raw.h"
 #include "dump_misc.h"
-#include "hashes/md5.h"
-#include "hashes/sha1.h"
-#include "hashes/sha256.h"
+#include "md5.h"
+#include "../thirdParty/tiny_sha.h"
 
 typedef enum _PE_MAIN_TYPE {
     PE_TYPE_UNKNOWN = 0,

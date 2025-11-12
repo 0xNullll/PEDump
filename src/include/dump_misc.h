@@ -6,6 +6,8 @@
 #include "file_defs.h"
 #include "cmd_types.h"
 #include "pe_extract.h"
+#include "md5.h"
+#include "../thirdParty/tiny_sha.h"
 
 #define MAX_ASCII_STRING    2048
 #define MAX_UTF16_STRING    1024

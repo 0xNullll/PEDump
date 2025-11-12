@@ -1,10 +1,10 @@
 #ifndef MD5_IMP_H
 #define MD5_IMP_H
 
-#include "../libs.h"
+#include "libs.h"
 
 // MD5 constants
-#define MD5_DIGEST_LENGTH 16
+#define MD5_DIGEST_SIZE 16
 
 #define INIT_DATA_A 0x67452301UL
 #define INIT_DATA_B 0xefcdab89UL
@@ -233,9 +233,9 @@ static inline bool MD5(const uint8_t *data, size_t len, uint8_t *md) {
 }
 
 // Compare two MD5 digests
-static inline int MD5Compare(const uint8_t a[MD5_DIGEST_LENGTH],
-                              const uint8_t b[MD5_DIGEST_LENGTH]) {
-    return memcmp(a, b, MD5_DIGEST_LENGTH);
+static inline int MD5Compare(const uint8_t a[MD5_DIGEST_SIZE],
+                              const uint8_t b[MD5_DIGEST_SIZE]) {
+    return memcmp(a, b, MD5_DIGEST_SIZE);
 }
 
 #endif // MD5_IMP_H
