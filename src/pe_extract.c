@@ -670,25 +670,130 @@ RET_CODE extract_version_resource(
 }
 
 
+// RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
+//     RET_CODE status = RET_ERROR;
+
+//     if (!ctx || !target)
+//         return status;
+
+//     switch (target->type) {
+
+//         case TARGET_FILE:
+//             target->buffer = (PBYTE)read_entire_file_fp(
+//                 ctx->fileHandle,
+//                 &target->bufferSize
+//             );
+
+//             if (!target->buffer && target->bufferSize == 0) {
+//                 fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+//                 return status;
+//             }
+
+//             target->hashPresent = true;
+//             break;
+
+//         case TARGET_RICH_HEADER:
+//             if (!ctx->richHeader || ctx->richHeader->richHdrSize == 0) {
+//                 target->buffer = NULL;
+//                 target->bufferSize = 0;
+//                 target->hashPresent = false;
+//                 break;
+//             }
+
+//             // Read the raw Rich header from the file
+//             target->buffer = (PBYTE)parse_table_from_fo(
+//                 ctx->fileHandle,
+//                 ctx->richHeader->richHdrOff,
+//                 ctx->richHeader->richHdrOff + ctx->richHeader->richHdrSize,
+//                 1
+//             );
+
+//             if (!target->buffer) {
+//                 fprintf(stderr, "[!!] Failed to read raw Rich header from file\n");
+//                 target->bufferSize = 0;
+//                 target->hashPresent = false;
+//                 break;
+//             }
+
+//             target->bufferSize = ctx->richHeader->richHdrSize;
+//             target->hashPresent = true;
+//             break;
+
+//         case TARGET_SECTION: {
+//             DWORD inFo = 0, inSize = 0;
+//             WORD dataDirIndex = 0;
+
+//             status = extract_section(
+//                 ctx->sections,
+//                 ctx->numberOfSections,
+//                 &target->section,
+//                 &inFo,
+//                 &inSize,
+//                 &dataDirIndex
+//             );
+
+//             target->bufferSize = (ULONGLONG)inSize;
+
+//             if (status != RET_SUCCESS) {
+//                 fprintf(stderr, "[!!] Failed to locate the target section\n");
+//                 return status;
+//             }
+
+//             target->buffer = (PBYTE)parse_table_from_fo(
+//                 ctx->fileHandle,
+//                 inFo,
+//                 target->bufferSize,
+//                 1
+//             );
+
+//             if (!target->buffer && target->bufferSize == 0) {
+//                 fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+//                 return status;
+//             }
+
+//             target->hashPresent = true;
+//             break;
+//         }
+
+//         case TARGET_RANGE:
+//             target->buffer = (PBYTE)parse_table_from_fo(
+//                 ctx->fileHandle,
+//                 (DWORD)target->rangeStart,
+//                 target->rangeEnd,
+//                 1
+//             );
+
+//             if (!target->buffer && target->bufferSize == 0) {
+//                 fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+//                 return status;
+//             }
+
+//             target->hashPresent = true;
+//             break;
+
+//         default:
+//             fprintf(stderr, "[!!] Unknown target type (%d) passed to load_target_buffer\n", target->type);
+//             return status;
+//     }
+
+//     return RET_SUCCESS;
+// }
+
 RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
     RET_CODE status = RET_ERROR;
-
     if (!ctx || !target)
         return status;
 
+    target->ownsBuffer = true; // by default, buffer is allocated here
+
     switch (target->type) {
-
         case TARGET_FILE:
-            target->buffer = (PBYTE)read_entire_file_fp(
-                ctx->fileHandle,
-                &target->bufferSize
-            );
-
-            if (!target->buffer && target->bufferSize == 0) {
-                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+            target->buffer = (PBYTE)read_entire_file_fp(ctx->fileHandle, &target->bufferSize);
+            if (!target->buffer || target->bufferSize == 0) {
+                fprintf(stderr, "[!!] Failed to allocate memory for file buffer\n");
+                target->ownsBuffer = false;
                 return status;
             }
-
             target->hashPresent = true;
             break;
 
@@ -697,24 +802,22 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
                 target->buffer = NULL;
                 target->bufferSize = 0;
                 target->hashPresent = false;
+                target->ownsBuffer = false;
                 break;
             }
-
-            // Read the raw Rich header from the file
             target->buffer = (PBYTE)parse_table_from_fo(
                 ctx->fileHandle,
                 ctx->richHeader->richHdrOff,
                 ctx->richHeader->richHdrOff + ctx->richHeader->richHdrSize,
                 1
             );
-
             if (!target->buffer) {
-                fprintf(stderr, "[!!] Failed to read raw Rich header from file\n");
+                fprintf(stderr, "[!!] Failed to read Rich header\n");
                 target->bufferSize = 0;
                 target->hashPresent = false;
+                target->ownsBuffer = false;
                 break;
             }
-
             target->bufferSize = ctx->richHeader->richHdrSize;
             target->hashPresent = true;
             break;
@@ -722,57 +825,35 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
         case TARGET_SECTION: {
             DWORD inFo = 0, inSize = 0;
             WORD dataDirIndex = 0;
-
-            status = extract_section(
-                ctx->sections,
-                ctx->numberOfSections,
-                &target->section,
-                &inFo,
-                &inSize,
-                &dataDirIndex
-            );
-
+            status = extract_section(ctx->sections, ctx->numberOfSections, &target->section, &inFo, &inSize, &dataDirIndex);
             target->bufferSize = (ULONGLONG)inSize;
-
             if (status != RET_SUCCESS) {
-                fprintf(stderr, "[!!] Failed to locate the target section\n");
+                fprintf(stderr, "[!!] Failed to locate section\n");
+                target->ownsBuffer = false;
                 return status;
             }
-
-            target->buffer = (PBYTE)parse_table_from_fo(
-                ctx->fileHandle,
-                inFo,
-                target->bufferSize,
-                1
-            );
-
+            target->buffer = (PBYTE)parse_table_from_fo(ctx->fileHandle, inFo, target->bufferSize, 1);
             if (!target->buffer && target->bufferSize == 0) {
-                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+                fprintf(stderr, "[!!] Failed to allocate memory for section buffer\n");
+                target->ownsBuffer = false;
                 return status;
             }
-
             target->hashPresent = true;
             break;
         }
 
         case TARGET_RANGE:
-            target->buffer = (PBYTE)parse_table_from_fo(
-                ctx->fileHandle,
-                (DWORD)target->rangeStart,
-                target->rangeEnd,
-                1
-            );
-
+            target->buffer = (PBYTE)parse_table_from_fo(ctx->fileHandle, (DWORD)target->rangeStart, target->rangeEnd, 1);
             if (!target->buffer && target->bufferSize == 0) {
-                fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+                fprintf(stderr, "[!!] Failed to allocate memory for range buffer\n");
+                target->ownsBuffer = false;
                 return status;
             }
-
             target->hashPresent = true;
             break;
 
         default:
-            fprintf(stderr, "[!!] Unknown target type (%d) passed to load_target_buffer\n", target->type);
+            fprintf(stderr, "[!!] Unknown target type (%d)\n", target->type);
             return status;
     }
 
@@ -791,29 +872,90 @@ RET_CODE compute_hash(PTarget target, WORD algorithm, PUCHAR outHash, PULONGLONG
 
     switch (algorithm) {
         case ALG_MD5: {
-            UCHAR md5_digest[MD5_DIGEST_LENGTH] = {0};
+            UCHAR md5_digest[MD5_DIGEST_SIZE] = {0};
             if (!MD5(target->buffer, target->bufferSize, md5_digest)) {
                 fprintf(stderr, "[!!] Failed to compute MD5 hash\n");
                 return RET_ERROR;
             }
-            memcpy(outHash, md5_digest, MD5_DIGEST_LENGTH);
-            *outLen = MD5_DIGEST_LENGTH;
+            memcpy(outHash, md5_digest, MD5_DIGEST_SIZE);
+            *outLen = MD5_DIGEST_SIZE;
             break;
         }
 
         case ALG_SHA1: {
-            UCHAR sha1_digest[SHA1_DIGEST_LENGTH] = {0};
-            if (!SHA1(target->buffer, target->bufferSize, sha1_digest)) {
+            UCHAR sha1_digest[SHA1_DIGEST_SIZE] = {0};
+            if (!SHA1((uint8_t*)target->buffer, (size_t)target->bufferSize, sha1_digest)) {
                 fprintf(stderr, "[!!] Failed to compute SHA1 hash\n");
                 return RET_ERROR;
             }
-            memcpy(outHash, sha1_digest, SHA1_DIGEST_LENGTH);
-            *outLen = SHA1_DIGEST_LENGTH;
+            memcpy(outHash, sha1_digest, SHA1_DIGEST_SIZE);
+            *outLen = SHA1_DIGEST_SIZE;
+            break;
+        }
+
+        case ALG_SHA224: {
+            UCHAR sha224_digest[SHA224_DIGEST_SIZE] = {0};
+            if (!SHA224((uint8_t*)target->buffer, (size_t)target->bufferSize, sha224_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA224 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha224_digest, SHA224_DIGEST_SIZE);
+            *outLen = SHA224_DIGEST_SIZE;
             break;
         }
 
         case ALG_SHA256: {
-            // Implement SHA256 here when ready
+            UCHAR sha256_digest[SHA256_DIGEST_SIZE] = {0};
+            if (!SHA256((uint8_t*)target->buffer, (size_t)target->bufferSize, sha256_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA256 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha256_digest, SHA256_DIGEST_SIZE);
+            *outLen = SHA256_DIGEST_SIZE;
+            break;
+        }
+
+        case ALG_SHA384: {
+            UCHAR sha384_digest[SHA384_DIGEST_SIZE] = {0};
+            if (!SHA384((uint8_t*)target->buffer, (size_t)target->bufferSize, sha384_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA384 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha384_digest, SHA384_DIGEST_SIZE);
+            *outLen = SHA384_DIGEST_SIZE;
+            break;
+        }
+
+        case ALG_SHA512: {
+            UCHAR sha512_digest[SHA512_DIGEST_SIZE] = {0};
+            if (!SHA512((uint8_t*)target->buffer, (size_t)target->bufferSize, sha512_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA512 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha512_digest, SHA512_DIGEST_SIZE);
+            *outLen = SHA512_DIGEST_SIZE;
+            break;
+        }
+
+        case ALG_SHA512_224: {
+            UCHAR sha512_224_digest[SHA512_224_DIGEST_SIZE] = {0};
+            if (!SHA512_224((uint8_t*)target->buffer, (size_t)target->bufferSize, sha512_224_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA512/224 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha512_224_digest, SHA512_224_DIGEST_SIZE);
+            *outLen = SHA512_224_DIGEST_SIZE;
+            break;
+        }
+
+        case ALG_SHA512_256: {
+            UCHAR sha512_256_digest[SHA512_256_DIGEST_SIZE] = {0};
+            if (!SHA512_256((uint8_t*)target->buffer, (size_t)target->bufferSize, sha512_256_digest)) {
+                fprintf(stderr, "[!!] Failed to compute SHA512/256 hash\n");
+                return RET_ERROR;
+            }
+            memcpy(outHash, sha512_256_digest, SHA512_256_DIGEST_SIZE);
+            *outLen = SHA512_256_DIGEST_SIZE;
             break;
         }
 
@@ -825,43 +967,92 @@ RET_CODE compute_hash(PTarget target, WORD algorithm, PUCHAR outHash, PULONGLONG
     return RET_SUCCESS;
 }
 
+// RET_CODE perform_hash_extract(PHashConfig hashCfg) {
+//     RET_CODE status = RET_ERROR;
+
+//     if (!hashCfg->primaryCtx && !hashCfg->secondaryCtx)
+//         return status;
+
+//     if (hashCfg->primaryCtx) {
+//         status = load_target_buffer(hashCfg->primaryCtx, &hashCfg->primaryTarget);
+//         if (status != RET_SUCCESS) goto mem_cleanup;
+
+//         status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm, hashCfg->primaryTarget.hash, &hashCfg->primaryTarget.hashLen);
+//         if (status != RET_SUCCESS) goto alg_cleanup;
+//     }
+
+//     if (hashCfg->secondaryCtx) {
+//         status = load_target_buffer(hashCfg->secondaryCtx, &hashCfg->secondaryTarget);
+//         if (status != RET_SUCCESS) goto mem_cleanup;
+    
+//         status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm, hashCfg->secondaryTarget.hash, &hashCfg->secondaryTarget.hashLen);
+//         if (status != RET_SUCCESS) goto alg_cleanup;
+//     }
+
+//     dump_extracted_hash(hashCfg, 0);
+
+//     SAFE_FREE(hashCfg->primaryTarget.buffer);
+//     SAFE_FREE(hashCfg->secondaryTarget.buffer);
+//     return RET_SUCCESS;
+
+// mem_cleanup:
+//     SAFE_FREE(hashCfg->primaryTarget.buffer);
+//     SAFE_FREE(hashCfg->secondaryTarget.buffer);
+//     fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+//     return status;
+
+// alg_cleanup:
+//     SAFE_FREE(hashCfg->primaryTarget.buffer);
+//     SAFE_FREE(hashCfg->secondaryTarget.buffer);
+//     fprintf(stderr, "[!!] Failed to compute a hash\n");
+//     return status;
+// }
+
 RET_CODE perform_hash_extract(PHashConfig hashCfg) {
     RET_CODE status = RET_ERROR;
-
     if (!hashCfg->primaryCtx && !hashCfg->secondaryCtx)
         return status;
 
+    // --- Primary target ---
     if (hashCfg->primaryCtx) {
         status = load_target_buffer(hashCfg->primaryCtx, &hashCfg->primaryTarget);
         if (status != RET_SUCCESS) goto mem_cleanup;
 
-        status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm, hashCfg->primaryTarget.hash, &hashCfg->primaryTarget.hashLen);
+        status = compute_hash(&hashCfg->primaryTarget, hashCfg->algorithm,
+                              hashCfg->primaryTarget.hash, &hashCfg->primaryTarget.hashLen);
         if (status != RET_SUCCESS) goto alg_cleanup;
     }
 
-    if (hashCfg->secondaryCtx) {
-        status = load_target_buffer(hashCfg->secondaryCtx, &hashCfg->secondaryTarget);
+    // --- Secondary target ---
+    // Only load if a different file OR secondary target exists for internal compare
+    if ((hashCfg->mode == HASHCMD_COMPARE_TARGETS && hashCfg->secondaryCtx) ||
+        (hashCfg->mode == HASHCMD_COMPARE_INTERNAL && hashCfg->secondaryTarget.bufferSize == 0)) {
+        
+        status = load_target_buffer(hashCfg->secondaryCtx ? hashCfg->secondaryCtx : hashCfg->primaryCtx,
+                                    &hashCfg->secondaryTarget);
         if (status != RET_SUCCESS) goto mem_cleanup;
-    
-        status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm, hashCfg->secondaryTarget.hash, &hashCfg->secondaryTarget.hashLen);
+
+        status = compute_hash(&hashCfg->secondaryTarget, hashCfg->algorithm,
+                              hashCfg->secondaryTarget.hash, &hashCfg->secondaryTarget.hashLen);
         if (status != RET_SUCCESS) goto alg_cleanup;
     }
 
     dump_extracted_hash(hashCfg, 0);
 
-    SAFE_FREE(hashCfg->primaryTarget.buffer);
-    SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    if (hashCfg->primaryTarget.ownsBuffer) SAFE_FREE(hashCfg->primaryTarget.buffer);
+    if (hashCfg->secondaryTarget.ownsBuffer) SAFE_FREE(hashCfg->secondaryTarget.buffer);
+
     return RET_SUCCESS;
 
 mem_cleanup:
-    SAFE_FREE(hashCfg->primaryTarget.buffer);
-    SAFE_FREE(hashCfg->secondaryTarget.buffer);
-    fprintf(stderr, "[!!] Failed to allocate memory for memory buffer\n");
+    if (hashCfg->primaryTarget.ownsBuffer) SAFE_FREE(hashCfg->primaryTarget.buffer);
+    if (hashCfg->secondaryTarget.ownsBuffer) SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    fprintf(stderr, "[!!] Memory allocation failed\n");
     return status;
 
 alg_cleanup:
-    SAFE_FREE(hashCfg->primaryTarget.buffer);
-    SAFE_FREE(hashCfg->secondaryTarget.buffer);
-    fprintf(stderr, "[!!] Failed to compute a hash\n");
+    if (hashCfg->primaryTarget.ownsBuffer) SAFE_FREE(hashCfg->primaryTarget.buffer);
+    if (hashCfg->secondaryTarget.ownsBuffer) SAFE_FREE(hashCfg->secondaryTarget.buffer);
+    fprintf(stderr, "[!!] Failed to compute hash\n");
     return status;
 }

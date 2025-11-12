@@ -458,10 +458,21 @@ RET_CODE parse_hash_config(const char *arg, HashConfig *hc) {
     char *alg = strchr(buf, '@');
     if (alg) {
         *alg++ = '\0';
+
         if (strncmp(alg, "sha1", 4) == 0)
             hc->algorithm = ALG_SHA1;
+        else if (strncmp(alg, "sha224", 6) == 0)
+            hc->algorithm = ALG_SHA224;
         else if (strncmp(alg, "sha256", 6) == 0)
             hc->algorithm = ALG_SHA256;
+        else if (strncmp(alg, "sha384", 6) == 0)
+            hc->algorithm = ALG_SHA384;
+        else if (strncmp(alg, "sha512_224", 10) == 0)
+            hc->algorithm = ALG_SHA512_224;
+        else if (strncmp(alg, "sha512_256", 10) == 0)
+            hc->algorithm = ALG_SHA512_256;
+        else if (strncmp(alg, "sha512", 6) == 0)
+            hc->algorithm = ALG_SHA512;
         else
             hc->algorithm = ALG_MD5; // default
     } else {
