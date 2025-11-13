@@ -38,7 +38,7 @@
 - [-] Run some tests for memory leaks and bad memory access
 
 ## FRAMEWORK & USABILITY
-- [-] Print useful file info: type, CPU architecture, size, 32/64-bit
+- [x] Print high-level file overview: sizes, section counts, memory vs disk info
 - [x] Update dump_all_data_directories to handle different formats and convert RVA→offsets (skip security directory when passing to raw dump functions)
 - [x] Allow raw dump line ranges: -1 = last line, start-end = specific lines, default = all lines
 - [x] Dump all printable strings with metadata (offset, size, type: Unicode/ASCII)
