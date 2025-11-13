@@ -47,6 +47,9 @@
 
 #define ALIGN2(x)  ((ULONGLONG)((x) + 1ull) & ~1ull);
 
+// Align 'value' up to the nearest multiple of 'alignment'
+#define ALIGN_UP(value, alignment) (((value) + ((alignment)-1)) & ~((alignment)-1))
+
 // Groups section info for easier printing and tracking
 typedef struct _SECTION_INFO{
     char *name;
@@ -103,6 +106,55 @@ LONGLONG get_file_size
     IN FILE *peFile
 );
 
+BOOL isTruncated
+(
+    IN PPEContext peCtx
+);
+
+DWORD computeImpliedImageSize
+(
+    IN PPEContext peCtx
+);
+
+LONGLONG getLoadedVsImpliedDelta
+(
+    IN PPEContext peCtx
+);
+
+ULONGLONG computeAlignmentWasteDisk
+(
+    IN PPEContext peCtx
+);
+
+ULONGLONG computeAlignmentExpansionMem
+(
+    IN PPEContext peCtx
+);
+
+ULONGLONG computeTotalRawData
+(
+    IN PPEContext peCtx
+);
+
+ULONGLONG computeTotalVirtualData
+(
+    IN PPEContext peCtx
+);
+
+double computeExecDataRatio
+(
+    IN PPEContext peCtx
+);
+
+ULONGLONG computeHeaderFootprint
+(
+    IN PPEContext peCtx
+);
+
+double computeHeaderDensity
+(
+    IN PPEContext peCtx
+);
 
 // Reads the entire contents of a file into a dynamically allocated buffer.
 // peFile  : pointer to an open FILE

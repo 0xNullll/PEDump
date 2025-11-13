@@ -30,27 +30,9 @@ RET_CODE dump_pe_strings
     IN const char* regexFilter
 );
 
-// Dumps a high-level overview of a PE file, including file headers, optional headers, 
-// sections, and data directories. Prints key information such as architecture, PE type, 
-// subsystem, image base, entry point, linker version, timestamps, and characteristics.
-//
-// filePath   : Path to the PE file
-// nt32       : Pointer to IMAGE_NT_HEADERS32 structure (for 32-bit PE files)
-// nt64       : Pointer to IMAGE_NT_HEADERS64 structure (for 64-bit PE files)
-// sections   : Pointer to the array of section headers
-// dataDirs   : Pointer to the PE data directories
-// is64bit    : Flag indicating whether the PE is 64-bit (1 = 64-bit, 0 = 32-bit)
-// fileSize   : Total size of the PE file in bytes
-// Returns    : RET_CODE indicating success or failure of the dump operation
 RET_CODE dump_pe_overview
 (
-    IN const char *filePath,
-    IN PIMAGE_NT_HEADERS32 nt32,
-    IN PIMAGE_NT_HEADERS64 nt64,
-    IN PIMAGE_SECTION_HEADER sections,
-    IN PIMAGE_DATA_DIRECTORY dataDirs,
-    IN int is64bit,
-    IN LONGLONG fileSize
+    IN PPEContext peCtx
 );
 
 // Dumps information about extracted exported functions to the console or log output.
