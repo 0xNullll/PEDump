@@ -76,159 +76,100 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
     return RET_SUCCESS;
 }
 
-// update by making it take the PECONTEXT stracture
-RET_CODE dump_pe_overview(
-    const char *filePath,
-    PIMAGE_NT_HEADERS32 nt32,
-    PIMAGE_NT_HEADERS64 nt64,
-    PIMAGE_SECTION_HEADER sections,
-    PIMAGE_DATA_DIRECTORY dataDirs,
-    int is64bit,
-    LONGLONG fileSize) {
+RET_CODE dump_pe_overview(PPEContext peCtx) {
+    if (!peCtx || !peCtx->valid) return RET_INVALID_PARAM;
 
-    int status = RET_ERROR;
+    // Overlay info
+    DWORD overlayFo = 0, overlaySize = 0;
+    getOverlayInfo(peCtx->sections, peCtx->numberOfSections, peCtx->fileSize, &overlayFo, &overlaySize);
 
-    // Basic header extraction
-    WORD Characteristics       = is64bit ? nt64->FileHeader.Characteristics      : nt32->FileHeader.Characteristics;
-    DWORD timestamp            = is64bit ? nt64->FileHeader.TimeDateStamp        : nt32->FileHeader.TimeDateStamp;
-    WORD  numberOfSections     = is64bit ? nt64->FileHeader.NumberOfSections     : nt32->FileHeader.NumberOfSections;
-    WORD  machine              = is64bit ? nt64->FileHeader.Machine              : nt32->FileHeader.Machine;
+    // Alignment info
+    DWORD fileAlign = peCtx->is64Bit ? peCtx->nt64->OptionalHeader.FileAlignment
+                                     : peCtx->nt32->OptionalHeader.FileAlignment;
+    DWORD memAlign  = peCtx->is64Bit ? peCtx->nt64->OptionalHeader.SectionAlignment
+                                     : peCtx->nt32->OptionalHeader.SectionAlignment;
 
-    // Optional header extraction
-    DWORD      addressOfEntryPoint     = is64bit ? nt64->OptionalHeader.AddressOfEntryPoint     : nt32->OptionalHeader.AddressOfEntryPoint;
-    ULONGLONG  imageBase               = is64bit ? nt64->OptionalHeader.ImageBase               : nt32->OptionalHeader.ImageBase;
-    BYTE       majorLinker             = is64bit ? nt64->OptionalHeader.MajorLinkerVersion      : nt32->OptionalHeader.MajorLinkerVersion;
-    BYTE       minorLinker             = is64bit ? nt64->OptionalHeader.MinorLinkerVersion      : nt32->OptionalHeader.MinorLinkerVersion;
-    WORD       subsystem               = is64bit ? nt64->OptionalHeader.Subsystem               : nt32->OptionalHeader.Subsystem;
-    WORD       majorSubsystemVersion   = is64bit ? nt64->OptionalHeader.MajorSubsystemVersion   : nt32->OptionalHeader.MajorSubsystemVersion;
-    WORD       minorSubsystemVersion   = is64bit ? nt64->OptionalHeader.MinorSubsystemVersion   : nt32->OptionalHeader.MinorSubsystemVersion;
-    WORD       dllChars                = is64bit ? nt64->OptionalHeader.DllCharacteristics      : nt32->OptionalHeader.DllCharacteristics;
+    // Alignment waste/expansion
+    ULONGLONG wasteDisk = computeAlignmentWasteDisk(peCtx);
+    ULONGLONG expansionMem = computeAlignmentExpansionMem(peCtx);
 
-    // Overlay and PE type detection
-    DWORD overlayOffset = 0, overlaySize = 0;
-    getOverlayInfo(sections, numberOfSections, fileSize, &overlayOffset, &overlaySize);
+    // Header footprint
+    ULONGLONG headerFootprint = computeHeaderFootprint(peCtx);
 
-    PETypeInfo peTypeInfo;
+    // Section counts
+    WORD rxCount = 0, rwCount = 0;
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        IMAGE_SECTION_HEADER *sec = &peCtx->sections[i];
+        if (sec->Characteristics & IMAGE_SCN_MEM_EXECUTE) rxCount++;
+        if (sec->Characteristics & IMAGE_SCN_MEM_WRITE)   rwCount++;
+    }
 
-    status = identify_pe_type(
-        filePath,
-        dataDirs,
-        sections,
-        numberOfSections,
-        Characteristics,
-        addressOfEntryPoint,
-        subsystem,
-        majorSubsystemVersion,
-        minorSubsystemVersion,
-        &peTypeInfo
-    );
+    // Compute densities
+    ULONGLONG totalRawData     = computeTotalRawData(peCtx);
+    ULONGLONG totalVirtualData = computeTotalVirtualData(peCtx);
+    double execDataRatio       = computeExecDataRatio(peCtx);
+    double headerDensity       = computeHeaderDensity(peCtx);
+    double memDensity          = peCtx->sizeOfImage ? (double)totalVirtualData / (double)peCtx->sizeOfImage * 100.0 : 0.0;
+    double overlayDensity      = overlaySize ? (double)overlaySize / (double)peCtx->fileSize * 100.0 : 0.0;
 
-    // Timestamp formatting
-    char timeStampStr[64];
-    if ((timestamp >= SOME_REASONABLE_EPOCH && timestamp <= CURRENT_EPOCH_PLUS_MARGIN) || timestamp == 0)
-        sprintf(timeStampStr, "%08lX  %s", timestamp, format_timestamp(timestamp));
-    else
-        sprintf(timeStampStr, "%08lX", timestamp);
-
-    // PE Overview
+    // ----------------------------------------------------------------------
     printf("======================================================================\n");
-    printf("PE Overview : %s\n", filePath);
-    printf("----------------------------------------------------------------------\n");
-    printf("File Size              : %lld bytes\n", fileSize);
-    printf("Architecture           : %s %s\n", is64bit ? "x64" : "x86", fileHeaderMachineToString(machine));
-    printf("PE Type                : %s\n", peTypeInfo.extension);
-    printf("Subsystem              : %s\n", subSystemTypeFlagToString(subsystem));
-    printf("Subsystem Type         : %s\n", subSystemVersionFlagToString(majorSubsystemVersion, minorSubsystemVersion));
-    printf("Image Base             : 0x%llX\n", imageBase);
-    printf("Address Of Entry Point : 0x%llX\n", imageBase + addressOfEntryPoint);
-    printf("Linker Version         : %u.%u\n", majorLinker, minorLinker);
-    printf("Timestamp              : %s\n", timeStampStr);
-    printf("Overlay Size           : %lu bytes\n", overlaySize);
-    printf("======================================================================\n\n");
-
-    printf("Characteristics        : 0x%04X\n", Characteristics);
-
-    // Characteristics Flags
-    FlagDesc characteristics_flags[] = {
-        {IMAGE_FILE_RELOCS_STRIPPED,         "IMAGE_FILE_RELOCS_STRIPPED"},
-        {IMAGE_FILE_EXECUTABLE_IMAGE,        "IMAGE_FILE_EXECUTABLE_IMAGE"},
-        {IMAGE_FILE_LINE_NUMS_STRIPPED,      "IMAGE_FILE_LINE_NUMS_STRIPPED"},
-        {IMAGE_FILE_LOCAL_SYMS_STRIPPED,     "IMAGE_FILE_LOCAL_SYMS_STRIPPED"},
-        {IMAGE_FILE_AGGRESIVE_WS_TRIM,       "IMAGE_FILE_AGGRESIVE_WS_TRIM"},
-        {IMAGE_FILE_LARGE_ADDRESS_AWARE,     "IMAGE_FILE_LARGE_ADDRESS_AWARE"},
-        {IMAGE_FILE_BYTES_REVERSED_LO,       "IMAGE_FILE_BYTES_REVERSED_LO"},
-        {IMAGE_FILE_32BIT_MACHINE,           "IMAGE_FILE_32BIT_MACHINE"},
-        {IMAGE_FILE_DEBUG_STRIPPED,          "IMAGE_FILE_DEBUG_STRIPPED"},
-        {IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP, "IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP"},
-        {IMAGE_FILE_NET_RUN_FROM_SWAP,       "IMAGE_FILE_NET_RUN_FROM_SWAP"},
-        {IMAGE_FILE_SYSTEM,                  "IMAGE_FILE_SYSTEM"},
-        {IMAGE_FILE_DLL,                     "IMAGE_FILE_DLL"},
-        {IMAGE_FILE_UP_SYSTEM_ONLY,          "IMAGE_FILE_UP_SYSTEM_ONLY"},
-        {IMAGE_FILE_BYTES_REVERSED_HI,       "IMAGE_FILE_BYTES_REVERSED_HI"}
-    };
-
-    DWORD characteristics_flags_count = (sizeof(characteristics_flags)/sizeof(characteristics_flags[0]));
-
-    for (DWORD i = 0; i < characteristics_flags_count; i++) {
-        if (Characteristics & characteristics_flags[i].flag) {
-            printf("\t\t       + 0x%04lX  %-50s\n",
-                    characteristics_flags[i].flag,
-                    characteristics_flags[i].name);
-        }
-    }
-
-    if (Characteristics) putchar('\n');
-
-    printf("Dll Characteristics    : 0x%04X\n", dllChars);
-
-    // Dll Characteristics Flags
-    FlagDesc dll_characteristics_flags[] = { 
-        {IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA,             "IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA"},
-        {IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE,                "IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE"},
-        {IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY,             "IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY"},
-        {IMAGE_DLLCHARACTERISTICS_NX_COMPAT,                   "IMAGE_DLLCHARACTERISTICS_NX_COMPAT"},
-        {IMAGE_DLLCHARACTERISTICS_NO_ISOLATION,                "IMAGE_DLLCHARACTERISTICS_NO_ISOLATION"},
-        {IMAGE_DLLCHARACTERISTICS_NO_SEH,                      "IMAGE_DLLCHARACTERISTICS_NO_SEH"},
-        {IMAGE_DLLCHARACTERISTICS_NO_BIND,                     "IMAGE_DLLCHARACTERISTICS_NO_BIND"},
-        {IMAGE_DLLCHARACTERISTICS_APPCONTAINER,                "IMAGE_DLLCHARACTERISTICS_APPCONTAINER"},
-        {IMAGE_DLLCHARACTERISTICS_WDM_DRIVER,                  "IMAGE_DLLCHARACTERISTICS_WDM_DRIVER"},
-        {IMAGE_DLLCHARACTERISTICS_GUARD_CF,                    "IMAGE_DLLCHARACTERISTICS_GUARD_CF"},
-        {IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE,       "IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE"}
-    };
-
-    DWORD flagCount = sizeof(dll_characteristics_flags) / sizeof(dll_characteristics_flags[0]);
-    for (DWORD i = 0; i < flagCount; i++) {
-        if (dllChars & dll_characteristics_flags[i].flag) {
-            printf("\t\t       + 0x%04lX  %-50s\n",
-                dll_characteristics_flags[i].flag,
-                dll_characteristics_flags[i].name);
-        }
-    }
-    if (dllChars) putchar('\n');
-
+    printf("Computed Overview : %s\n", peCtx->filePath);
     printf("----------------------------------------------------------------------\n");
 
-    // Section Summary
-    printf("\t\t-- Section Summary (%u sections) --\n\n", numberOfSections);
+    // -------------------- Basic Sizes --------------------
+    printf("Disk File Size             : %llu bytes\n", (ULONGLONG)peCtx->fileSize);
+    printf("In-Memory Size             : %llu bytes\n", peCtx->sizeOfImage);
+    printf("Computed Image Size        : %lu bytes (from sections + SectionAlignment)\n", computeImpliedImageSize(peCtx));
+    printf("Disk vs Memory Delta       : %lld bytes (Memory - Disk)\n", (LONGLONG)peCtx->sizeOfImage - peCtx->fileSize);
+    printf("Memory vs Computed Delta   : %lld bytes (Memory - Computed Image Size)\n", getLoadedVsImpliedDelta(peCtx));
+    printf("Truncated                  : %s\n", isTruncated(peCtx) ? "yes" : "no");
 
-    printf("Name       | VirtualAddress     | Virt Size  | Raw Size  | Perms\n");
-    for (int i = 0; i < numberOfSections; i++) {
-        char perms[4] = "---";
-        if (sections[i].Characteristics & IMAGE_SCN_MEM_READ)    perms[0] = 'R';
-        if (sections[i].Characteristics & IMAGE_SCN_MEM_WRITE)   perms[1] = 'W';
-        if (sections[i].Characteristics & IMAGE_SCN_MEM_EXECUTE) perms[2] = 'X';
+    putchar('\n');
 
-        printf("%-10s | 0x%016llX | 0x%08lX | 0x%08lX | %s\n",
-            sections[i].Name,
-            (ULONGLONG)sections[i].VirtualAddress + imageBase,
-            sections[i].Misc.VirtualSize,
-            sections[i].SizeOfRawData,
-            perms
-        );
+    // -------------------- Overlay Info --------------------
+    if (overlaySize) {
+        printf("Overlay Present            : yes\n");
+        printf("Overlay Offset             : 0x%lX bytes\n", overlayFo);
+        printf("Overlay Size               : %lu bytes (%.2f%% of file)\n", overlaySize, overlayDensity);
+    } else {
+        printf("Overlay Present            : no\n");
     }
 
-    printf("======================================================================\n");
-    return status;
+    putchar('\n');
+
+    // -------------------- Alignment Info --------------------
+    printf("File Alignment             : 0x%lX bytes\n", fileAlign);
+    printf("Memory Alignment           : 0x%lX bytes\n", memAlign);
+    printf("Alignment Waste (disk)     : %llu bytes (%.2f%% of file)\n",
+           wasteDisk, peCtx->fileSize ? (double)wasteDisk / (double)peCtx->fileSize * 100.0 : 0.0);
+    printf("Alignment Expansion (mem)  : %llu bytes (%.2f%% of memory image)\n",
+           expansionMem, peCtx->sizeOfImage ? (double)expansionMem / (double)peCtx->sizeOfImage * 100.0 : 0.0);
+
+    putchar('\n');
+
+    // -------------------- Header Info --------------------
+    printf("Header + Section Table     : %llu bytes (DOS + NT + Sections)\n", headerFootprint);
+    
+    putchar('\n');
+
+    // -------------------- Section Info --------------------
+    printf("Section Count              : %u\n", peCtx->numberOfSections);
+    printf("Executable Sections Count  : %u\n", rxCount);
+    printf("Writable Sections Count    : %u\n", rwCount);
+    printf("Total Raw Data             : %llu bytes\n", totalRawData);
+    printf("Total Virtual Data         : %llu bytes\n", totalVirtualData);
+    printf("Executable/Data Ratio      : %.2f%% (RX vs RW)\n", execDataRatio);
+
+    putchar('\n');
+
+    // -------------------- Density Info --------------------
+    printf("Header Density             : %.2f%% of file\n", headerDensity);
+    printf("Memory Density             : %.2f%% of memory image\n", memDensity);
+    printf("----------------------------------------------------------------------\n");
+
+    fflush(stdout);
+    return RET_SUCCESS;
 }
 
 void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER sections, WORD numberOfSections, ULONGLONG imageBase, int level) {
@@ -437,94 +378,6 @@ void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
     return;
 }
 
-// 🧩 Mode 1 — Hash Generation
-// [HASH INFO]
-// Algorithm : SHA256 (256-bit)
-// Target    : Section (.rdata, 6656 bytes)
-// File      : C:\samples\calc.exe
-// Digest    : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
-// ----------------------------------------------------
-
-// [HASH INFO]
-// Algorithm : MD5 (128-bit)
-// Target    : Range (0x95A00–0x96000, 1536 bytes)
-// File      : C:\samples\infected.exe
-// Digest    : 9e107d9d372bb6826bd81d3542a419d6
-// ----------------------------------------------------
-
-// [HASH INFO]
-// Algorithm : SHA1 (160-bit)
-// Target    : File (entire, 9830400 bytes)
-// File      : C:\samples\kernel32.dll
-// Digest    : da39a3ee5e6b4b0d3255bfef95601890afd80709
-// ----------------------------------------------------
-
-
-// ⚖️ Mode 2 — File-to-File Comparison
-// [HASH COMPARE]
-// Algorithm : SHA256 (256-bit)
-// Mode      : Section vs Section
-// File A    : C:\samples\calc_v1.exe (.rdata, 6656 bytes)
-// File B    : C:\samples\calc_v2.exe (.rdata, 6656 bytes)
-// Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
-// Digest B  : 9e107d9d372bb6826bd81d3542a419d6
-// Result    : DIFFERENT
-// ----------------------------------------------------
-
-// [HASH COMPARE]
-// Algorithm : SHA1 (160-bit)
-// Mode      : Range vs Range
-// File A    : C:\samples\infected.exe (0x12000–0x13FFF, 8192 bytes)
-// File B    : C:\samples\clean.exe    (0x12000–0x13FFF, 8192 bytes)
-// Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
-// Digest B  : 9b74c9897bac770ffc029102a200c5de
-// Result    : DIFFERENT
-// ----------------------------------------------------
-
-// [HASH COMPARE]
-// Algorithm : MD5 (128-bit)
-// Mode      : File vs File
-// File A    : C:\samples\kernel32_v1.dll (9830400 bytes)
-// File B    : C:\samples\kernel32_v2.dll (9830400 bytes)
-// Digest A  : e2fc714c4727ee9395f324cd2e7f331f
-// Digest B  : e2fc714c4727ee9395f324cd2e7f331f
-// Result    : MATCH
-// ----------------------------------------------------
-
-
-// 🧠 Mode 3 — Intra-File Comparison
-// [HASH COMPARE]
-// Algorithm : SHA256 (256-bit)
-// Mode      : Section vs Section (same file)
-// File      : C:\samples\calc.exe
-// Target A  : .text (12288 bytes)
-// Target B  : .rdata (6656 bytes)
-// Digest A  : 5a1f7c9be23ac2f0d77c0e98d742ff47f8c3f21f
-// Digest B  : 9e107d9d372bb6826bd81d3542a419d6
-// Result    : DIFFERENT
-// ----------------------------------------------------
-
-// [HASH COMPARE]
-// Algorithm : SHA1 (160-bit)
-// Mode      : Range vs Range (same file)
-// File      : C:\samples\infected.exe
-// Target A  : 0x4000–0x5FFF (8192 bytes)
-// Target B  : 0x9000–0xAFFF (8192 bytes)
-// Digest A  : 3e25960a79dbc69b674cd4ec67a72c62
-// Digest B  : 9b74c9897bac770ffc029102a200c5de
-// Result    : DIFFERENT
-// ----------------------------------------------------
-
-// [HASH COMPARE]
-// Algorithm : MD5 (128-bit)
-// Mode      : Section vs Range (same file)
-// File      : C:\samples\driver.sys
-// Target A  : .data (4096 bytes)
-// Target B  : 0x8A000–0x8B200 (4608 bytes)
-// Digest A  : e2fc714c4727ee9395f324cd2e7f331f
-// Digest B  : 7d793037a0760186574b0282f2f435e7
-// Result    : DIFFERENT
-// ----------------------------------------------------
 
 void print_target_desc(const char* label, PTarget target, int level) {
     printf("%s%-*s: ", INDENT(level), LABEL_WIDTH, label);

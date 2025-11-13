@@ -1142,7 +1142,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 break;
 
             case CMD_OVERVIEW:
-                if (dump_pe_overview(peCtx->filePath, nt32, nt64, peCtx->sections, dataDirs, is64bit, fileSize) != RET_SUCCESS) {
+                if (dump_pe_overview(peCtx) != RET_SUCCESS) {
                     fprintf(stderr, "[!] Failed to dump PE Over View info\n");   
                 }
                 break;

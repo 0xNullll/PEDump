@@ -13,34 +13,6 @@
 #include "md5.h"
 #include "../thirdParty/tiny_sha.h"
 
-typedef enum _PE_MAIN_TYPE {
-    PE_TYPE_UNKNOWN = 0,
-    PE_TYPE_MUI,
-    PE_TYPE_EXE,
-    PE_TYPE_DLL,
-    PE_TYPE_DRIVER,
-    PE_TYPE_SYSTEM,
-    PE_TYPE_EFI,
-    PE_TYPE_CONTROL_PANEL,
-    PE_TYPE_ACTIVEX,
-    PE_TYPE_SCREENSAVER
-} PE_MAIN_TYPE;
-
-typedef struct _PETypeInfo {
-    BYTE isConsole     : 1;
-    BYTE isGui         : 1;
-    BYTE isFirmware    : 1;
-    BYTE isNative      : 1;
-    BYTE hasExports    : 1;
-    BYTE hasImports    : 1;
-    BYTE hasSignature  : 1;
-
-    PE_MAIN_TYPE mainType;
-
-    char extension[32];
-    char fileName[260];
-} PETypeInfo, *PPETypeInfo;
-
 typedef enum _EXPORT_TYPE {
     EXPORT_TYPE_NONE     = 0x00,  // no type
     EXPORT_TYPE_DLL_NAME = 0x01,  // match by dll name
@@ -90,32 +62,6 @@ typedef struct _MATCH_LIST{
     ULONGLONG capacity;   // Allocated capacity
     size_t itemSize;      // Size of each item type (e.g. sizeof(IMPORT_MATCH))
 } MATCH_LIST, *PMATCH_LIST;
-
-// Identifies the type of a PE file (EXE, DLL, SYS, etc.) and fills type-related info.
-// filePath          : path to the PE file
-// dataDirs          : pointer to the PE file's data directories
-// sections          : array of section headers
-// numberOfSections  : number of sections in the PE
-// fileFlags         : PE file flags
-// addrOfEntryPoint  : Address of Entry Point from the PE header
-// subsystem         : subsystem value from PE header
-// majorSubVer       : major subsystem version
-// minorSubVer       : minor subsystem version
-// outPetypeinfo     : pointer to PPETypeInfo structure to receive type info
-// Returns           : RET_CODE indicating success or failure
-RET_CODE identify_pe_type
-(
-    IN  const char            *filePath,
-    IN  PIMAGE_DATA_DIRECTORY dataDirs,
-    IN  PIMAGE_SECTION_HEADER sections,
-    IN  WORD                  numberOfSections,
-    IN  WORD                  fileFlags,
-    IN  DWORD                 addrOfEntryPoint,
-    IN  WORD                  subsystem,
-    IN  WORD                  majorSubVer,
-    IN  WORD                  minorSubVer,
-    OUT PPETypeInfo           outPetypeinfo
-);
 
 // Processes PE sections to extract data based on extraction configuration.
 // sections          : pointer to array of section headers

@@ -80,6 +80,151 @@ LONGLONG get_file_size(FILE *peFile) {
     return size;
 }
 
+
+BOOL isTruncated(PPEContext peCtx) {
+    if (!peCtx->valid || peCtx->fileSize <= 0)
+        return TRUE; // invalid or empty file
+
+    ULONGLONG maxEnd = 0;
+    for (WORD i = 0; i < peCtx->numberOfSections; ++i) {
+        const PIMAGE_SECTION_HEADER sec = &peCtx->sections[i];
+        if (sec->PointerToRawData == 0 || sec->SizeOfRawData == 0)
+            continue;
+
+        ULONGLONG end = (ULONGLONG)sec->PointerToRawData + sec->SizeOfRawData;
+        if (end > maxEnd)
+            maxEnd = end;
+    }
+
+    return maxEnd > (ULONGLONG)peCtx->fileSize;
+}
+
+DWORD computeImpliedImageSize(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid)
+        return 0;
+
+    DWORD sectionAlignment = 0;
+
+    if (peCtx->is64Bit) {
+        if (!peCtx->nt64) return 0;
+        sectionAlignment = peCtx->nt64->OptionalHeader.SectionAlignment;
+    } else {
+        if (!peCtx->nt32) return 0;
+        sectionAlignment = peCtx->nt32->OptionalHeader.SectionAlignment;
+    }
+
+    DWORD maxEnd = 0;
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        IMAGE_SECTION_HEADER *sec = &peCtx->sections[i];
+        DWORD sectionEnd = sec->VirtualAddress + ALIGN_UP(sec->Misc.VirtualSize, sectionAlignment);
+        if (sectionEnd > maxEnd)
+            maxEnd = sectionEnd;
+    }
+
+    return maxEnd;
+}
+
+LONGLONG getLoadedVsImpliedDelta(PPEContext peCtx) {
+    if (!peCtx || !peCtx->valid)
+        return 0;
+
+    ULONGLONG loadedSize = peCtx->sizeOfImage;
+    DWORD impliedSize    = computeImpliedImageSize(peCtx);
+
+    return (LONGLONG)loadedSize - (LONGLONG)impliedSize;
+}
+
+ULONGLONG computeAlignmentWasteDisk(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid) return 0;
+
+    ULONGLONG fileAlign = peCtx->is64Bit ? peCtx->nt64->OptionalHeader.FileAlignment
+                                         : peCtx->nt32->OptionalHeader.FileAlignment;
+    ULONGLONG totalWaste = 0;
+
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        ULONGLONG rawSize = peCtx->sections[i].SizeOfRawData;
+        totalWaste += ALIGN_UP(rawSize, fileAlign) - rawSize;
+    }
+
+    return totalWaste;
+}
+
+ULONGLONG computeAlignmentExpansionMem(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid) return 0;
+
+    ULONGLONG memAlign = peCtx->is64Bit ? peCtx->nt64->OptionalHeader.SectionAlignment
+                                        : peCtx->nt32->OptionalHeader.SectionAlignment;
+    ULONGLONG totalExpansion = 0;
+
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        ULONGLONG virtSize = peCtx->sections[i].Misc.VirtualSize;
+        totalExpansion += ALIGN_UP(virtSize, memAlign) - virtSize;
+    }
+
+    return totalExpansion;
+}
+
+ULONGLONG computeTotalRawData(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid) return 0;
+
+    ULONGLONG totalRaw = 0;
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        totalRaw += peCtx->sections[i].SizeOfRawData;
+    }
+    return totalRaw;
+}
+
+ULONGLONG computeTotalVirtualData(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid) return 0;
+
+    ULONGLONG totalVirtual = 0;
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        totalVirtual += peCtx->sections[i].Misc.VirtualSize;
+    }
+    return totalVirtual;
+}
+
+double computeExecDataRatio(PPEContext peCtx) {
+    if (!peCtx || !peCtx->sections || !peCtx->valid) return 0.0;
+
+    ULONGLONG execSize = 0;
+    ULONGLONG dataSize = 0;
+
+    for (WORD i = 0; i < peCtx->numberOfSections; i++) {
+        IMAGE_SECTION_HEADER *sec = &peCtx->sections[i];
+        ULONGLONG vs = sec->Misc.VirtualSize;
+
+        if (sec->Characteristics & IMAGE_SCN_MEM_EXECUTE)
+            execSize += vs;
+        else
+            dataSize += vs; // all none executable sections considered "data"
+    }
+
+    // Avoid division by zero
+    if (dataSize == 0) return 0.0;
+
+    return ((double)execSize / (double)dataSize) * 100.0;
+}
+
+ULONGLONG computeHeaderFootprint(PPEContext peCtx) {
+    if (!peCtx || !peCtx->valid) return 0;
+
+    // Compute Header + Table Footprint
+    ULONGLONG dosSize = peCtx->dosHeader ? (ULONGLONG)peCtx->dosHeader->e_lfanew : 0;
+    ULONGLONG ntHeaderSize = peCtx->is64Bit ? sizeof(IMAGE_NT_HEADERS64) : sizeof(IMAGE_NT_HEADERS32);
+    ULONGLONG sectionTableSize = (ULONGLONG)peCtx->numberOfSections * sizeof(IMAGE_SECTION_HEADER);
+
+    return dosSize + ntHeaderSize + sectionTableSize;
+}
+
+double computeHeaderDensity(PPEContext peCtx) {
+    if (!peCtx || !peCtx->valid || peCtx->fileSize == 0) return 0.0;
+
+    ULONGLONG headerFootprint = computeHeaderFootprint(peCtx);
+    return ((double)headerFootprint / (double)peCtx->fileSize) * 100.0;
+}
+
+
 RET_CODE get_dll_from_forwarder(const char *forwarderName, char *outDllName, ULONGLONG strSize) {
     if (!forwarderName || !outDllName || strSize == 0) {
         if (strSize > 0) outDllName[0] = '\0';
