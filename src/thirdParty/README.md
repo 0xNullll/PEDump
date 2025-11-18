@@ -33,9 +33,9 @@ the full POSIX regex library.
 | `[abc]`     | Character class                                     |
 | `[^abc]`    | Inverted class *(partially broken in this version)* |
 | `[a-zA-Z]`  | Character ranges                                    |
-| `\s`, `\S`| Whitespace / non-whitespace                         |
-| `\w`, `\W`| Alphanumeric / non-alphanumeric                     |
-| `\d`, `\D`| Digits / non-digits                                 |
+| `\s`, `\S`  | Whitespace / non-whitespace                         |
+| `\w`, `\W`  | Alphanumeric / non-alphanumeric                     |
+| `\d`, `\D`  | Digits / non-digits                                 |
 
 ### Usage in This Project
 
@@ -50,76 +50,24 @@ This lightweight implementation is included to ensure regex functionality is ava
 
 ## Tiny SHA Integration
 
-This project also includes **Tiny SHA**, a minimal and portable C library for computing  
-SHA hash digests. All supported SHA variants are included: **SHA-1, SHA-224, SHA-256,  
-SHA-384, SHA-512, SHA-512/224, and SHA-512/256**.  
+This directory contains **Tiny SHA**, a minimal and portable C library for computing SHA hash digests.  
+All major SHA variants are supported, including **SHA-1, SHA-2, SHA-3, SHAKE, and Raw SHAKE**.  
 
 ### Overview
 
 Tiny SHA is designed to be:
 
-- Lightweight (<50 KB)
-- Self-contained
-- Endian-aware (works on both little-endian and big-endian systems)
-- Incremental (supports streaming API with `Init`, `Update`, `Final`)
-- Single-shot (wrapper functions that hash data in one call)
-- Configurable (enable/disable algorithms via macros)
-- Prefixable (avoid name collisions using `TSHASH_PREFIX`)
+- Lightweight and self-contained (<50 KB)  
+- Endian-aware (works on little-endian and big-endian systems)  
+- Incremental (streaming API: `Init`, `Update` / `Absorb`, `Final` / `Squeeze`)  
+- Single-shot (wrapper functions for hashing in one call)  
+- Configurable (enable/disable algorithms via macros)  
+- Prefixable (`TSHASH_PREFIX`) to avoid name collisions  
+- Includes optional bit-level helpers for SHAKE/XOF:  
+  - `Trunc_s` — truncate a byte array to a specific number of bits  
+  - `concat_bits` — concatenate two sequences of bits  
 
 ### Usage in This Project
 
-Tiny SHA is used in PE dumping, hashing, or comparison tasks where quick  
-and reliable SHA computation is required.  
-
-**Single-shot hashing example:**
-
-```c
-#include <stdio.h>
-#include "tiny_sha.h"
-
-int main() {
-    const char *msg = "Hello, Tiny SHA!";
-    uint8_t hash[SHA256_DIGEST_SIZE];
-
-    if (SHA256((const uint8_t*)msg, strlen(msg), hash)) {
-        printf("SHA-256: ");
-        for (int i = 0; i < SHA256_DIGEST_SIZE; i++)
-            printf("%02x", hash[i]);
-        printf("\n");
-    }
-}
-```
-
-**Incremental / streaming example:**
-
-```c
-SHA256_CTX ctx;
-SHA256Init(&ctx);
-SHA256Update(&ctx, (const uint8_t*)msg, strlen(msg));
-SHA256Final(&ctx, hash);
-```
-
-**Comparing hashes:**
-
-```c
-int cmp = SHA256CompareOrder(hash1, hash2);
-if (cmp == 0)
-    printf("Hashes are equal\n");
-else if (cmp < 0)
-    printf("hash1 < hash2\n");
-else
-    printf("hash1 > hash2\n");
-```
-
-### Notes
-
-- No external dependencies — fully self-contained  
-- All functions return `bool` to indicate success/failure  
-- Can be compiled with optional prefix to avoid collisions:  
-
-```c
-#define TSHASH_PREFIX PEDumper_
-#include "tiny_sha.h"
-```
-
-This ensures the SHA functions are namespaced specifically for this project.
+Tiny SHA is used for **hash computation, comparison, and PE dumping**.  
+It provides fast, reliable, and fully self-contained SHA functionality, even in environments without a standard hashing library.
