@@ -75,7 +75,7 @@ RET_CODE dump_exported_functions(
         foBase += sizeof(DWORD);
     }
 
-    printf("\n\t\t  ==== END FO EXPORTED FUNCTIONS ====\n\n");
+    printf("\n\t\t  ==== END OF EXPORTED FUNCTIONS ====\n\n");
     fflush(stdout);
     return RET_SUCCESS;
 }
