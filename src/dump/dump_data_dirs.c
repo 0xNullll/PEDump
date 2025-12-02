@@ -24,7 +24,7 @@ RET_CODE dump_exported_functions(
     WORD vaOffDigit = count_digits(vaBase);
     WORD foOffDigit = count_digits(foBase);
 
-    printf("%-*s%-*s  %-4s %-8s %-8s %-8s %-80s %s\n",
+    printf("%-*s %-*s  %-4s %-8s %-8s %-8s %-80s %s\n",
            vaOffDigit, "VA", foOffDigit, "FO", "Idx", "Ordinal", "Func-RVA", "Name-RVA", "Name", "Forwarded-To");
 
     for (DWORD funcIdx = 0; funcIdx < ExportDir->NumberOfFunctions; funcIdx++) {
@@ -62,14 +62,15 @@ RET_CODE dump_exported_functions(
         char *printFuncName = funcName[0] ? funcName : "-";
         char *printForwardName = forwardName[0] ? forwardName : " ";
 
-        printf("%llX %lX   %-4lu %-8lX %08lX %-8s %-80s %s\n",
-               vaBase, foBase,
-               funcIdx + 1,
-               funcIdx + ExportDir->Base,
-               funcRVA,
-               hasName ? str_to_hex(nameRVA) : "0",
-               printFuncName,
-               printForwardName);
+        printf("%-*llX %-*lX  %-4lu %-8lX %08lX %-8s %-80s %s\n",
+                vaOffDigit, vaBase,
+                foOffDigit, foBase,
+                funcIdx + 1,
+                funcIdx + ExportDir->Base,
+                funcRVA,
+                hasName ? str_to_hex(nameRVA) : "0",
+                printFuncName,
+                printForwardName);
 
         vaBase += sizeof(DWORD);
         foBase += sizeof(DWORD);

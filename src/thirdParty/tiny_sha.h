@@ -78,38 +78,38 @@ extern "C" {
    SHA-3 variants
    ------------------------ */
 #ifndef ENABLE_SHA3_224
-#define ENABLE_SHA3_224 1      /* enable SHA3-224 by default */
+#define ENABLE_SHA3_224 0
 #endif
 
 #ifndef ENABLE_SHA3_256
-#define ENABLE_SHA3_256 1      /* enable SHA3-256 by default */
+#define ENABLE_SHA3_256 0
 #endif
 
 #ifndef ENABLE_SHA3_384
-#define ENABLE_SHA3_384 1      /* enable SHA3-384 by default */
+#define ENABLE_SHA3_384 0
 #endif
 
 #ifndef ENABLE_SHA3_512
-#define ENABLE_SHA3_512 1      /* enable SHA3-512 by default */
+#define ENABLE_SHA3_512 0
 #endif
 
 /* ------------------------
    SHAKE / RawSHAKE
    ------------------------ */
 #ifndef ENABLE_SHAKE128
-#define ENABLE_SHAKE128 1      /* enable SHAKE128 by default */
+#define ENABLE_SHAKE128 0
 #endif
 
 #ifndef ENABLE_SHAKE256
-#define ENABLE_SHAKE256 1      /* enable SHAKE256 by default */
+#define ENABLE_SHAKE256 0
 #endif
 
 #ifndef ENABLE_RAWSHAKE128
-#define ENABLE_RAWSHAKE128 1   /* enable RawSHAKE128 by default */
+#define ENABLE_RAWSHAKE128 0
 #endif
 
 #ifndef ENABLE_RAWSHAKE256
-#define ENABLE_RAWSHAKE256 1   /* enable RawSHAKE256 by default */
+#define ENABLE_RAWSHAKE256 0
 #endif
 
 /* ------------------------
