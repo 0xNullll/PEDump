@@ -26,7 +26,7 @@ int main(void) {
         // "import:@4",
         // "-h",
         // "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
-        "C:\\Users\\agent\\OneDrive\\Desktop\\tiny-crypto\\tiny-crypto\\bin\\run_all_demos.exe",
+        "C:\\Users\\agent\\OneDrive\\Desktop\\CryptoForge\\bin\\run_all_demos.exe",
         // "C:/Program Files/CrystalDiskMark9/unins000.exe",
         NULL
     };
