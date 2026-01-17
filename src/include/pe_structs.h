@@ -310,6 +310,13 @@
         BYTE        Data[ 1 ];              // Actual data
     } IMAGE_DEBUG_MISC, *PIMAGE_DEBUG_MISC;
 
+    //
+    // IMAGE_OPTIONAL_HEADER
+    //
+
+    #define IMAGE_NT_OPTIONAL_HDR32_MAGIC 0x10b
+    #define IMAGE_NT_OPTIONAL_HDR64_MAGIC 0x20b
+
     // IMAGE_OPTIONAL_HEADER32
     typedef struct _IMAGE_OPTIONAL_HEADER32 {
         WORD Magic;
