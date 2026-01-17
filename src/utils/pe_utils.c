@@ -66,7 +66,7 @@ LONGLONG get_file_size(FILE *peFile) {
     if (!peFile) return 0;
 
     // Save the current file position
-    LONGLONG currentPos = _ftelli64(peFile);
+    LONGLONG currentPos = FTELL64(peFile);
     if (currentPos < 0) return 0;
 
     // Seek to the end to get total file size
@@ -635,7 +635,7 @@ BOOL has_section(PIMAGE_SECTION_HEADER sections, WORD numberOfSections, const ch
         char name[9] = {0};  
         memcpy(name, sections[i].Name, 8);
 
-        if (_stricmp(name, sectionName) == 0)
+        if (STREQI(name, sectionName) == 0)
             return TRUE;
     }
     return FALSE;
