@@ -129,6 +129,12 @@
     typedef uint64_t    ULONGLONG;
     typedef uint16_t    USHORT;
 
+    #ifndef _BOOLEAN_
+    #define _BOOLEAN_
+    typedef BYTE BOOLEAN;
+    #endif
+    typedef BOOLEAN *PBOOLEAN;
+
     // Pointer-sized integer types
     typedef uintptr_t           UINT_PTR;
     typedef intptr_t            INT_PTR;
