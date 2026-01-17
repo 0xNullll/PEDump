@@ -936,6 +936,14 @@
         DWORD dwFileDateMS;      // High-order 32 bits of file's binary creation date
         DWORD dwFileDateLS;      // Low-order 32 bits of file's binary creation date
     } VS_FIXEDFILEINFO;
+
+    typedef struct _WIN_CERTIFICATE {
+        DWORD dwLength;
+        WORD wRevision;
+        WORD wCertificateType;
+        BYTE bCertificate[ANYSIZE_ARRAY];
+    } WIN_CERTIFICATE,*LPWIN_CERTIFICATE;
+
 #endif
 
 // size of safe symbol name
