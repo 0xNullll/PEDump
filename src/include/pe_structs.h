@@ -142,6 +142,7 @@
     typedef WCHAR*              LPWSTR;
     typedef BYTE*               PBYTE;
     typedef UCHAR*              PUCHAR;
+    typedef WORD*               PWORD;
     typedef DWORD*              PDWORD;
     typedef ULONG*              PULONG;
     typedef ULONGLONG*          PULONGLONG;
