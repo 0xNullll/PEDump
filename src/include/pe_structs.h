@@ -89,15 +89,15 @@
         #endif
     #endif // DUMMYSTRUCTNAME
 
-    #ifndef
+    #ifndef BOOL
         typedef int32_t BOOL;
     #endif
 
-    #ifndef
+    #ifndef TRUE
         #define TRUE  1
     #endif
 
-    #ifndef
+    #ifndef FALSE
         #define FALSE 0
     #endif
 
@@ -498,7 +498,7 @@
     //
     // - Exception Table -
     //
-    
+
     // ==========================================
     // Windows CE Runtime Function Entry (ARM, PPC, SH3/SH4 Windows CE)
     // ==========================================
@@ -644,7 +644,22 @@
         DWORD   AddressOfRawData; // RVA
         DWORD   PointerToRawData; // file offset
     } IMAGE_DEBUG_DIRECTORY, *PIMAGE_DEBUG_DIRECTORY;
- 
+
+    typedef struct _IMAGE_FUNCTION_ENTRY {
+      DWORD StartingAddress;
+      DWORD EndingAddress;
+      DWORD EndOfPrologue;
+    } IMAGE_FUNCTION_ENTRY,*PIMAGE_FUNCTION_ENTRY;
+
+    typedef struct _IMAGE_FUNCTION_ENTRY64 {
+      ULONGLONG StartingAddress;
+      ULONGLONG EndingAddress;
+      __C89_NAMELESS union {
+	ULONGLONG EndOfPrologue;
+	ULONGLONG UnwindInfoAddress;
+      } DUMMYUNIONNAME;
+    } IMAGE_FUNCTION_ENTRY64,*PIMAGE_FUNCTION_ENTRY64;
+
     typedef struct _IMAGE_COFF_SYMBOLS_HEADER {
         DWORD   NumberOfSymbols;
         DWORD   LvaToFirstSymbol;

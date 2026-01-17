@@ -507,9 +507,9 @@ typedef enum _SECURITY_CERT_REVISION_FLAGS {
 
 #ifndef WIN_CERT_TYPE_X509
 typedef enum _SECURITY_CERT_TYPE_FLAGS {
-    WIN_CERT_TYPE_X509              = 0x0001   // bCertificate contains an X.509 Certificate
-    WIN_CERT_TYPE_PKCS_SIGNED_DATA  = 0x0002   // bCertificate contains a PKCS SignedData structure
-    WIN_CERT_TYPE_RESERVED_1        = 0x0003   // Reserved
+    WIN_CERT_TYPE_X509              = 0x0001,  // bCertificate contains an X.509 Certificate
+    WIN_CERT_TYPE_PKCS_SIGNED_DATA  = 0x0002,  // bCertificate contains a PKCS SignedData structure
+    WIN_CERT_TYPE_RESERVED_1        = 0x0003,  // Reserved
     WIN_CERT_TYPE_TS_STACK_SIGNED   = 0x0004   // Terminal Server Protocol Stack Certificate signing
 } SECURITY_CERT_TYPE_FLAGS;
 #endif
