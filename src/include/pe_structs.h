@@ -896,22 +896,23 @@
     //
     // CLR (.NET) Directory
     //
-    typedef struct _IMAGE_COR20_HEADER {
-        DWORD   cb;
-        WORD    MajorRuntimeVersion;
-        WORD    MinorRuntimeVersion;
-        DWORD   MetaData;          // RVA to metadata
-        DWORD   Flags;
-        DWORD   EntryPointToken;
-        DWORD   Resources;
-        DWORD   StrongNameSignature;
-        DWORD   CodeManagerTable;
-        DWORD   VTableFixups;
-        DWORD   ExportAddressTableJumps;
-        DWORD   ManagedNativeHeader;
-    } IMAGE_COR20_HEADER, *PIMAGE_COR20_HEADER;
-
-
+    typedef struct IMAGE_COR20_HEADER {
+        DWORD cb;
+        WORD MajorRuntimeVersion;
+        WORD MinorRuntimeVersion;
+        IMAGE_DATA_DIRECTORY MetaData;
+        DWORD Flags;
+        union {
+	    DWORD EntryPointToken;
+	    DWORD EntryPointRVA;
+        } DUMMYUNIONNAME;
+        IMAGE_DATA_DIRECTORY Resources;
+        IMAGE_DATA_DIRECTORY StrongNameSignature;
+        IMAGE_DATA_DIRECTORY CodeManagerTable;
+        IMAGE_DATA_DIRECTORY VTableFixups;
+        IMAGE_DATA_DIRECTORY ExportAddressTableJumps;
+        IMAGE_DATA_DIRECTORY ManagedNativeHeader;
+    } IMAGE_COR20_HEADER,*PIMAGE_COR20_HEADER;
 
     // Binary representation of file version information
     typedef struct tagVS_FIXEDFILEINFO {
