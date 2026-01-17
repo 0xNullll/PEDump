@@ -58,7 +58,7 @@ typedef enum _MACHINE_TYPE {
 #endif
 
 // ---------------------------------------------------------------------
-// IMAGE_NT_HEADER subsystem types
+// IMAGE_NT_HEADER Subsystem Types
 // ---------------------------------------------------------------------
 #ifndef IMAGE_SUBSYSTEM_UNKNOWN
 typedef enum _IMAGE_SUBSYSTEMS {
