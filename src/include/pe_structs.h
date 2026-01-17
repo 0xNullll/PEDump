@@ -155,6 +155,10 @@
     // Convenience pointer typedefs often seen in headers
     typedef PVOID               LPWIN32_MEMORY; // generic alias (example)
 
+    // Image File Signatures
+    #define IMAGE_DOS_SIGNATURE 0x5A4D
+    #define IMAGE_NT_SIGNATURE 0x00004550
+
     // IMAGE_DATA_DIRECTORY
     typedef struct _IMAGE_DATA_DIRECTORY {
         DWORD VirtualAddress;
