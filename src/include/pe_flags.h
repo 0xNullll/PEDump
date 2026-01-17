@@ -161,7 +161,7 @@ typedef enum _IMAGE_SYMBOL_DERIVED_TYPE {
 // ---------------------------------------------------------------------
 #ifndef IMAGE_SYM_CLASS_END_OF_FUNCTION
     typedef enum _IMAGE_SYMBOL_STORAGE_CLASS {
-        IMAGE_SYM_CLASS_END_OF_FUNCTION      = -1,
+        IMAGE_SYM_CLASS_END_OF_FUNCTION      = (BYTE)-1,
         IMAGE_SYM_CLASS_NULL                 = 0x00,
         IMAGE_SYM_CLASS_AUTOMATIC            = 0x01,
         IMAGE_SYM_CLASS_EXTERNAL             = 0x02,

@@ -38,7 +38,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
                     uniConverted[j] = '\0';
 
                     if (regexFilter != NULL) {
-                        if (!regex_search(regexFilter, uniConverted)) continue;
+                        if (!regex_search(regexFilter, (const char *)uniConverted)) continue;
                     }
                     printf("%-5lu    0x%8llX    %-4c    %-6zu    %s\n",
                            ++stringNum, start, 'W', j, uniConverted);
@@ -60,7 +60,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
                 asciiTemp[len] = '\0';
 
                 if (regexFilter != NULL) {
-                    if (!regex_search(regexFilter, asciiTemp)) continue;
+                    if (!regex_search(regexFilter, (const char *)asciiTemp)) continue;
                 }
 
                 printf("-%5lu    0x%8llX    %-4c    %-6zu    %s\n",
