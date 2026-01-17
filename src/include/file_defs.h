@@ -2,6 +2,7 @@
 #define FILE_DEFS_H
 
 #include "libs.h"
+#include "pe_structs.h"
 
 //  Portable File Positioning (64-bit Safe) and portable Case-Insensitive String Comparison
 #ifdef _WIN32

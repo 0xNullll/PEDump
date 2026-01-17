@@ -684,8 +684,11 @@ typedef enum _VFT_FLAGS {
 #endif
 
 #ifndef VFT2_UNKNOWN
-typedef enum _VFT2_DRV_SUBTYPE {
-    VFT2_UNKNOWN               = 0x00000000L,
+    #define VFT2_UNKNOWN 0x00000000L
+#endif
+
+#ifndef VFT2_DRV_PRINTER
+    typedef enum _VFT2_DRV_SUBTYPE {
     VFT2_DRV_PRINTER           = 0x00000001L,
     VFT2_DRV_KEYBOARD          = 0x00000002L,
     VFT2_DRV_LANGUAGE          = 0x00000003L,
@@ -700,9 +703,8 @@ typedef enum _VFT2_DRV_SUBTYPE {
 } VFT2_DRV_SUBTYPE;
 #endif
 
-#ifndef VFT2_UNKNOWN
+#ifndef VFT2_FONT_RASTER
     typedef enum _VFT2_FONT_SUBTYPE{
-        VFT2_UNKNOWN        = 0x00000000L,
         VFT2_FONT_RASTER    = 0x00000001L,
         VFT2_FONT_VECTOR    = 0x00000002L,
         VFT2_FONT_TRUETYPE  = 0x00000003L

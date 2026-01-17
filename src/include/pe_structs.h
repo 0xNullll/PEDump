@@ -146,7 +146,6 @@
     typedef ssize_t             SSIZE_T;    // signed size type
 
     // Windows-style char/wide types
-    typedef char                CHAR;
     typedef uint16_t            WCHAR;      // UTF-16 code unit on Windows
     typedef CHAR*               PCHAR;
     typedef WCHAR*              PWCHAR;
@@ -246,6 +245,13 @@
     } IMAGE_SYMBOL;
     typedef IMAGE_SYMBOL, *PIMAGE_SYMBOL;
 
+    typedef struct IMAGE_AUX_SYMBOL_TOKEN_DEF {
+        BYTE  bAuxType;                  // IMAGE_AUX_SYMBOL_TYPE
+        BYTE  bReserved;                 // Must be 0
+        DWORD SymbolTableIndex;
+        BYTE  rgbReserved[12];           // Must be 0
+    } IMAGE_AUX_SYMBOL_TOKEN_DEF;
+
     typedef union _IMAGE_AUX_SYMBOL {
         struct {
             DWORD    TagIndex;                      // struct, union, or enum tag index
@@ -287,13 +293,6 @@
         } CRC;
     } IMAGE_AUX_SYMBOL;
     typedef IMAGE_AUX_SYMBOL, *PIMAGE_AUX_SYMBOL;
-
-    typedef struct IMAGE_AUX_SYMBOL_TOKEN_DEF {
-        BYTE  bAuxType;                  // IMAGE_AUX_SYMBOL_TYPE
-        BYTE  bReserved;                 // Must be 0
-        DWORD SymbolTableIndex;
-        BYTE  rgbReserved[12];           // Must be 0
-    } IMAGE_AUX_SYMBOL_TOKEN_DEF;
 
     #define FRAME_FPO       0
     #define FRAME_TRAP      1

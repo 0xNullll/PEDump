@@ -53,8 +53,8 @@
                 "${workspaceFolder}\\src\\dump\\dump_headers.c",
                 "${workspaceFolder}\\src\\dump\\dump_raw.c",
 
-                "${workspaceFolder}\\src\\ThirdParty\\tiny_regex.c",
-                "${workspaceFolder}\\src\\ThirdParty\\tiny_sha.c",
+                "${workspaceFolder}\\src\\thirdParty\\tiny_regex.c",
+                "${workspaceFolder}\\src\\thirdParty\\tiny_sha.c",
 
                 "${workspaceFolder}\\src\\utils\\pe_utils.c",
                 "${workspaceFolder}\\src\\utils\\struct_io.c",
