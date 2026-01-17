@@ -112,9 +112,11 @@
 
     // Unsigned integer types
     typedef uint8_t     BYTE;
+    typedef uint8_t     UCHAR;
     typedef uint16_t    WORD;
     typedef uint32_t    DWORD;
     typedef uint32_t    UINT;
+    typedef uint32_t    ULONG;
     typedef uint64_t    ULONGLONG;
     typedef uint16_t    USHORT;
 
@@ -138,6 +140,11 @@
     typedef const CHAR*         LPCSTR;
     typedef const WCHAR*        LPCWSTR;
     typedef WCHAR*              LPWSTR;
+    typedef BYTE*               PBYTE;
+    typedef UCHAR*              PUCHAR;
+    typedef DWORD*              PDWORD;
+    typedef ULONG*              PULONG;
+    typedef ULONGLONG*          PULONGLONG;
 
     // Generic pointer types
     typedef void*               PVOID;
