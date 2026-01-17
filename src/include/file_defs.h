@@ -10,9 +10,27 @@
     #define FTELL64(file)                 _ftelli64(file)
     #define STREQI(a, b) _stricmp((a), (b))
 #else
-    #define FSEEK64(file, offset, whence) fseeko((file), (off_t)(offset), (whence))
-    #define FTELL64(file)                 ftello(file)
-    #define STREQI(a, b) strcasecmp((a), (b))
+    // Check for ftello
+    #if defined(__GNUC__) || defined(__linux__) || defined(__unix__)
+        #if !defined(ftello)  // If ftello is missing, define fallback
+            #define FTELL64(file) ftell(file)  // Fallback to ftell
+        #else
+            #define FTELL64(file) ftello(file)  // Use ftello if available
+        #endif
+    #else
+        #define FTELL64(file) ftell(file)  // Fallback to ftell
+    #endif
+
+    // Check for fseeko
+    #if defined(__GNUC__) || defined(__linux__) || defined(__unix__)
+        #if !defined(fseeko)  // If fseeko is missing, define fallback
+            #define FSEEK64(file, offset, whence) fseek((file), (long)(offset), (whence))  // Fallback to fseek
+        #else
+            #define FSEEK64(file, offset, whence) fseeko((file), (offset), (whence))  // Use fseeko if available
+        #endif
+    #else
+        #define FSEEK64(file, offset, whence) fseek((file), (offset), (whence))  // Fallback to fseek
+    #endif
 #endif
 
 //  Optional Function Detection (if not available)
@@ -40,7 +58,10 @@
 #endif
 
 #define SAFE_FREE(p) do { if (p) { free(p); (p) = NULL; } } while (0)
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
+
+#ifndef max
+    #define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
 
 #ifndef MAX_PATH_LENGTH
     #define MAX_PATH_LENGTH 260 // Maximum file path length
