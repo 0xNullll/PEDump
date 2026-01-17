@@ -58,28 +58,6 @@ typedef enum _MACHINE_TYPE {
 #endif
 
 // ---------------------------------------------------------------------
-// IMAGE_NT_HEADER Subsystem Types
-// ---------------------------------------------------------------------
-#ifndef IMAGE_SUBSYSTEM_UNKNOWN
-typedef enum _IMAGE_SUBSYSTEMS {
-#define IMAGE_SUBSYSTEM_UNKNOWN                  = 0,
-#define IMAGE_SUBSYSTEM_NATIVE                   = 1,
-#define IMAGE_SUBSYSTEM_WINDOWS_GUI              = 2,
-#define IMAGE_SUBSYSTEM_WINDOWS_CUI              = 3,
-#define IMAGE_SUBSYSTEM_OS2_CUI                  = 5,
-#define IMAGE_SUBSYSTEM_POSIX_CUI                = 7,
-#define IMAGE_SUBSYSTEM_NATIVE_WINDOWS           = 8,
-#define IMAGE_SUBSYSTEM_WINDOWS_CE_GUI           = 9,
-#define IMAGE_SUBSYSTEM_EFI_APPLICATION          = 10,
-#define IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER  = 11,
-#define IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER       = 12,
-#define IMAGE_SUBSYSTEM_EFI_ROM                  = 13,
-#define IMAGE_SUBSYSTEM_XBOX                     = 14,
-#define IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION = 16
-} IMAGE_SUBSYSTEMS;
-#endif
-
-// ---------------------------------------------------------------------
 // IMAGE_FILE_HEADER Characteristics
 // ---------------------------------------------------------------------
 #ifndef IMAGE_FILE_RELOCS_STRIPPED
@@ -100,6 +78,28 @@ typedef enum _IMAGE_FILE_CHARACTERISTICS {
     IMAGE_FILE_UP_SYSTEM_ONLY             = 0x2000,
     IMAGE_FILE_BYTES_REVERSED_HI          = 0x4000
 } IMAGE_FILE_CHARACTERISTICS;
+#endif
+
+// ---------------------------------------------------------------------
+// IMAGE_NT_HEADER Subsystem Types
+// ---------------------------------------------------------------------
+#ifndef IMAGE_SUBSYSTEM_UNKNOWN
+typedef enum _IMAGE_SUBSYSTEMS {
+    IMAGE_SUBSYSTEM_UNKNOWN                  = 0,
+    IMAGE_SUBSYSTEM_NATIVE                   = 1,
+    IMAGE_SUBSYSTEM_WINDOWS_GUI              = 2,
+    IMAGE_SUBSYSTEM_WINDOWS_CUI              = 3,
+    IMAGE_SUBSYSTEM_OS2_CUI                  = 5,
+    IMAGE_SUBSYSTEM_POSIX_CUI                = 7,
+    IMAGE_SUBSYSTEM_NATIVE_WINDOWS           = 8,
+    IMAGE_SUBSYSTEM_WINDOWS_CE_GUI           = 9,
+    IMAGE_SUBSYSTEM_EFI_APPLICATION          = 10,
+    IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER  = 11,
+    IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER       = 12,
+    IMAGE_SUBSYSTEM_EFI_ROM                  = 13,
+    IMAGE_SUBSYSTEM_XBOX                     = 14,
+    IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION = 16
+} IMAGE_SUBSYSTEMS;
 #endif
 
 // ---------------------------------------------------------------------
