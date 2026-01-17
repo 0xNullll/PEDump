@@ -47,18 +47,17 @@
     #define IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT   13   // Delay Load Import Descriptors
     #define IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14   // COM Runtime Descriptor
 
+    // Detect if anonymous structs/unions are supported
+    #if defined(NONAMELESSUNION)
+        #define HAS_ANON 0
+    #elif defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
+        #define HAS_ANON 1
+    #else
+        #define HAS_ANON 0
+    #endif
+
     #ifndef DUMMYUNIONNAME
-        #if defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS)
-            #define DUMMYUNIONNAME   u
-            #define DUMMYUNIONNAME2  u2
-            #define DUMMYUNIONNAME3  u3
-            #define DUMMYUNIONNAME4  u4
-            #define DUMMYUNIONNAME5  u5
-            #define DUMMYUNIONNAME6  u6
-            #define DUMMYUNIONNAME7  u7
-            #define DUMMYUNIONNAME8  u8
-            #define DUMMYUNIONNAME9  u9
-        #else
+        #if HAS_ANON
             #define DUMMYUNIONNAME
             #define DUMMYUNIONNAME2
             #define DUMMYUNIONNAME3
@@ -68,24 +67,34 @@
             #define DUMMYUNIONNAME7
             #define DUMMYUNIONNAME8
             #define DUMMYUNIONNAME9
+        #else
+            #define DUMMYUNIONNAME   u
+            #define DUMMYUNIONNAME2  u2
+            #define DUMMYUNIONNAME3  u3
+            #define DUMMYUNIONNAME4  u4
+            #define DUMMYUNIONNAME5  u5
+            #define DUMMYUNIONNAME6  u6
+            #define DUMMYUNIONNAME7  u7
+            #define DUMMYUNIONNAME8  u8
+            #define DUMMYUNIONNAME9  u9
         #endif
     #endif // DUMMYUNIONNAME
 
     #ifndef DUMMYSTRUCTNAME
-        #if defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS)
-            #define DUMMYSTRUCTNAME  s
-            #define DUMMYSTRUCTNAME2 s2
-            #define DUMMYSTRUCTNAME3 s3
-            #define DUMMYSTRUCTNAME4 s4
-            #define DUMMYSTRUCTNAME5 s5
-            #define DUMMYSTRUCTNAME6 s6
-        #else
+        #if HAS_ANON
             #define DUMMYSTRUCTNAME
             #define DUMMYSTRUCTNAME2
             #define DUMMYSTRUCTNAME3
             #define DUMMYSTRUCTNAME4
             #define DUMMYSTRUCTNAME5
             #define DUMMYSTRUCTNAME6
+        #else
+            #define DUMMYSTRUCTNAME  s
+            #define DUMMYSTRUCTNAME2 s2
+            #define DUMMYSTRUCTNAME3 s3
+            #define DUMMYSTRUCTNAME4 s4
+            #define DUMMYSTRUCTNAME5 s5
+            #define DUMMYSTRUCTNAME6 s6
         #endif
     #endif // DUMMYSTRUCTNAME
 
