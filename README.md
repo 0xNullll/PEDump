@@ -1,0 +1,186 @@
+# pedump
+
+A cross-platform Portable Executable (PE) inspection and analysis tool written in C.
+`pedump` performs static analysis of Windows PE files on Linux, Windows, and macOS.
+
+---
+
+## Platform Support
+
+`pedump` runs on:
+- Linux
+- Windows
+- macOS
+
+The tool analyzes **Windows PE binaries** on all supported platforms.
+
+---
+
+## Example Usage
+
+```bash
+pedump -ov sample.exe
+pedump -i sample.exe
+pedump -H section:.text@sha256 sample.exe
+```
+
+---
+
+## Features
+
+- Full PE header parsing (DOS, NT, Optional)
+- Section table inspection with permissions and sizes
+- Import and export directory analysis
+- Resource, TLS, debug, reloc, security, and load-config directories
+- Rich header, version info, and COFF symbols/strings
+- ASCII and UTF-16LE string extraction with optional regex filtering
+- Targeted extraction of sections, imports, exports, and arbitrary ranges
+- Hashing of specific PE regions with multiple algorithms
+- Comparison of PE regions across one or two files
+- Designed to handle malformed or non-standard PE files where possible
+
+---
+
+## Build
+
+### Requirements
+- C11-compatible compiler (GCC or Clang)
+- POSIX environment or Windows toolchain
+
+### Build
+
+```bash
+make
+```
+
+Or manually:
+
+```bash
+gcc -std=c11 -O2 -o pedump src/*.c
+```
+
+---
+
+## Usage
+
+```bash
+pedump [options] file [file2]
+```
+
+### General
+- `-h`, `--help`  
+  Show help message
+
+---
+
+### Headers & PE Information
+- `-dh`,  `--dos-header`        Print DOS header  
+- `-fh`,  `--file-header`       Print File header  
+- `-oh`,  `--optional-header`   Print Optional header  
+- `-nth`, `--nt-headers`        Print NT headers  
+- `-s`,   `--sections`          Print section table  
+
+---
+
+### Data Directories
+- `-e`,    `--exports`          Print export directory  
+- `-i`,    `--imports`          Print import directory  
+- `-r`,    `--resources`        Print resources directory  
+- `-ex`,   `--exception`        Print exception directory  
+- `-sec`,  `--security`         Print security directory  
+- `-br`,   `--basereloc`        Print base relocations  
+- `-d`,    `--debug`            Print debug directory  
+- `-tls`,  `--tls`              Print TLS directory  
+- `-lc`,   `--load-config`      Print load config directory  
+- `-bi`,   `--bound-import`     Print bound imports  
+- `-iat`,  `--iat`              Print Import Address Table  
+- `-di`,   `--delay-import`     Print delay imports  
+- `-dd`,   `--data-directories` Print all data directories  
+
+---
+
+### Miscellaneous
+- `-rh`,  `--rich`              Print Rich header  
+- `-vi`,  `--version-info`      Print version information  
+- `-sym`, `--symbol-table`      Print COFF symbol table  
+- `-st`,  `--string-table`      Print COFF string table  
+- `-o`,   `--overlay`           Print overlay data  
+- `-ov`,  `--overview`          Print high-level file overview  
+- `-a`,   `--all`               Print all available information  
+
+---
+
+### Output Formatting
+- `-v2f`, `--va2file <NUMBER>`  
+  Convert virtual address to file offset
+
+- `-f`, `--format <type[:spec]>`  
+  Output formats:
+  - `hex`   Hexadecimal bytes (16 bytes per line)
+  - `dec`   Decimal bytes (0–255)
+  - `bin`   Binary bytes
+  - `table` Offset | Hex | ASCII
+
+Range specifiers:
+- `:N`              First N lines
+- `:start,max`      Line or byte range
+- `0x...`           Byte offset (aligned to line size)
+
+---
+
+### Strings
+- `-s`, `--strings [rgex:<pattern>]`
+
+Dump ASCII and UTF-16LE strings.
+Optional regex filtering using system POSIX regex or TinyRegex fallback.
+
+---
+
+### Extraction
+- `-x`, `--extract <target[:spec]>`
+
+Targets:
+- `section:NAME`
+- `section:#IDX`
+- `section:rva/VAL`
+- `section:fo/VAL`
+- `export:NAME | #ORD | rva/VAL | FWD | LIB`
+- `import:NAME | #ORD | @HNT | LIB | LIB/NAME`
+
+Address formats:
+- `HEX`, `0xHEX`, `HEXh`
+
+---
+
+### Hashing
+- `-H`, `--hash <target[@alg]>`
+
+Supported algorithms:
+`md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`,  
+`sha512_224`, `sha512_256`
+
+---
+
+### Comparison
+- `-cc`, `--compare-targets <target1>::<target2[@alg]>`
+
+Compare regions between two files or within the same file.
+
+---
+
+## Project Status
+
+This project is under active development.
+Some options may be partially implemented or subject to change.
+
+---
+
+## Disclaimer
+
+This tool is intended for educational and research purposes only.
+
+---
+
+## License
+
+MIT
