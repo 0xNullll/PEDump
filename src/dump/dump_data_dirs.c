@@ -1023,7 +1023,7 @@ void print_string_file_info(StringFileInfo *stringFileInfo, WCHAR *szKey, ULONGL
 void print_string_table(StringTable *stringtable, ULONGLONG vaBase, DWORD foBase, int level) {
     DWORD ID;
 
-    ID = wcstoul(stringtable->szKey, NULL, 16);
+    ID = (DWORD)wcstoul((const wchar_t *)stringtable->szKey, NULL, 16);
 
     WORD langID    = (WORD)((ID >> 16) & 0xFFFF);  // high word = LangID
     WORD charsetID = (WORD)(ID & 0xFFFF);          // low word  = CharsetID
@@ -1731,7 +1731,7 @@ RET_CODE dump_security_dir(FILE *peFile, PIMAGE_DATA_DIRECTORY securityDirData) 
         printf("\n");
 
         // move to next entry (aligned on 8 bytes)
-        offset += (DWORD)(cert->dwLength + 7UL) & ~7UL;
+        offset += (DWORD)((cert->dwLength + 7UL) & ~7UL);
         certNumber++;
     }
 
@@ -2141,7 +2141,7 @@ RET_CODE dump_MISC_debug_info(
     if (misc.Unicode) {
         wchar_t *wdata = (wchar_t*)misc.Data;
         for (DWORD i = 0; i < misc.Length / 2; i++) {
-            if (iswprint(wdata[i]))
+            if (iswprint((wint_t)wdata[i]))
                 wprintf(L"%s\t\t\t%04X : %c\n", INDENT(level + 1), i, wdata[i]);
             else
                 wprintf(L"%s\t\t\t%04X : 0x%04X\n", INDENT(level + 1), i, wdata[i]);
