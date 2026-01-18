@@ -150,8 +150,8 @@
 - [x] Dump all printable strings with metadata
 - [x] Implement search (string/regex) with offsets + format support
 - [x] Implement hashing feature (all SHA2/SHA512 variants + MD5 + SHA1)
-- [-] Implement hash comparison between files/sections
-- [ ] Extend -cc / compare to accept multiple files
+- [-] Extend -H / Hash comparison to accept multiple files/sections
+- [-] Extend -cc / compare to accept multiple files
 
 
 

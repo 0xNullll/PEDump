@@ -1136,8 +1136,10 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
                 getOverlayInfo(peCtx->sections, numberOfSections, fileSize, &overlayFo, &overlaySize);
                 
-                if (print_range(peCtx->fileHandle, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                    fprintf(stderr, "[!] Failed to dump Overlay\n");
+                if (overlayFo != 0 && overlaySize != 0) {
+                    if (print_range(peCtx->fileHandle, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Overlay\n");
+                    }
                 }
                 break;
 
@@ -1148,14 +1150,74 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 break;
 
             case CMD_ALL: // NOT FINSHED
+                // Dump PE Overview
+                if (dump_pe_overview(peCtx) != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to dump PE Overview\n");
+                }
+
                 if (config.formatConfig.view == VIEW_TABLE) {
-                // havent been handled yet.
+                    // Dump DOS Header
+                    if (dump_dos_header(dosHeader, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Dos Header\n");
+                    }
+
+                    // Dump File Header
+                    if (dump_file_header(peCtx->fileHandle, foFileHeader, fileHeader, imageBase, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump File Header\n");
+                    }
+
+                    // Dump Optional Header
+                    if (dump_optional_header(peCtx->fileHandle, peCtx->sections, numberOfSections, foOptHeader, optHeader, imageBase, is64bit, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Optional Header\n");
+                    }
+
+                    // Dump NT Headers
+                    if (dump_nt_headers(peCtx->fileHandle, peCtx->sections, numberOfSections, foNtHeaders, ntHeaders, imageBase, is64bit) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump NT Headers\n");
+                    }
+
+                    // Dump Section Headers
+                    if (dump_section_headers(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections, fileSize, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Section Headers\n");
+                    }
+
+                    // Dump Data Directories
+                    if (dump_all_data_directories(peCtx->fileHandle, peCtx->sections, numberOfSections, dataDirs, peCtx->dirs, imageBase, is64bit, fileSize, machine) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Data Directories\n");
+                    }
+
+                    // Dump Rich Header if present
+                    if (peCtx->richHeader) {
+                        if (dump_rich_header(peCtx->fileHandle, 0x40, (DWORD)dosHeader->e_lfanew, peCtx->richHeader) != RET_SUCCESS) {
+                            fprintf(stderr, "[!] Failed to dump Rich Header\n");
+                        }
+                    }
+
+                    // Dump COFF Symbol Table and String Table
+                    if (PointerToSymbolTable && NumberOfSymbols) {
+                        if (dump_symbol_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections) != RET_SUCCESS) {
+                            fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
+                        }
+                        if (dump_string_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols) != RET_SUCCESS) {
+                            fprintf(stderr, "[!] Failed to dump COFF String Table\n");
+                        }
+                    }
+
+                    // Dump Overlay
+                    overlayFo = 0; overlaySize = 0;
+                    getOverlayInfo(peCtx->sections, numberOfSections, fileSize, &overlayFo, &overlaySize);
+
+                    if (overlayFo != 0 && overlaySize != 0) {
+                        if (print_range(peCtx->fileHandle, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                            fprintf(stderr, "[!] Failed to dump Overlay\n");
+                        }
+                    }
                 } else {
+                    // Raw view: dump the whole file at once
                     if (print_range(peCtx->fileHandle, 0, (DWORD)fileSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump the whole file\n");
                     }
-                }
-                
+                }                
                 break;
 
             case CMD_VA2FILE:
@@ -1265,9 +1327,9 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                     }
 
                     // Three possible cases:
-                    // 1. Two file args → external compare
-                    // 2. One file arg  → internal compare
-                    // 3. None → invalid
+                    // 1. Two file args -> external compare
+                    // 2. One file arg  -> internal compare
+                    // 3. None -> invalid
 
                     const char *file1 = NULL;
                     const char *file2 = NULL;
@@ -1298,8 +1360,6 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                     if (status != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to perform comperation extraction\n");
                     }
-
-                    // handle dumping and extracting the rest of the info
                 }
 
                 freePEContext(config.hashConfig.primaryCtx);

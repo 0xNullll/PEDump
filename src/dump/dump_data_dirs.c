@@ -2830,7 +2830,7 @@ RET_CODE print_load_config_table(
 
         RVA_INFO valueInfo = get_rva_info(value, sections, numberOfSections, imageBase);
 
-        printf("  [%0*llu] VA: %-16llX FO: %-8lX  Value: %-8lX Meta: %-1X  [   %-8s]\n",
+        printf("  [%0*llu] VA: %-16llX FO: %-8lX  Value: %-8lX Meta: %-2X  [   %-8s]\n",
                digits, i + 1, currentVA, fileOffset, value, meta, valueInfo.sectionName);
 
         currentVA += sizeof(DWORD) + sizeof(BYTE);  // 5 bytes per entry
@@ -4392,11 +4392,10 @@ RET_CODE dump_all_data_directories(
     int is64bit,
     LONGLONG fileSize,
     WORD machine) {
-    int status = RET_NO_VALUE;
+        
+    RET_CODE overallStatus = RET_SUCCESS; // assume success unless a failure occurs
 
-    //
     // Directory pointers
-    //
     PIMAGE_DATA_DIRECTORY pExportDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_EXPORT];
     PIMAGE_DATA_DIRECTORY pImportDataDir       = &dataDirs[IMAGE_DIRECTORY_ENTRY_IMPORT];
     PIMAGE_DATA_DIRECTORY pRsrcDataDir         = &dataDirs[IMAGE_DIRECTORY_ENTRY_RESOURCE];
@@ -4411,122 +4410,84 @@ RET_CODE dump_all_data_directories(
     PIMAGE_DATA_DIRECTORY pDelayImportDataDir  = &dataDirs[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
     PIMAGE_DATA_DIRECTORY pClrHeaderDataDir    = &dataDirs[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 
-    //
+    // Helper macro to call a dump function and handle errors
+    #define TRY_DUMP(dirPtr, funcCall, dirName) \
+        do { \
+            if ((dirPtr)->VirtualAddress) { \
+                if ((funcCall) != RET_SUCCESS) { \
+                    fprintf(stderr, "[!] Failed to dump %s Directory\n", dirName); \
+                    overallStatus = RET_ERROR; \
+                } \
+                END_DIR(); \
+            } \
+        } while(0)
+
     // EXPORT
-    //
-    if (pExportDataDir->VirtualAddress) {
-        if (dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Export Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pExportDataDir,
+             dump_export_dir(peFile, sections, numberOfSections, pExportDataDir, dirs->exportDir, imageBase),
+             "Export");
 
-    //
     // IMPORT
-    //
-    if (pImportDataDir->VirtualAddress) {
-        if (dump_import_dir(peFile, sections, numberOfSections, pImportDataDir, dirs->importDir, imageBase, is64bit, fileSize) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Import Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pImportDataDir,
+             dump_import_dir(peFile, sections, numberOfSections, pImportDataDir, dirs->importDir, imageBase, is64bit, fileSize),
+             "Import");
 
-    //
     // RESOURCE
-    //
-    if (pRsrcDataDir->VirtualAddress) {
-        if (dump_rsrc_dir(peFile, sections, numberOfSections, pRsrcDataDir, dirs->rsrcDir, dirs->rsrcEntriesDir, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Resource Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pRsrcDataDir,
+             dump_rsrc_dir(peFile, sections, numberOfSections, pRsrcDataDir, dirs->rsrcDir, dirs->rsrcEntriesDir, imageBase),
+             "Resource");
 
-    //
     // EXCEPTION
-    //
-    if (pExceptionDataDir->VirtualAddress) {
-        if (dump_exception_dir(peFile, sections, numberOfSections, pExceptionDataDir, machine, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Exception Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pExceptionDataDir,
+             dump_exception_dir(peFile, sections, numberOfSections, pExceptionDataDir, machine, imageBase),
+             "Exception");
 
-    //
     // SECURITY
-    //
-    if (pSecurityDataDir->VirtualAddress) {
-        if (dump_security_dir(peFile, pSecurityDataDir) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Security Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pSecurityDataDir,
+             dump_security_dir(peFile, pSecurityDataDir),
+             "Security");
 
-    //
     // BASE RELOC
-    //
-    if (pRelocDataDir->VirtualAddress) {
-        if (dump_reloc_dir(peFile, sections, numberOfSections, pRelocDataDir, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pRelocDataDir,
+             dump_reloc_dir(peFile, sections, numberOfSections, pRelocDataDir, imageBase),
+             "Base Relocation");
 
-    //
     // DEBUG
-    //
-    if (pDebugDataDir->VirtualAddress) {
-        if (dump_debug_dir(peFile, sections, numberOfSections, pDebugDataDir, dirs->debugDir, machine, imageBase, is64bit) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Debug Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pDebugDataDir,
+             dump_debug_dir(peFile, sections, numberOfSections, pDebugDataDir, dirs->debugDir, machine, imageBase, is64bit),
+             "Debug");
 
-    //
     // TLS
-    //
-    if (pTlsDataDir->VirtualAddress) {
-        if (dump_tls_dir(peFile, sections, numberOfSections, pTlsDataDir, dirs->tls64, dirs->tls32, imageBase, is64bit) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump TLS Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pTlsDataDir,
+             dump_tls_dir(peFile, sections, numberOfSections, pTlsDataDir, dirs->tls64, dirs->tls32, imageBase, is64bit),
+             "TLS");
 
-    //
     // LOAD CONFIG
-    //
-    if (pLcfgDataDir->VirtualAddress) {
-        if (dump_load_config_dir(peFile, sections, numberOfSections, pLcfgDataDir, dirs->loadConfig64, dirs->loadConfig32, imageBase, is64bit) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pLcfgDataDir,
+             dump_load_config_dir(peFile, sections, numberOfSections, pLcfgDataDir, dirs->loadConfig64, dirs->loadConfig32, imageBase, is64bit),
+             "Load Config");
 
-    //
     // BOUND IMPORT
-    //
-    if (pBoundImportDataDir->VirtualAddress) {
-        if (dump_bound_import_dir(peFile, sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pBoundImportDataDir,
+             dump_bound_import_dir(peFile, sections, numberOfSections, pBoundImportDataDir, imageBase),
+             "Bound Import");
 
-    //
     // IAT
-    //
-    if (pIatDataDir->VirtualAddress) {
-        if (dump_iat_table(peFile, sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump IAT Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pIatDataDir,
+             dump_iat_table(peFile, sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize),
+             "IAT");
 
-    //
     // DELAY IMPORT
-    //
-    if (pDelayImportDataDir->VirtualAddress) {
-        if (dump_delay_import_dir(peFile, sections, numberOfSections, pDelayImportDataDir, dirs->delayImportDir, imageBase, is64bit, fileSize) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pDelayImportDataDir,
+             dump_delay_import_dir(peFile, sections, numberOfSections, pDelayImportDataDir, dirs->delayImportDir, imageBase, is64bit, fileSize),
+             "Delay Import");
 
-    //
     // CLR HEADER
-    //
-    if (pClrHeaderDataDir->VirtualAddress) {
-        if (dump_clr_header_dir(peFile, sections, numberOfSections, pClrHeaderDataDir, dirs->clrHeader, imageBase) != RET_SUCCESS)
-            fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
-        END_DIR();
-    }
+    TRY_DUMP(pClrHeaderDataDir,
+             dump_clr_header_dir(peFile, sections, numberOfSections, pClrHeaderDataDir, dirs->clrHeader, imageBase),
+             "CLR/.NET Header");
 
-    return status;
+    #undef TRY_DUMP
+
+    return overallStatus;
 }
