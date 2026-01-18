@@ -44,22 +44,21 @@ PEDump -H section:.text@sha256 sample.exe
 ## Build
 
 ### Requirements
-- C11-compatible compiler (GCC or Clang)
-- POSIX environment or Windows toolchain
+- C11-compatible compiler (GCC, Clang, or MSVC)
+- CMake (≥ 3.20)
+- Windows or POSIX environment
 
 ### Build
 
-```bash
-make
+```powershell
+mkdir build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 ```
 
-Or manually:
-
-```bash
-gcc -std=c11 -O2 -o PEDump src/*.c
-```
-
----
+- The binary will be located in **build/bin/**:
+  - Windows: **PEDump.exe**
+  -Linux/macOS: **PEDump**
 
 ## Usage
 
@@ -68,8 +67,7 @@ PEDump [options] file [file2]
 ```
 
 ### General
-- `-h`, `--help`  
-  Show help message
+- `-h`, `--help`                Show help message
 
 ---
 
@@ -96,6 +94,11 @@ PEDump [options] file [file2]
 - `-iat`,  `--iat`              Print Import Address Table  
 - `-di`,   `--delay-import`     Print delay imports  
 - `-dd`,   `--data-directories` Print all data directories  
+
+---
+
+### CLR (Common Language Runtime)
+- `-ch`, `--clr-header`          Print CLR header
 
 ---
 
@@ -183,4 +186,4 @@ This tool is intended for educational and research purposes only.
 
 ## License
 
-MIT
+This project is released under the **MIT License**. See [LICENSE](LICENSE) for full text.

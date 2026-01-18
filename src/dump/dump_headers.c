@@ -349,7 +349,7 @@ void print_clr_token(
     printf("%sbAuxType : 0x%X %s| SymbolTableIndex : 0x%lX\n",
         INDENT(level + 1),
         (unsigned)auxSym->TokenDef.bAuxType,
-        auxSym->TokenDef.bAuxType == IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF ? "(IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF)" : "",
+        auxSym->TokenDef.bAuxType == _IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF ? "(IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF)" : "",
         (unsigned long)auxSym->TokenDef.SymbolTableIndex);
 
     // printf("%sbAuxType : 0x%lX %s| SymbolTableIndex : 0x%lX\n",

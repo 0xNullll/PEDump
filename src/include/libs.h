@@ -12,6 +12,7 @@
     #endif
 
     #include <windows.h>
+    #include <winnt.h>
     #include <wincrypt.h>
     #include <wintrust.h>
 
