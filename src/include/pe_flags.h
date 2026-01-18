@@ -230,10 +230,10 @@ typedef enum _IMAGE_COMDAT_SELECT_TYPE {
 } IMAGE_COMDAT_SELECT_TYPE;
 #endif
 
-#ifndef IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF
-    typedef enum IMAGE_AUX_SYMBOL_TYPE {
-        IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF = 1,
-    } IMAGE_AUX_SYMBOL_TYPE;
+#ifndef _IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF
+typedef enum __IMAGE_AUX_SYMBOL_TYPE {
+    _IMAGE_AUX_SYMBOL_TYPE_TOKEN_DEF = 1,
+} _IMAGE_AUX_SYMBOL_TYPE;
 #endif
 
 // ---------------------------------------------------------------------
