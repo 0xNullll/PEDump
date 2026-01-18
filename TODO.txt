@@ -1,4 +1,4 @@
-# PE Parser Project TODO List
+# PEdump Project TODO List
 
 [x] = finished
 [-] = work in progress
@@ -97,8 +97,8 @@
 - [x] Split format options into temporary (-tf / --temp-format) and permanent (-f / --format)
 - [x] Add the ability to decide max and start offset using hex or lines
 - [ ] Add a "raw dump" feature (strip all annotations)
-- [x] Implement basic RVA → file offset converter
-- [x] Implement file offset → RVA converter
+- [x] Implement basic RVA -> file offset converter
+- [x] Implement file offset -> RVA converter
 
 
 
@@ -135,7 +135,7 @@
 - [ ] Test dump_bound_import_dir
 - [x] Fix all possible warnings
 - [ ] Test commands system in many ways to clear errors
-- [ ] Test on Linux
+- [-] Test on Linux
 - [ ] Test on macOS
 - [-] Run tests for memory leaks and bad memory access
 
@@ -171,22 +171,22 @@
 ====================================================
 - [x] Implement malformed-file error system
 
-- [x] Invalid DOS magic → ERR_INVALID_DOS
-- [x] e_lfanew beyond file size → no EOF reading
-- [x] Missing/corrupt PE signature → ERR_NO_PE_SIG
-- [x] Empty section table → no crash
-- [x] Section with zero SizeOfRawData → safe
-- [ ] Section overlapping VA/PointerToRawData → error or skip
-- [x] Section PointerToRawData > file size → error
-- [x] RVA outside all sections → return -1
-- [x] Data directory RVA=0 Size=0 → handled
-- [x] Truncated resource directory → detected
-- [ ] Resource with bad NameOffset/ID → skip safely
-- [ ] CLR header with invalid metadata RVA → error
-- [ ] Malformed RuntimeFunctionEntry → skip
-- [x] Packed section (VirtualSize=0 but data exists) → safe
-- [x] Non-printable section name → handled
-- [x] Overlay after last section → detected
-- [ ] Bit-flipped headers → safe skip
-- [ ] File truncated mid-section → detect
-- [ ] Duplicate sections → warn or skip
+- [x] Invalid DOS magic -> ERR_INVALID_DOS
+- [x] e_lfanew beyond file size -> no EOF reading
+- [x] Missing/corrupt PE signature -> ERR_NO_PE_SIG
+- [x] Empty section table -> no crash
+- [x] Section with zero SizeOfRawData -> safe
+- [ ] Section overlapping VA/PointerToRawData -> error or skip
+- [x] Section PointerToRawData > file size -> error
+- [x] RVA outside all sections -> return -1
+- [x] Data directory RVA=0 Size=0 -> handled
+- [x] Truncated resource directory -> detected
+- [ ] Resource with bad NameOffset/ID -> skip safely
+- [ ] CLR header with invalid metadata RVA -> error
+- [ ] Malformed RuntimeFunctionEntry -> skip
+- [x] Packed section (VirtualSize=0 but data exists) -> safe
+- [x] Non-printable section name -> handled
+- [x] Overlay after last section -> detected
+- [ ] Bit-flipped headers -> safe skip
+- [ ] File truncated mid-section -> detect
+- [ ] Duplicate sections -> warn or skip
