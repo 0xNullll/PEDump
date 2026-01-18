@@ -406,7 +406,7 @@ void print_help(void) {
         "                                                   HEXh (Intel)        e.g. rva/401000h\n"
         "                                                   (Parsers are case-insensitive for hex digits and the trailing 'h')\n"
         "\n"
-        "Hashing & Comparison:\n" // not implemented yet
+        "Hashing & Comparison:\n"
         "  Note: Targets follow the same format as --extract, including section, rva/VAL, and fo/VAL.\n"
         "        Value formatting (HEX, 0xHEX, HEXh) works the same here.\n"
         "\n"
