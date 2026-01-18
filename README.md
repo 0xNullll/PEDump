@@ -1,13 +1,13 @@
-# pedump
+# PEDump
 
 A cross-platform Portable Executable (PE) inspection and analysis tool written in C.
-`pedump` performs static analysis of Windows PE files on Linux, Windows, and macOS.
+`PEDump` performs static analysis of Windows PE files on Linux, Windows, and macOS.
 
 ---
 
 ## Platform Support
 
-`pedump` runs on:
+`PEDump` runs on:
 - Linux
 - Windows
 - macOS
@@ -19,9 +19,9 @@ The tool analyzes **Windows PE binaries** on all supported platforms.
 ## Example Usage
 
 ```bash
-pedump -ov sample.exe
-pedump -i sample.exe
-pedump -H section:.text@sha256 sample.exe
+PEDump -ov sample.exe
+PEDump -i sample.exe
+PEDump -H section:.text@sha256 sample.exe
 ```
 
 ---
@@ -56,7 +56,7 @@ make
 Or manually:
 
 ```bash
-gcc -std=c11 -O2 -o pedump src/*.c
+gcc -std=c11 -O2 -o PEDump src/*.c
 ```
 
 ---
@@ -64,7 +64,7 @@ gcc -std=c11 -O2 -o pedump src/*.c
 ## Usage
 
 ```bash
-pedump [options] file [file2]
+PEDump [options] file [file2]
 ```
 
 ### General
