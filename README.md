@@ -58,7 +58,7 @@ cmake --build build
 
 - The binary will be located in **build/bin/**:
   - Windows: **PEDump.exe**
-  -Linux/macOS: **PEDump**
+  - Linux/macOS: **PEDump**
 
 ## Usage
 
