@@ -127,6 +127,8 @@ PEDump -i sample.exe
 PEDump -H section:.text@sha256 sample.exe
 ```
 
+> **Note:** For detailed usage examples, advanced options, and command demonstrations, see [USAGE.md](USAGE.md).
+
 ---
 
 ## Features
