@@ -952,8 +952,10 @@ RET_CODE loadPEContext(const char *fileName, PPEContext *outCtx, FILE **outFile)
         return RET_INVALID_PARAM;
 
     FILE *file = fopen(fileName, "rb");
-    if (!file)
+    if (!file) {
+        fprintf(stderr, "[!] Failed to open %s\n", fileName);
         return RET_ERROR;
+    }
 
     if (!isPE(file)) {
         fprintf(stderr, "[!] File is not a valid PE: %s\n", fileName);
