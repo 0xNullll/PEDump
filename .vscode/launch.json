@@ -5,7 +5,7 @@
             "name": "C/C++: gcc.exe build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\pedump.exe",
+            "program": "${workspaceFolder}\\PEDump.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
