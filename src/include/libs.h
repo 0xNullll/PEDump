@@ -35,6 +35,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <time.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <wchar.h>
+#include <wtypes.h>
 
 // =============================================================
 //  Optional Regex Fallback (TinyRegex)

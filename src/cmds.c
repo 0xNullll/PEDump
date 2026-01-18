@@ -183,7 +183,7 @@ LONG parseNumber(const char *s, int *isLine) {
         buf[len - 1] = '\0';
     }
 
-    LONG val = strtol(buf, NULL, hex ? 16 : 10);
+    LONG val = (LONG)strtol(buf, NULL, hex ? 16 : 10);
 
     if (hex) {
         *isLine = 0;
@@ -666,7 +666,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
     RET_CODE status = RET_SUCCESS;
 
    // iterate over arguments
-    for (int i = 1; i < argc - 2; i++) {
+    for (int i = 1; i < argc - 1; i++) {
         if (argv[i] == NULL) break;
 
         if (resetNextArg) {
