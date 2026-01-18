@@ -56,9 +56,9 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-- The binary will be located in **build/bin/**:
-  + Windows: **PEDump.exe**
-  + Linux/macOS: **PEDump**
+The binary will be located in **build/bin/**:
+- Windows: **PEDump.exe**
+- Linux/macOS: **PEDump**
 
 ## Usage
 
