@@ -4,32 +4,6 @@
 #include "include/cmds.h"
 
 int main(int argc, char *argv[]) {
-    // // Fake argc/argv
-    // int argc = 4;
-    // char *argv[] = {
-    //     "PEdump", // argv[0] = program name
-    //     // "-h",
-    //     // "C:\\Users\\agent\\OneDrive\\Desktop\\pe_dumper\\src\\test2.exe",
-    //     // "C:/Users/agent/AppData/Local/FiveM/FiveM.exe",
-    //     // "-x",
-    //     // "import:ntdll.dll",
-    //     // "-ov",
-    //     "-e",
-    //     // "file@sha512_224",
-    //     // "file::file@sha512",
-    //     // "section:.text::section:.text",
-    //     // "--strings",
-    //     // "rgex:.*\\.exe",
-    //     // "-x",
-    //     // "export:NTDLL.RtlAcquireSRWLockExclusive",
-    //     // "import:@4",
-    //     // "-h",
-    //     "C:\\Windows\\System32\\kernel32.dll", // argv[1] = test subject,
-    //     // "C:\\Users\\agent\\OneDrive\\Desktop\\CryptoForge\\bin\\run_all_demos.exe",
-    //     // "C:/Program Files/CrystalDiskMark9/unins000.exe",
-    //     NULL
-    // };
-
     // Check for at least one argument before accessing argv[1]
     if (argc > 1 && isHelpCmd(argv[1])) {
         print_help();
@@ -63,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
 
     // For debugging
-    // printf("PE parsing completed successfully.\n");
+    printf("PE parsing completed successfully.\n");
     fflush(stdout);
     
 cleanup:
