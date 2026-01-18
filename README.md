@@ -48,6 +48,8 @@ PEDump -H section:.text@sha256 sample.exe
 - CMake (≥ 3.20)
 - Windows or POSIX environment
 
+---
+
 ### Build
 
 ```powershell
@@ -62,6 +64,8 @@ The binary will be located in **build/bin/**:
   - `PEDump.exe`
 - **Linux / macOS**:  
   - `PEDump`
+
+---
 
 ## Usage
 
