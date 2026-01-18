@@ -1,56 +1,30 @@
 # PEDump
 
-A cross-platform Portable Executable (PE) inspection and analysis tool written in C.
+A cross-platform **Portable Executable (PE)** inspection and analysis tool written in C.  
 `PEDump` performs static analysis of Windows PE files on Linux, Windows, and macOS.
 
 ---
 
 ## Platform Support
 
-`PEDump` runs on:
-- Linux
-- Windows
-- macOS
+`PEDump` runs on:  
+- Linux  
+- Windows  
+- macOS  
 
-The tool analyzes **Windows PE binaries** on all supported platforms.
-
----
-
-## Example Usage
-
-```bash
-PEDump -ov sample.exe
-PEDump -i sample.exe
-PEDump -H section:.text@sha256 sample.exe
-```
+It analyzes **Windows PE binaries** on all supported platforms.
 
 ---
 
-## Features
+## Build Requirements
 
-- Full PE header parsing (DOS, NT, Optional)
-- Section table inspection with permissions and sizes
-- Import and export directory analysis
-- Resource, TLS, debug, reloc, security, and load-config directories
-- Rich header, version info, and COFF symbols/strings
-- ASCII and UTF-16LE string extraction with optional regex filtering
-- Targeted extraction of sections, imports, exports, and arbitrary ranges
-- Hashing of specific PE regions with multiple algorithms
-- Comparison of PE regions across one or two files
-- Designed to handle malformed or non-standard PE files where possible
-
----
-
-## Build
-
-### Requirements
-- C11-compatible compiler (GCC, Clang, or MSVC)
-- CMake (≥ 3.20)
+- C11-compatible compiler (GCC, Clang, or MSVC)  
+- CMake ≥ 3.20  
 - Windows or POSIX environment
 
 ---
 
-### Build
+## Building
 
 ```powershell
 mkdir build
@@ -60,10 +34,8 @@ cmake --build build
 
 The binary will be located in **build/bin/**:
 
-- **Windows**:  
-  - `PEDump.exe`
-- **Linux / macOS**:  
-  - `PEDump`
+- **Windows**: `PEDump.exe`  
+- **Linux / macOS**: `PEDump`
 
 ---
 
@@ -74,18 +46,14 @@ PEDump [options] file [file2]
 ```
 
 ### General
-- `-h`, `--help`                Show help message
-
----
+- `-h`, `--help`                Show help message  
 
 ### Headers & PE Information
 - `-dh`,  `--dos-header`        Print DOS header  
 - `-fh`,  `--file-header`       Print File header  
 - `-oh`,  `--optional-header`   Print Optional header  
 - `-nth`, `--nt-headers`        Print NT headers  
-- `-s`,   `--sections`          Print section table  
-
----
+- `-sec`, `--sections`          Print section table  
 
 ### Data Directories
 - `-e`,    `--exports`          Print export directory  
@@ -102,12 +70,8 @@ PEDump [options] file [file2]
 - `-di`,   `--delay-import`     Print delay imports  
 - `-dd`,   `--data-directories` Print all data directories  
 
----
-
 ### CLR (Common Language Runtime)
-- `-ch`, `--clr-header`          Print CLR header
-
----
+- `-ch`, `--clr-header`         Print CLR header  
 
 ### Miscellaneous
 - `-rh`,  `--rich`              Print Rich header  
@@ -118,79 +82,80 @@ PEDump [options] file [file2]
 - `-ov`,  `--overview`          Print high-level file overview  
 - `-a`,   `--all`               Print all available information  
 
----
+### Strings
+- `-str`, `--strings [rgex:<pattern>]`  
+Dump ASCII and UTF-16LE strings. Optional regex filtering using POSIX regex or TinyRegex fallback.  
 
 ### Output Formatting
-- `-v2f`, `--va2file <NUMBER>`  
-  Convert virtual address to file offset
+- `-v2f`, `--va2file <NUMBER>`  Convert virtual address to file offset  
+- `-f`,   `--format <type[:spec]>` Output format:  
+  - `hex`   Hexadecimal bytes (16 bytes per line)  
+  - `dec`   Decimal bytes (0–255)  
+  - `bin`   Binary bytes  
+  - `table` Offset | Hex | ASCII  
 
-- `-f`, `--format <type[:spec]>`  
-  Output formats:
-  - `hex`   Hexadecimal bytes (16 bytes per line)
-  - `dec`   Decimal bytes (0–255)
-  - `bin`   Binary bytes
-  - `table` Offset | Hex | ASCII
-
-Range specifiers:
-- `:N`              First N lines
-- `:start,max`      Line or byte range
-- `0x...`           Byte offset (aligned to line size)
-
----
-
-### Strings
-- `-s`, `--strings [rgex:<pattern>]`
-
-Dump ASCII and UTF-16LE strings.
-Optional regex filtering using system POSIX regex or TinyRegex fallback.
-
----
+Range specifiers:  
+- `:N`              First N lines  
+- `:start,max`      Line or byte range  
+- `0x...`           Byte offset (aligned to line size)  
 
 ### Extraction
-- `-x`, `--extract <target[:spec]>`
+- `-x`, `--extract <target[:spec]>`  
 
-Targets:
-- `section:NAME`
-- `section:#IDX`
-- `section:rva/VAL`
-- `section:fo/VAL`
-- `export:NAME | #ORD | rva/VAL | FWD | LIB`
-- `import:NAME | #ORD | @HNT | LIB | LIB/NAME`
+Targets:  
+- `section:NAME | #IDX | rva/VAL | fo/VAL`  
+- `export:NAME | #ORD | rva/VAL | FWD | LIB`  
+- `import:NAME | #ORD | @HNT | LIB | LIB/NAME`  
 
-Address formats:
-- `HEX`, `0xHEX`, `HEXh`
-
----
+Address formats: `HEX`, `0xHEX`, `HEXh`  
 
 ### Hashing
-- `-H`, `--hash <target[@alg]>`
+- `-H`, `--hash <target[@alg]>`  
+Supported algorithms: `md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224`, `sha512_256`  
 
-Supported algorithms:
-`md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`,  
-`sha512_224`, `sha512_256`
+### Comparison
+- `-cc`, `--compare-targets <target1>::<target2[@alg]>`  
+Compare regions between two files or within the same file.
 
 ---
 
-### Comparison
-- `-cc`, `--compare-targets <target1>::<target2[@alg]>`
+## Example Usage
 
-Compare regions between two files or within the same file.
+```bash
+PEDump -ov sample.exe
+PEDump -i sample.exe
+PEDump -H section:.text@sha256 sample.exe
+```
+
+---
+
+## Features
+
+- Full PE header parsing (DOS, NT, Optional)  
+- Section table inspection with permissions and sizes  
+- Import and export directory analysis  
+- Resource, TLS, debug, reloc, security, and load-config directories  
+- Rich header, version info, COFF symbols and string tables  
+- ASCII and UTF-16LE string extraction with optional regex filtering  
+- Targeted extraction of sections, imports, exports, and arbitrary ranges  
+- Hashing of specific PE regions with multiple algorithms  
+- Comparison of PE regions across one or two files  
+- Designed to handle malformed or non-standard PE files where possible  
 
 ---
 
 ## Project Status
 
-This project is under active development.
-Some options may be partially implemented or subject to change.
+Under active development. Some options may be partially implemented or subject to change.
 
 ---
 
 ## Disclaimer
 
-This tool is intended for educational and research purposes only.
+For educational and research purposes only.
 
 ---
 
 ## License
 
-This project is released under the **MIT License**. See [LICENSE](LICENSE) for full text.
+Released under the **MIT License**. See [LICENSE](LICENSE) for full text.
