@@ -343,7 +343,7 @@ VA                FO        Size        Value
                                                                    + 20000000  IMAGE_SCN_MEM_EXECUTE
                                                                    + 40000000  IMAGE_SCN_MEM_READ
 
-... [sections 2-7 omitted for brevity] ...
+[...]
 
 0000000140059000  00057000       - SECTION: #8 -
 
@@ -387,7 +387,46 @@ Print export directory.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -e C:\Windows\System32\kernel32.dll
+
+00000001800A4B60        - EXPORTS DIRECTORY -
+
+VA                FO        Size        Value
+00000001800A4B60  000A4B60  [4]         Characteristics     : 00000000
+
+00000001800A4B64  000A4B64  [4]         ReproChecksum       : D83A007F (3627679871)
+
+00000001800A4B68  000A4B68  [2]         Major Version       : 0000
+00000001800A4B6A  000A4B6A  [2]         Minor Version       : 0000
+
+00000001800A4B6C  000A4B6C  [4]         Export DLL Name RVA : 000A8DA0  [VA: 1800A8DA0] [FO: A8DA0] [  .rdata  ]
+00000001800A8DA0  000A8DA0 [12]         Export Table Name   : KERNEL32.dll
+
+00000001800A4B70  000A4B70  [4]         Base                : 00000001
+
+00000001800A4B74  000A4B74  [4]         Number Of Functions : 0000069C  (1692)
+00000001800A4B78  000A4B78  [4]         Number Of Names     : 0000069C  (1692)
+
+00000001800A4B7C  000A4B7C  [4]         Functions RVA       : 000A4B88  [VA: 1800A4B88] [FO: A4B88] [  .rdata  ]
+00000001800A4B80  000A4B80  [4]         Names RVA           : 000A65F8  [VA: 1800A65F8] [FO: A65F8] [  .rdata  ]
+00000001800A4B84  000A4B84  [4]         Name Ordinals RVA   : 000A8068  [VA: 1800A8068] [FO: A8068] [  .rdata  ]
+
+                  ==== EXPORTED FUNCTIONS [1692 entries] ====
+
+VA         FO      Idx  Ordinal  Func-RVA Name-RVA Name                                                                             Forwarded-To
+1800A4B88  A4B88   1    1        000A8DC5 000A8DAD AcquireSRWLockExclusive                                                          NTDLL.RtlAcquireSRWLockExclusive
+1800A4B8C  A4B8C   2    2        000A8DFB 000A8DE6 AcquireSRWLockShared                                                             NTDLL.RtlAcquireSRWLockShared
+1800A4B90  A4B90   3    3        00037BA0 000A8E19 ActivateActCtx
+1800A4B94  A4B94   4    4        0000E4E0 000A8E28 ActivateActCtxWorker
+1800A4B98  A4B98   5    5        00057F60 000A8E3D ActivatePackageVirtualizationContext
+[...]
+1800A65E4  A65E4   1688 698      00058240 000B3771 uaw_wcschr
+1800A65E8  A65E8   1689 699      00058270 000B377C uaw_wcscpy
+1800A65EC  A65EC   1690 69A      000582A0 000B3787 uaw_wcsicmp
+1800A65F0  A65F0   1691 69B      000582C0 000B3793 uaw_wcslen
+1800A65F4  A65F4   1692 69C      000582F0 000B379E uaw_wcsrchr
+
+                  ==== END OF EXPORTED FUNCTIONS ====
 ```
 
 ### Imports
