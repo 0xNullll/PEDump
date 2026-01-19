@@ -548,14 +548,16 @@ VA                FO        Size        Value
 ### Resources
 **Syntax:**
 ```bash
-PEDump -r <file>
-PEDump --resources <file>
+$ PEDump -r <file>
+$ PEDump --resources <file>
 ```
 **Description:**
 Print resources directory.
 
 **Example:**
 ```
+$ PEDump -r C:\Windows\System32\notepad.exe
+
                                   - RESOURCE DIRECTORY -
 
 Root Directory (VA=14003A000, FO=38000):
