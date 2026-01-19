@@ -343,7 +343,9 @@ VA                FO        Size        Value
                                                                    + 20000000  IMAGE_SCN_MEM_EXECUTE
                                                                    + 40000000  IMAGE_SCN_MEM_READ
 
-[...]
+...
+...
+...
 
 0000000140059000  00057000       - SECTION: #8 -
 
@@ -379,8 +381,8 @@ VA                FO        Size        Value
 ### Exports
 **Syntax:**
 ```bash
-PEDump -e <file>
-PEDump --exports <file>
+$ PEDump -e <file>
+$ PEDump --exports <file>
 ```
 **Description:**
 Print export directory.
@@ -419,7 +421,9 @@ VA         FO      Idx  Ordinal  Func-RVA Name-RVA Name                         
 1800A4B90  A4B90   3    3        00037BA0 000A8E19 ActivateActCtx
 1800A4B94  A4B94   4    4        0000E4E0 000A8E28 ActivateActCtxWorker
 1800A4B98  A4B98   5    5        00057F60 000A8E3D ActivatePackageVirtualizationContext
-[...]
+...
+...
+...
 1800A65E4  A65E4   1688 698      00058240 000B3771 uaw_wcschr
 1800A65E8  A65E8   1689 699      00058270 000B377C uaw_wcscpy
 1800A65EC  A65EC   1690 69A      000582A0 000B3787 uaw_wcsicmp
@@ -432,15 +436,117 @@ VA         FO      Idx  Ordinal  Func-RVA Name-RVA Name                         
 ### Imports
 **Syntax:**
 ```bash
-PEDump -i <file>
-PEDump --imports <file>
+$ PEDump -i <file>
+$ PEDump --imports <file>
 ```
 **Description:**
 Print import directory.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -i C:\Windows\System32\notepad.exe
+
+00000001400308D0        - IMPORT DIRECTORY - number of import descriptors: 50
+
+00000001400308D0        IMPORT descriptor: 1  - Library: GDI32.dll
+
+VA                FO        Size        Value
+00000001400308D0  000308D0  [ 4]        Hint name table       : 00030D30  [VA: 140030D30] [FO: 30D30] [  .rdata  ]
+
+00000001400308D4  000308D4  [ 4]        Time Date Stamp       : 00000000
+
+00000001400308D8  000308D8  [ 4]        Forwarder chain       : 00000000
+
+00000001400308DC  000308DC  [ 4]        Library name RVA      : 000319B4  [VA: 1400319B4] [FO: 319B4] [  .rdata  ]
+00000001400319B4  000319B4  [ 9]        Imports library name  : GDI32.dll
+
+00000001400308E0  000308E0  [ 4]        Import address table  : 00029938  [VA: 140029938] [FO: 29938] [  .rdata  ]
+
+
+
+
+0000000140030D30          HINT NAME TABLE: 25 Enties
+
+0000000140030D30  00030D30  [8]         [VA: 140031904] [FO: 31904] [  .rdata  ]
+0000000140031904                                             31904  [  2]            Hint : 0398  (920)
+0000000140031906                                             31906  [ 10]            Name : SetMapMode
+
+0000000140030D40  00030D40  [8]         [VA: 140031912] [FO: 31912] [  .rdata  ]
+0000000140031912                                             31912  [  2]            Hint : 03AC  (940)
+0000000140031914                                             31914  [ 16]            Name : SetViewportExtEx
+
+0000000140030D50  00030D50  [8]         [VA: 140031926] [FO: 31926] [  .rdata  ]
+0000000140031926                                             31926  [  2]            Hint : 03B0  (944)
+0000000140031928                                             31928  [ 14]            Name : SetWindowExtEx
+
+...
+...
+...
+
+0000000140030E90  00030E90  [8]         [VA: 14003184E] [FO: 3184E] [  .rdata  ]
+000000014003184E                                             3184E  [  2]            Hint : 0031  (49)
+0000000140031850                                             31850  [ 18]            Name : CreateCompatibleDC
+
+0000000140030EA0  00030EA0  [8]         [VA: 140031960] [FO: 31960] [  .rdata  ]
+0000000140031960                                             31960  [  2]            Hint : 01A1  (417)
+0000000140031962                                             31962  [  7]            Name : EndPage
+
+0000000140030EB0  00030EB0  [8]         [VA: 140031838] [FO: 31838] [  .rdata  ]
+0000000140031838                                             31838  [  2]            Hint : 0043  (67)
+000000014003183A                                             3183A  [ 19]            Name : CreateFontIndirectW
+
+
+
+
+0000000140029938          IMPORT ADDRESS TABLE: 25 Entries
+
+0000000140029938  00029938  [8]            31904
+0000000140029940  00029940  [8]            31912
+0000000140029948  00029948  [8]            31926
+...
+...
+...
+00000001400299E8  000299E8  [8]            3184E
+00000001400299F0  000299F0  [8]            31960
+00000001400299F8  000299F8  [8]            31838
+
+------------- END FO IMPORT DESCRIPTOR 1 (25 functions) -------------
+
+...
+...
+...
+
+0000000140030CA4        IMPORT descriptor: 50  - Library: api-ms-win-core-delayload-l1-1-0.dll
+
+VA                FO        Size        Value
+0000000140030CA4  00030CA4  [ 4]        Hint name table       : 00031158  [VA: 140031158] [FO: 31158] [  .rdata  ]
+
+0000000140030CA8  00030CA8  [ 4]        Time Date Stamp       : 00000000
+
+0000000140030CAC  00030CAC  [ 4]        Forwarder chain       : 00000000
+
+0000000140030CB0  00030CB0  [ 4]        Library name RVA      : 0003358A  [VA: 14003358A] [FO: 3358A] [  .rdata  ]
+000000014003358A  0003358A  [36]        Imports library name  : api-ms-win-core-delayload-l1-1-0.dll
+
+0000000140030CB4  00030CB4  [ 4]        Import address table  : 00029D60  [VA: 140029D60] [FO: 29D60] [  .rdata  ]
+
+
+
+
+0000000140031158          HINT NAME TABLE: 1 Entry
+
+0000000140031158  00031158  [8]         [VA: 14003354C] [FO: 3354C] [  .rdata  ]
+000000014003354C                                             3354C  [  2]            Hint : 0000  (0)
+000000014003354E                                             3354E  [ 20]            Name : DelayLoadFailureHook
+
+
+
+
+0000000140029D60          IMPORT ADDRESS TABLE: 1 Entry
+
+0000000140029D60  00029D60  [8]            3354C
+
+------------- END FO IMPORT DESCRIPTOR 50 (1 function) -------------
 ```
 
 ### Resources
