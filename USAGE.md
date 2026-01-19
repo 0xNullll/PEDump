@@ -284,29 +284,88 @@ VA                FO        Size        Value
 ### NT Headers
 **Syntax:**
 ```bash
-PEDump -nth <file>
-PEDump --nt-headers <file>
+$ PEDump -nth <file>
+$ PEDump --nt-headers <file>
 ```
 **Description:**
 Print NT headers.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -nth C:\Windows\System32\notepad.exe
+
+00000001400000F8        - IMAGE NT HEADERS -
+
+VA                FO        Size        Value
+00000001400000F8  000000F8  [4]         Signature : 00004550  ("PE")
+
+00000001400000FC        - IMAGE FILE HEADER -
+# ... same output as -fh ...
+
+0000000140000110        - IMAGE OPTIONAL HEADER -
+# ... same output as -oh ...
 ```
 
 ### Sections
 **Syntax:**
 ```bash
-PEDump -s <file>
-PEDump --sections <file>
+$ PEDump -s <file>
+$ PEDump --sections <file>
 ```
 **Description:**
 Print Sections table.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -s C:\Windows\System32\notepad.exe
+
+0000000140001000  00001000      SECTION HEADERS - number of sections : 8
+
+0000000140001000  00001000       - SECTION: #1 -
+
+VA                FO        Size        Value
+0000000140001000  00001000  [8]         Name                       : .text
+
+0000000140001008  00001008  [4]         Virtual size               : 000266E2  (157410)
+0000000140001008  00001008  [4]         (Relative) Virtual address : 00001000
+
+000000014000100C  0000100C  [4]         Size of raw data           : 00027000  (159744)
+0000000140001010  00001010  [4]         Pointer to raw data        : 00001000
+
+0000000140001014  00001014  [4]         Pointer to relocations     : 00000000
+0000000140001018  00001018  [4]         Pointer to linenumbers     : 00000000
+
+000000014000101C  0000101C  [2]         Number of relocations      : 0000
+000000014000101E  0000101E  [2]         Pointer to linenumbers     : 0000
+
+0000000140001020  00001020  [4]         Characteristics            : 60000020
+                                                                   + 00000020  IMAGE_SCN_CNT_CODE
+                                                                   + 20000000  IMAGE_SCN_MEM_EXECUTE
+                                                                   + 40000000  IMAGE_SCN_MEM_READ
+
+... [sections 2-7 omitted for brevity] ...
+
+0000000140059000  00057000       - SECTION: #8 -
+
+VA                FO        Size        Value
+0000000140059000  00057000  [8]         Name                       : .reloc
+
+0000000140059008  00057008  [4]         Virtual size               : 00000350  (848)
+0000000140059008  00057008  [4]         (Relative) Virtual address : 00059000
+
+000000014005900C  0005700C  [4]         Size of raw data           : 00001000  (4096)
+0000000140059010  00057010  [4]         Pointer to raw data        : 00057000
+
+0000000140059014  00057014  [4]         Pointer to relocations     : 00000000
+0000000140059018  00057018  [4]         Pointer to linenumbers     : 00000000
+
+000000014005901C  0005701C  [2]         Number of relocations      : 0000
+000000014005901E  0005701E  [2]         Pointer to linenumbers     : 0000
+
+0000000140059020  00057020  [4]         Characteristics            : 42000040
+                                                                   + 00000040  IMAGE_SCN_CNT_INITIALIZED_DATA
+                                                                   + 02000000  IMAGE_SCN_MEM_DISCARDABLE
+                                                                   + 40000000  IMAGE_SCN_MEM_READ
 ```
 
 ---

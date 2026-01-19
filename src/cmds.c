@@ -626,7 +626,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
         ? (PVOID)&nt64->OptionalHeader
         : (PVOID)&nt32->OptionalHeader;
 
-    PVOID ntHeaders = peCtx->is64Bit ? (PVOID)&nt64 : (PVOID)&nt32;
+    PVOID ntHeaders = peCtx->is64Bit ? (PVOID)nt64 : (PVOID)nt32;
 
     // --- Data Directories ---
     PIMAGE_DATA_DIRECTORY dataDirs = is64bit
