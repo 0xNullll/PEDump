@@ -556,7 +556,70 @@ Print resources directory.
 
 **Example:**
 ```
-# output example placeholder
+                                  - RESOURCE DIRECTORY -
+
+Root Directory (VA=14003A000, FO=38000):
+    Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=3, IDEntries=4
+
+
+    subDir: EDPENLIGHTENEDAPPINFOID (ID=0x688, Named=EDPENLIGHTENEDAPPINFOID) [VA=14003A010, FO=38010]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=1, IDEntries=0
+
+        subDir: #1 (ID=0x6B8, Named=MICROSOFTEDPENLIGHTENEDAPPINFO) [VA=14003A058, FO=38058]
+            Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+            Entry: (Lang=0x409 -> English (United States), named=N/A) [VA=14003A1C0, FO=381C0]
+                    Data Offsets: (RVA=3AC58 FO=38C58), Size=0x2 (2), CodePage=0x0, Reserved=0
+
+
+    subDir: EDPPERMISSIVEAPPINFOID (ID=0x6F6, Named=EDPPERMISSIVEAPPINFOID) [VA=14003A018, FO=38018]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=1, IDEntries=0
+
+        subDir: #1 (ID=0x724, Named=MICROSOFTEDPPERMISSIVEAPPINFO) [VA=14003A070, FO=38070]
+            Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+            Entry: (Lang=0x409 -> English (United States), named=N/A) [VA=14003A1D8, FO=381D8]
+                    Data Offsets: (RVA=3AC60 FO=38C60), Size=0x2 (2), CodePage=0x0, Reserved=0
+
+
+    subDir: MUI (ID=0x760, Named=MUI) [VA=14003A020, FO=38020]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+        subDir: #1 (ID=0x1, Named=N/A) [VA=14003A088, FO=38088]
+            Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+            Entry: (Lang=0x409 -> English (United States), named=N/A) [VA=14003A1F0, FO=381F0]
+                    Data Offsets: (RVA=58090 FO=56090), Size=0x140 (320), CodePage=0x0, Reserved=0
+
+
+    subDir: ICON (ID=0x3, Named=N/A) [VA=14003A028, FO=38028]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=22
+
+        [... skipped ...]
+
+    subDir: GROUP_ICON (ID=0xE, Named=N/A) [VA=14003A030, FO=38030]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=4
+
+        [... skipped ...]
+
+    subDir: VERSION (ID=0x10, Named=N/A) [VA=14003A038, FO=38038]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+        subDir: #1 (ID=0x1, Named=N/A) [VA=14003A190, FO=38190]
+            Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+            Entry: (Lang=0x409 -> English (United States), named=N/A) [VA=14003A478, FO=38478]
+                    Data Offsets: (RVA=57D18 FO=55D18), Size=0x374 (884), CodePage=0x0, Reserved=0
+
+
+    subDir: MANIFEST (ID=0x18, Named=N/A) [VA=14003A040, FO=38040]
+        Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+        subDir: #1 (ID=0x1, Named=N/A) [VA=14003A1A8, FO=381A8]
+            Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
+
+            Entry: (Lang=0x409 -> English (United States), named=N/A) [VA=14003A490, FO=38490]
+                    Data Offsets: (RVA=3A770 FO=38770), Size=0x4E4 (1252), CodePage=0x0, Reserved=0
 ```
 
 ### Exception / Security / Debug / TLS / Base Reloc / Load Config / Bound Import / IAT / Delay Import / All Data Directories
