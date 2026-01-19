@@ -343,9 +343,9 @@ VA                FO        Size        Value
                                                                    + 20000000  IMAGE_SCN_MEM_EXECUTE
                                                                    + 40000000  IMAGE_SCN_MEM_READ
 
-...
-...
-...
+
+[... skipped ...]
+
 
 0000000140059000  00057000       - SECTION: #8 -
 
@@ -421,9 +421,9 @@ VA         FO      Idx  Ordinal  Func-RVA Name-RVA Name                         
 1800A4B90  A4B90   3    3        00037BA0 000A8E19 ActivateActCtx
 1800A4B94  A4B94   4    4        0000E4E0 000A8E28 ActivateActCtxWorker
 1800A4B98  A4B98   5    5        00057F60 000A8E3D ActivatePackageVirtualizationContext
-...
-...
-...
+
+[... skipped ...]
+
 1800A65E4  A65E4   1688 698      00058240 000B3771 uaw_wcschr
 1800A65E8  A65E8   1689 699      00058270 000B377C uaw_wcscpy
 1800A65EC  A65EC   1690 69A      000582A0 000B3787 uaw_wcsicmp
@@ -479,9 +479,7 @@ VA                FO        Size        Value
 0000000140031926                                             31926  [  2]            Hint : 03B0  (944)
 0000000140031928                                             31928  [ 14]            Name : SetWindowExtEx
 
-...
-...
-...
+[... skipped ...]
 
 0000000140030E90  00030E90  [8]         [VA: 14003184E] [FO: 3184E] [  .rdata  ]
 000000014003184E                                             3184E  [  2]            Hint : 0031  (49)
@@ -503,18 +501,16 @@ VA                FO        Size        Value
 0000000140029938  00029938  [8]            31904
 0000000140029940  00029940  [8]            31912
 0000000140029948  00029948  [8]            31926
-...
-...
-...
+
+[... skipped ...]
+
 00000001400299E8  000299E8  [8]            3184E
 00000001400299F0  000299F0  [8]            31960
 00000001400299F8  000299F8  [8]            31838
 
 ------------- END FO IMPORT DESCRIPTOR 1 (25 functions) -------------
 
-...
-...
-...
+[... skipped ...]
 
 0000000140030CA4        IMPORT descriptor: 50  - Library: api-ms-win-core-delayload-l1-1-0.dll
 
