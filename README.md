@@ -133,16 +133,18 @@ PEDump -H section:.text@sha256 sample.exe
 
 ## Features
 
-- Full PE header parsing (DOS, NT, Optional)  
-- Section table inspection with permissions and sizes  
-- Import and export directory analysis  
-- Resource, TLS, debug, reloc, security, and load-config directories  
-- Rich header, version info, COFF symbols and string tables  
-- ASCII and UTF-16LE string extraction with optional regex filtering  
-- Targeted extraction of sections, imports, exports, and arbitrary ranges  
-- Hashing of specific PE regions with multiple algorithms  
-- Comparison of PE regions across one or two files  
-- Designed to handle malformed or non-standard PE files where possible  
+- **🔹 Comprehensive PE header parsing** (DOS, NT, Optional) with detailed field inspection
+- **🔹 Section table analysis** including sizes, permissions, and characteristics
+- **🔹 Import and export directory analysis** with symbol resolution
+- **🔹 Resource, TLS, debug, base reloc, security, and load-config directory inspection**
+- **🔹 Rich header, version info, COFF symbol table, and string table extraction**
+- **🔹 ASCII and UTF-16LE string extraction** with optional POSIX/TinyRegex filtering
+- **🔹 Targeted extraction** of sections, imports, exports, and arbitrary file ranges
+- **🔹 Flexible hashing** of PE regions with multiple algorithms (MD5, SHA variants)
+- **🔹 Comparison** of PE regions across single or multiple files
+- **🔹 Support for malformed or non-standard PE files** where feasible
+- **🔹 Stream output**: Commands can be piped or streamed for live incremental analysis
+- **🔹 Customizable output formatting**: hex, dec, bin, table views with range and offset specifiers
 
 ---
 
