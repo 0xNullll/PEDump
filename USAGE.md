@@ -30,7 +30,7 @@
 
 ## General
 
-This section explains basic usage, global flags, and help commands.
+***This section explains basic usage, global flags, and help commands.***
 
 ---
 
@@ -52,6 +52,10 @@ Show this help message with all available commands and options.
 ---
 
 ## Headers & PE Information
+
+***Dump and inspect the DOS, NT, File, and Optional headers, as well as all sections of the PE file.***
+
+---
 
 ### DOS Header
 **Syntax:**
