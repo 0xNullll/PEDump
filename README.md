@@ -14,7 +14,7 @@ A cross-platform **Portable Executable (PE)** inspection and analysis tool writt
 - **Targeted Extraction** – Extract specific sections, imports, exports, or arbitrary ranges
 - **Strings Extraction** – Extract ASCII and UTF-16LE strings from PE files
 - **COFF Symbol & String Tables** – Access PE symbol and string tables not commonly exposed
-- **Hashing** – Compute MD5/SHA hashes of files, sections, or ranges
+- **Hashing** – Compute MD5, SHA1, and SHA2 hashes of files, sections, or ranges
 - **Comparison** – Compare PE regions within the same file or between two files
 - **Output Formatting** – Flexible formats: hex, dec, bin, table
 
