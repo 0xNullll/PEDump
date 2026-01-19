@@ -7,19 +7,16 @@ A cross-platform **Portable Executable (PE)** inspection and analysis tool writt
 
 ## Features
 
-- **Comprehensive PE Analysis** – Full parsing of all headers, sections, and directories; **CLR inspection limited to header only**
-- **Section Table Analysis** – View section properties and characteristics
-- **Import/Export Directory** – Analyze imported and exported functions
-- **Data Directories** – Access Resource, TLS, Debug, Base Reloc, Security, Load Config, and other directories
-- **Rich Header & Version Info** – Extract Rich signature and version information
-- **COFF Symbol & String Tables** – Access symbol and string tables
-- **Strings Extraction** – Extract ASCII and UTF-16LE strings
-- **Targeted Extraction** – Extract specific sections, imports, exports, or arbitrary ranges
-- **Hashing** – Compute cryptographic hashes for files or regions
-- **Comparison** – Compare PE regions within or between files
-- **Output Formatting** – Flexible display formats (hex, dec, bin, table)
-- **Stream Output** – Support for incremental or piped output
+- **Comprehensive PE Analysis** – Full parsing of headers, sections, and directories; **CLR inspection limited to header only**
+- **Cross-Platform Support** – Works on Windows, Linux, and macOS
 - **Robust Parsing** – Handles malformed or non-standard PE files
+- **Stream Output** – Incremental or piped output for live analysis
+- **Targeted Extraction** – Extract specific sections, imports, exports, or arbitrary ranges
+- **Strings Extraction** – Extract ASCII and UTF-16LE strings from PE files
+- **COFF Symbol & String Tables** – Access PE symbol and string tables not commonly exposed
+- **Hashing** – Compute MD5/SHA hashes of files, sections, or ranges
+- **Comparison** – Compare PE regions within the same file or between two files
+- **Output Formatting** – Flexible formats: hex, dec, bin, table
 
 ---
 
