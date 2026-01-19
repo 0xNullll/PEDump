@@ -133,18 +133,19 @@ PEDump -H section:.text@sha256 sample.exe
 
 ## Features
 
-- **🔹 Comprehensive PE header parsing** (DOS, NT, Optional) with detailed field inspection
-- **🔹 Section table analysis** including sizes, permissions, and characteristics
-- **🔹 Import and export directory analysis** with symbol resolution
-- **🔹 Resource, TLS, debug, base reloc, security, and load-config directory inspection**
-- **🔹 Rich header, version info, COFF symbol table, and string table extraction**
-- **🔹 ASCII and UTF-16LE string extraction** with optional POSIX/TinyRegex filtering
-- **🔹 Targeted extraction** of sections, imports, exports, and arbitrary file ranges
-- **🔹 Flexible hashing** of PE regions with multiple algorithms (MD5, SHA variants)
-- **🔹 Comparison** of PE regions across single or multiple files
-- **🔹 Support for malformed or non-standard PE files** where feasible
-- **🔹 Stream output**: Commands can be piped or streamed for live incremental analysis
-- **🔹 Customizable output formatting**: hex, dec, bin, table views with range and offset specifiers
+- **Comprehensive PE Analysis** – Full parsing of all headers, sections, and directories; **CLR inspection limited to header only**
+- **Section Table Analysis** – View section properties and characteristics
+- **Import/Export Directory** – Analyze imported and exported functions
+- **Data Directories** – Access Resource, TLS, Debug, Base Reloc, Security, Load Config, and other directories
+- **Rich Header & Version Info** – Extract Rich signature and version information
+- **COFF Symbol & String Tables** – Access symbol and string tables
+- **Strings Extraction** – Extract ASCII and UTF-16LE strings
+- **Targeted Extraction** – Extract specific sections, imports, exports, or arbitrary ranges
+- **Hashing** – Compute cryptographic hashes for files or regions
+- **Comparison** – Compare PE regions within or between files
+- **Output Formatting** – Flexible display formats (hex, dec, bin, table)
+- **Stream Output** – Support for incremental or piped output
+- **Robust Parsing** – Handles malformed or non-standard PE files
 
 ---
 
