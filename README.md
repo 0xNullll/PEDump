@@ -20,17 +20,6 @@ A cross-platform **Portable Executable (PE)** inspection and analysis tool writt
 
 ---
 
-## Platform Support
-
-`PEDump` runs on:  
-- Linux  
-- Windows  
-- macOS  
-
-It analyzes **Windows PE binaries** on all supported platforms.
-
----
-
 ## Build Requirements
 
 - C11-compatible compiler (GCC, Clang, or MSVC)  
