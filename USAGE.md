@@ -66,15 +66,44 @@ Show this help message with all available commands and options.
 ### DOS Header
 **Syntax:**
 ```bash
-PEDump -dh <file>
-PEDump --dos-header <file>
+$ PEDump -dh <file>
+$ PEDump --dos-header <file>
 ```
 **Description:**
 Print DOS header.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -dh C:\Windows\System32\notepad.exe
+
+0000000140000000        - DOS HEADER -
+
+VA                FO        Size        Value
+0000000140000000  00000000  [2]         DOS signature                     : 5A4D  ("MZ")
+
+0000000140000002  00000002  [2]         Bytes used on last page           : 0090
+0000000140000004  00000004  [2]         Total pages count                 : 0003
+0000000140000006  00000006  [2]         Relocation entries                : 0000
+0000000140000008  00000008  [2]         Header size (in paragraphs)       : 0004
+000000014000000A  0000000A  [2]         Minimum extra paragraphs required : 0000
+000000014000000C  0000000C  [2]         Maximum extra paragraphs allowed  : FFFF  (65535)
+
+000000014000000E  0000000E  [2]         Initial stack segment             : 0000
+0000000140000010  00000010  [2]         Initial stack pointer             : 00B8
+0000000140000012  00000012  [2]         Checksum                          : 0000
+0000000140000014  00000014  [2]         Initial instruction pointer       : 0000
+0000000140000016  00000016  [2]         Initial code segment              : 0000
+0000000140000018  00000018  [2]         Relocation table file address     : 0040
+000000014000001A  0000001A  [2]         Overlay number                    : 0000
+
+000000014000001C  0000001C  [2]         Reserved words                    : 0.0.0.0
+
+000000014000001E  0000001E  [2]         OEM identifier                    : 0000
+0000000140000020  00000020  [2]         OEM information                   : 0000
+
+0000000140000022  00000022  [2]         Reserved words 2                  : 0.0.0.0.0.0.0.0.0.0
+
+0000000140000024  00000024  [4]         File address of new exe header    : 000000F8
 ```
 
 ### File Header
