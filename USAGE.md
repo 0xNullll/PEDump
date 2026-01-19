@@ -5,7 +5,32 @@
 
 ---
 
+## Table of Contents
+
+- [General](#general)
+- [Headers & PE Information](#headers--pe-information)
+  - [DOS Header](#dos-header)
+  - [File Header](#file-header)
+  - [Optional Header](#optional-header)
+  - [NT Headers](#nt-headers)
+  - [Sections](#sections)
+- [Data Directories](#data-directories)
+  - [Individual Directories](#individual-directories)
+  - [All Data Directories](#all-data-directories)
+  - [All Information](#all-information)
+- [CLR (Common Language Runtime)](#clr-common-language-runtime)
+- [Miscellaneous](#miscellaneous)
+- [Output Formatting](#output-formatting)
+- [Strings Extraction](#strings-extraction)
+- [Extraction](#extraction)
+- [Hashing](#hashing)
+- [Comparison](#comparison)
+
+---
+
 ## General
+
+This section explains basic usage, global flags, and help commands.
 
 ### Help
 
