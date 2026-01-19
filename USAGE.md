@@ -32,6 +32,8 @@
 
 This section explains basic usage, global flags, and help commands.
 
+---
+
 ### Help
 
 **Syntax:**
