@@ -392,7 +392,7 @@ VA                FO        Size        Value
 
 ---
 
-### Exports
+### Export Directory
 **Syntax:**
 ```bash
 $ PEDump -e <file>
@@ -447,7 +447,7 @@ VA         FO      Idx  Ordinal  Func-RVA Name-RVA Name                         
                   ==== END OF EXPORTED FUNCTIONS ====
 ```
 
-### Imports
+### Import Directory
 **Syntax:**
 ```bash
 $ PEDump -i <file>
@@ -559,7 +559,7 @@ VA                FO        Size        Value
 ------------- END FO IMPORT DESCRIPTOR 50 (1 function) -------------
 ```
 
-### Resources
+### Resource Directory
 **Syntax:**
 ```bash
 $ PEDump -r <file>
