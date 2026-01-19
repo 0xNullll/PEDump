@@ -5,6 +5,12 @@
 
 ---
 
+## Overview
+
+`PEDump` is a PE (Portable Executable) analysis tool that allows you to inspect headers, sections, data directories, extract strings, hash sections, and compare files.
+
+---
+
 ## Table of Contents
 
 - [General](#general)
@@ -30,7 +36,7 @@
 
 ## General
 
-***This section explains basic usage, global flags, and help commands.***
+***Basic usage, global flags, and help commands.***
 
 ---
 
@@ -53,7 +59,7 @@ Show this help message with all available commands and options.
 
 ## Headers & PE Information
 
-***Dump and inspect the DOS, NT, File, and Optional headers, as well as all sections of the PE file.***
+***Commands to dump and inspect DOS, NT, File, Optional headers, and PE sections.***
 
 ---
 
@@ -131,6 +137,10 @@ Print Sections table.
 
 ## Data Directories
 
+***Commands to display individual or all data directories for analysis.***
+
+---
+
 ### Exports
 **Syntax:**
 ```bash
@@ -190,6 +200,10 @@ Print the respective data directory.
 
 ## CLR (Common Language Runtime)
 
+***Commands to show CLR headers and metadata for .NET assemblies.***
+
+---
+
 ### CLR Header
 **Syntax:**
 ```bash
@@ -208,6 +222,10 @@ Print CLR header (not fully implemented).
 
 ## Miscellaneous
 
+***Commands for checksum, subsystem, alignment info, and other extra features.***
+
+---
+
 Commands include:
 - Rich Header: `-rh`
 - Version Info: `-vi`
@@ -225,6 +243,10 @@ Commands include:
 ---
 
 ## Output Formatting
+
+***Commands to adjust how output is displayed, including tables, raw formats, or VA conversions.***
+
+---
 
 **Syntax:**
 ```bash
@@ -247,6 +269,10 @@ Format output, convert VA to file offset.
 
 ## Strings Extraction
 
+***Commands to extract printable strings from the PE file or specific sections.***
+
+---
+
 **Syntax:**
 ```bash
 PEDump -s [rgex:<pattern>] <file>
@@ -264,6 +290,10 @@ Dump ASCII/UTF-16LE strings with optional regex filtering.
 
 ## Extraction
 
+***Commands to extract sections, resources, or data blocks from the PE file into separate files.***
+
+---
+
 **Syntax:**
 ```bash
 PEDump -x <target[:spec]> <file>
@@ -278,6 +308,10 @@ PEDump -x <target[:spec]> <file>
 ---
 
 ## Hashing
+
+***Commands to compute hashes of sections or the whole file for verification or comparison.***
+
+---
 
 **Syntax:**
 ```bash
@@ -295,6 +329,10 @@ Compute hash of file, section, range, or rich header.
 
 ## Comparison
 
+***Commands to compare files or sections using hashes or internal algorithms to detect differences.***
+
+---
+
 **Syntax:**
 ```bash
 PEDump -cc <target1>::<target2[@alg]> <file1> [file2]
@@ -305,4 +343,3 @@ Compare two targets within the same file or between two files.
 **Example:**
 ```
 # output example placeholder
-```
