@@ -72,8 +72,8 @@ PEDump [options] file [file2]
 - `-bi`,   `--bound-import`     Print bound imports  
 - `-iat`,  `--iat`              Print Import Address Table  
 - `-di`,   `--delay-import`     Print delay imports  
-- `-dd`,   `--data-directories` Print all data directories  
 - `-ch`,   `--clr-header`       Print CLR header  
+- `-dd`,   `--data-directories` Print all data directories  
 
 ### Miscellaneous
 - `-rh`,  `--rich`              Print Rich header  

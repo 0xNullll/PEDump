@@ -935,19 +935,12 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
             case CMD_BOUND_IMPORT:
                 if (pBoundImportDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pBoundImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Bound Import Directory RVA to file offset\n");
-                        break;
-                    }
-
                     if (config.formatConfig.view == VIEW_TABLE) {
                         if (dump_bound_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                         }
                     } else {
-                        if (print_range(peCtx->fileHandle, fo, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        if (print_range(peCtx->fileHandle, pBoundImportDataDir->VirtualAddress, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                         }
                     }
@@ -1033,7 +1026,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
             //
             // to be continued
             //
-            
+
             // case CMD_CLR_METADATA:
             //     break;
             // case CMD_CLR_READYTORUN:

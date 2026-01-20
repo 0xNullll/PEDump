@@ -424,7 +424,7 @@ RET_CODE dump_iat_table(
             value = t.u1.AddressOfData;
         }
 
-        printf("%016llX  %08llX  [%zu]\t\t%8llX\n",
+        printf("%016llX  %08llX  [%zu]\t%16llX\n",
             FirstThunkVaBase + j * thunkSize,
             FirstThunkOfBase + j * thunkSize,
             thunkSize,
@@ -1981,7 +1981,7 @@ RET_CODE dump_CodeView_debug_info(
 
         foBase += sizeof(GUID);
 
-        printf("%s%08lX  [ 4]\t\tAge          : %8lX\n",
+        printf("%s%08lX  [ 4]\t\tAge          : %lX\n",
             INDENT(level), foBase,
             pdb70.Age);
 
@@ -3917,7 +3917,6 @@ RET_CODE dump_load_config_dir(
     return RET_SUCCESS;
 }
 
-// TODO: test this function and see if it works 
 RET_CODE dump_bound_import_dir(
     FILE *peFile,
     PIMAGE_SECTION_HEADER sections,
@@ -3933,13 +3932,9 @@ RET_CODE dump_bound_import_dir(
 
     // partially defined = suspicious
     if (boundImportDataDir->VirtualAddress == 0 || boundImportDataDir->Size == 0)
-        return REPORT_MALFORMED("Bound Import directory partially empty (RVA=0 or Size=0)", "Bound Import Data Directory");
+        return REPORT_MALFORMED("Bound Import directory partially empty (FO=0 or Size=0)", "Bound Import Data Directory");
 
-    DWORD foBase;
-    if (rva_to_offset(boundImportDataDir->VirtualAddress, sections, numberOfSections, &foBase) != RET_SUCCESS) {
-        printf("[!!] Failed to map Bound Import Directory RVA to file offset\n");
-        return RET_ERROR;
-    }
+    DWORD foBase = boundImportDataDir->VirtualAddress;
 
     DWORD curOff     = foBase;
     DWORD dirSize    = boundImportDataDir->Size;
@@ -3973,15 +3968,14 @@ RET_CODE dump_bound_import_dir(
 
         // Timestamp pretty-print
         DWORD ts = desc.TimeDateStamp;
-        char tsStr[64];
         if ((ts >= SOME_REASONABLE_EPOCH && ts <= CURRENT_EPOCH_PLUS_MARGIN) || ts == 0) {
-            snprintf(tsStr, sizeof(tsStr), "TimeDateStamp: %08lX %s", ts, format_timestamp(ts));
+            printf("%sTimeDateStamp: %08lX %s\n", INDENT(1), ts, format_timestamp(ts));
         } else {
-            snprintf(tsStr, sizeof(tsStr), "ReproChecksum: %u", (unsigned) ts);
+            printf("%sReproChecksum: %08lX (%lu)\n", INDENT(1), ts, ts);
         }
 
-        printf("%s%s | Offset Module Name: %08lX | Number Of Module Forwarder Refs: %lX\n\n",
-               INDENT(1), tsStr, (ULONG)desc.OffsetModuleName, (ULONG)desc.NumberOfModuleForwarderRefs);
+        printf("%sOffset Module Name: %08lX | Number Of Module Forwarder Refs: %lX\n\n",
+               INDENT(1), (ULONG)desc.OffsetModuleName, (ULONG)desc.NumberOfModuleForwarderRefs);
 
         // Forwarder refs follow immediately after the descriptor
         DWORD fwdRefOffset = curOff + sizeof(IMAGE_BOUND_IMPORT_DESCRIPTOR);
@@ -4224,7 +4218,7 @@ RET_CODE dump_clr_header_dir(
     PIMAGE_COR20_HEADER clrHeaderDir,
     ULONGLONG imageBase) {
 
-    if (! !peFile || !clrHeaderDataDir || !clrHeaderDir) return RET_INVALID_PARAM; // sanity check
+    if (!peFile || !clrHeaderDataDir || !clrHeaderDir) return RET_INVALID_PARAM; // sanity check
 
     // completely empty = skip gracefully
     if (clrHeaderDataDir->VirtualAddress == 0 && clrHeaderDataDir->Size == 0)

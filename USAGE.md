@@ -752,7 +752,7 @@ Block VA: 0000000140039000  FO: 00037000  Size: 0000003C (60)  Entries: 26
   10        0x0050    0x0000000140039050  RISCV_LOW12I
   ...
   25        0x00E8    0x00000001400390E8  RISCV_LOW12I
-  26        0x0000    0x0000000140039000  ABSOLUTE  <- special entry, ignored in relocation
+  26        0x0000    0x0000000140039000  ABSOLUTE
 
   --------------------------------------------------------
 
@@ -784,7 +784,7 @@ $ PEDump -d C:/Windows/System32/notepad.exe
             FO        Size              Field          Value
             0002ED50  [ 4]              CV Signature : RSDS
             0002ED54  [16]              Signature    : 44543F42-253F-628F-2EE1-6BFAF8488CA6
-            0002ED64  [ 4]              Age          :        1
+            0002ED64  [ 4]              Age          : 1
             0002ED68  [ 8]              PDB FileName : notepad.
 
 [2] Type Name: POGO (FO=2E30C)
@@ -850,6 +850,7 @@ Idx    AddrOfCallBacks   OffOfCallBacks    CallBackEntries
 **Syntax:**
 ```bash
 $ PEDump -lc <file>
+$ PEDump --load-config <file>
 ```
 **Description:**
 Print the load configuration directory with security and runtime flags.
@@ -994,12 +995,28 @@ VA                FO        Field       Value
 **Syntax:**
 ```bash
 $ PEDump -bi <file>
+$ PEDump --bound-import <file>
 ```
 **Description:**
+Print the bound import directory containing precomputed import addresses.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -bi C:/Some/Random/Folder/calc.exe   (Classic Calculator from Windows XP v5.1, contains bound imports)
+[Note: Some entries are skipped in this example for readability]
+
+0000000001000260 - BOUND IMPORT DIRECTORY -
+
+Bound Import: SHELL32.dll (FO=260 | VA=1000260)
+    TimeDateStamp: 3B7DFE0F (Saturday 2001.08.18 08:33:03 UTC)
+    Offset Module Name: 00000038 | Number Of Module Forwarder Refs: 0
+
+Bound Import: msvcrt.dll (FO=268 | VA=1000268)
+    TimeDateStamp: 3B7DFE0E (Saturday 2001.08.18 08:33:02 UTC)
+    Offset Module Name: 00000044 | Number Of Module Forwarder Refs: 0
+
+            [... skipped entries for brevity ...]
+
 ```
 
 ---
@@ -1008,13 +1025,33 @@ $ PEDump -bi <file>
 **Syntax:**
 ```bash
 $ PEDump -iat <file>
+$ PEDump --iat <file>
 ```
 **Description:**
+Print the import address table mapping imported functions to memory addresses.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -iat C:/Windows/System32/notepad.exe
+
+
+
+00000001400298D8          IMPORT ADDRESS TABLE: 11 Entries
+
+00000001400298D8  000298D8  [8]            3348E
+00000001400298E0  000298E0  [8]            334A2
+00000001400298E8  000298E8  [8] 800000000000017D
+00000001400298F0  000298F0  [8]            334BA
+00000001400298F8  000298F8  [8] 800000000000019A
+0000000140029900  00029900  [8]            334D2
+0000000140029908  00029908  [8]            334E4
+0000000140029910  00029910  [8] 800000000000019D
+0000000140029918  00029918  [8]            334FC
+0000000140029920  00029920  [8] 8000000000000159
+0000000140029928  00029928  [8]            33510
 ```
+
+>Note: IAT output uses the same function as the Import Directory parser, so it’s just not perfectly aligned.
 
 ---
 
@@ -1022,12 +1059,62 @@ $ PEDump -iat <file>
 **Syntax:**
 ```bash
 $ PEDump -di <file>
+$ PEDump --delay-import <file>
 ```
 **Description:**
+Print the delay import directory for functions loaded only when first used.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -di C:/Windows/System32/notepad.exe
+[Note: Some entries are skipped in this example for readability]
+
+00000001400302F0 - DELAY IMPORT DIRECTORY - number of delay import descriptors: 6
+
+00000001400302F0 DELAY IMPORT descriptor: 1  - Library: ADVAPI32.dll
+
+VA                FO        Size        Value
+00000001400302F0  000302F0  [ 4]        All Attributes                 : 00000001
+
+00000001400302F4  000302F4  [ 4]        Dll Name RVA                   : 0002A800  [VA: 14002A800] [FO: 2A800] [  .rdata  ]
+000000014002A800  0002A800  [12]        Dll Name                       : ADVAPI32.dll
+
+00000001400302F8  000302F8  [ 4]        Module Handle RVA              : 000352A8  [VA: 1400352A8] [FO: 352A8] [  .data   ]
+
+00000001400302FC  000302FC  [ 4]        Import Address Table RVA       : 00039000  [VA: 140039000] [FO: 37000] [  .didat  ]
+0000000140030300  00030300  [ 4]        Import Name Table RVA          : 000303D0  [VA: 1400303D0] [FO: 303D0] [  .rdata  ]
+
+0000000140030304  00030304  [ 4]        Bound Import Address Table RVA : 000306C0  [VA: 1400306C0] [FO: 306C0] [  .rdata  ]
+
+0000000140030308  00030308  [ 4]        Unload Information Table RVA   : 00000000
+
+000000014003030C  0003030C  [ 4]        Time Date Stamp                : 00000000
+
+
+
+
+00000001400303D0          HINT NAME TABLE: 2 Enties
+
+00000001400303D0  000303D0  [8]         [VA: 1400304E6] [FO: 304E6] [  .rdata  ]
+00000001400304E6                                             304E6  [  2]            Hint : 00EA  (234)
+00000001400304E8                                             304E8  [ 12]            Name : DecryptFileW
+
+00000001400303E0  000303E0  [8]         [VA: 1400304C8] [FO: 304C8] [  .rdata  ]
+00000001400304C8                                             304C8  [  2]            Hint : 00EF  (239)
+00000001400304CA                                             304CA  [ 27]            Name : DuplicateEncryptionInfoFile
+
+
+
+
+0000000140039000          IMPORT ADDRESS TABLE: 2 Entries
+
+0000000140039000  00037000  [8]        140002B24
+0000000140039008  00037008  [8]        140002B12
+
+--------------------------- END FO DELAY IMPORT DESCRIPTOR 1 (2 functions) ---------------------------
+
+[... skipped entries for brevity ...]
+
 ```
 
 ---
@@ -1035,15 +1122,52 @@ $ PEDump -di <file>
 ### CLR Header Directory
 **Syntax:**
 ```bash
-PEDump -ch <file>
-PEDump --clr-header <file>
+$ PEDump -ch <file>
+$ PEDump --clr-header <file>
 ```
 **Description:**
 Print CLR header (not fully implemented).
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -ch C:/Windows/Microsoft.NET/Framework/v4.0.30319/mscorlib.dll
+
+0000000079722008 - CLR/.NET HEADER DIRECTORY -
+
+VA                FO        Size        Value
+0000000079722008  00000208  [4]         cb                           : 00000048
+
+000000007972200C  0000020C  [2]         Major Runtime Version        : 0002
+000000007972200E  0000020E  [2]         Minor Runtime Version        : 0005
+
+0000000079722010  00000210  [4]         MetaData.VA                  : 001899E8
+0000000079722014  00000214  [4]         MetaData.Size                : 0026A714
+
+0000000079722018  00000218  [4]         Flags                        : 0000000B
+                                                                     + 00000001  COMIMAGE_FLAGS_ILONLY
+                                                                     + 00000002  COMIMAGE_FLAGS_32BITREQUIRED
+                                                                     + 00000008  COMIMAGE_FLAGS_STRONGNAMESIGNED
+
+000000007972201C  0000021C  [4]         Entry Point Token            : 00000000
+
+0000000079722020  00000220  [4]         Resources.VA                 : 003F40FC
+0000000079722024  00000224  [4]         Resources.Size               : 000F4D38
+
+0000000079722028  00000228  [4]         StrongNameSignature.VA       : 004E8E34
+000000007972202C  0000022C  [4]         StrongNameSignature.Size     : 00000100
+
+0000000079722030  00000230  [4]         CodeManagerTable.VA          : 00000000
+0000000079722034  00000234  [4]         CodeManagerTable.Size        : 00000000
+
+0000000079722038  00000238  [4]         VTableFixups.VA              : 00000000
+000000007972203C  0000023C  [4]         VTableFixups.Size            : 00000000
+
+0000000079722040  00000240  [4]         ExportAddressTableJumps.VA   : 00000000
+0000000079722044  00000244  [4]         ExportAddressTableJumps.Size : 00000000
+
+0000000079722048  00000248  [4]         ManagedNativeHeader.VA       : 00000000
+000000007972204C  0000024C  [4]         ManagedNativeHeader.Size     : 00000000
+
 ```
 
 ---
