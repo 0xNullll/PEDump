@@ -26,19 +26,15 @@
   - [Resource Directory](#resource-directory)
   - [Exception Directory](#exception-directory)
   - [Security Directory](#security-directory)
-  - [Base Relocation Directory](#base-relocation-directory)
+  - [Base Relocation Directory](#base-Relocation-directory)
   - [Debug Directory](#debug-directory)
-  - [Architecture Directory](#architecture-directory)
-  - [Global Ptr Directory](#global-ptr-directory)
   - [TLS Directory](#tls-directory)
   - [Load Config Directory](#load-config-directory)
   - [Bound Import Directory](#bound-import-directory)
   - [IAT Directory](#iat-directory)
   - [Delay Import Directory](#delay-import-directory)
-  - [CLR Runtime Header](#clr-runtime-header)
-  - [Reserved Directory](#reserved-directory)
+  - [CLR Header Directory](#clr-header-directory)
   - [All Data Directories](#all-data-directories)
-- [CLR (Common Language Runtime)](#clr-common-language-runtime)
 - [Miscellaneous](#miscellaneous)
 - [Output Formatting](#output-formatting)
 - [Strings Extraction](#strings-extraction)
@@ -611,12 +607,12 @@ Root Directory (VA=14003A000, FO=38000):
     subDir: ICON (ID=0x3, Named=N/A) [VA=14003A028, FO=38028]
         Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=22
 
-        [... skipped ...]
+[... skipped ...]
 
     subDir: GROUP_ICON (ID=0xE, Named=N/A) [VA=14003A030, FO=38030]
         Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=4
 
-        [... skipped ...]
+[... skipped ...]
 
     subDir: VERSION (ID=0x10, Named=N/A) [VA=14003A038, FO=38038]
         Characteristics=0x0, TimeDateStamp=00000000  , Version=0.0, NamedEntries=0, IDEntries=1
@@ -638,13 +634,368 @@ Root Directory (VA=14003A000, FO=38000):
                     Data Offsets: (RVA=3A770 FO=38770), Size=0x4E4 (1252), CodePage=0x0, Reserved=0
 ```
 
-### Exception / Security / Debug / TLS / Base Reloc / Load Config / Bound Import / IAT / Delay Import / All Data Directories
+### Exception Directory
 **Syntax:**
 ```bash
-PEDump -ex|-sec|-d|-tls|-br|-lc|-bi|-iat|-di|-dd <file>
+$ PEDump -ex <file>
+$ PEDump --exception <file>
 ```
 **Description:**
-Print the respective data directory.
+Print the exception directory containing structured exception handling (SEH) information.
+
+**Example:**
+```
+$ PEDump -ex C:/Windows/System32/notepad.exe
+
+0000000140037000 - EXCEPTION DIRECTORY - number of entries: 385 (entry type: IMAGE_RUNTIME_FUNCTION_ENTRY (x64 / Itanium unwind))
+
+Idx   VA               FO         Begin      End        UnwindInfo
+1     0000000140037000 00035000   00001008   0000108E   0002FFF0
+2     000000014003700C 0003500C   00001094   000011B5   0002FFCC
+3     0000000140037018 00035018   000011BC   00001252   0002FFE0
+4     0000000140037024 00035024   00001260   000012D4   0002F7A4
+5     0000000140037030 00035030   000012DC   0000137A   0002F7A4
+
+[... skipped ...]
+
+381   00000001400381D0 000361D0   000275F0   00027612   0002F4F0
+382   00000001400381DC 000361DC   00027620   00027642   0002F4F0
+383   00000001400381E8 000361E8   00027650   00027672   0002F4F0
+384   00000001400381F4 000361F4   00027680   000276AE   0002F4F0
+385   0000000140038200 00036200   000276C0   000276E2   0002F4F0
+
+                        [End of entries]
+
+```
+
+---
+
+### Security Directory
+**Syntax:**
+```bash
+$ PEDump -sec <file>
+$ PEDump --security <file>
+```
+**Description:**
+Print the security directory containing certificates and related metadata.
+
+**Example:**
+```
+$ PEDump -sec C:/Windows/System32/kernel32.dll
+
+000C8000                        - SECURITY DIRECTORY -
+
+idx  FO        Length    Revision                     CertType
+1    000C8000  00004230  0200-(WIN_CERT_REVISION_2_0) 0002-(WIN_CERT_TYPE_PKCS_SIGNED_DATA)
+
+------------------------------------------ CertData -------------------------------------------
+30 82 42 24 06 09 2A 86 48 86 F7 0D 01 07 02 A0 82 42 15 30 82 42 11 02 01 01 31 0F 30 0D 06 09
+60 86 48 01 65 03 04 02 01 05 00 30 82 1C DC 06 0A 2B 06 01 04 01 82 37 02 01 04 A0 82 1C CC 30
+82 1C C8 30 82 1C 91 06 0A 2B 06 01 04 01 82 37 02 01 0F 30 82 1C 81 03 01 00 A0 82 1C 7A A1 82
+1C 76 04 10 A6 B5 86 D5 B4 A1 24 66 AE 05 A2 17 DA 8E 60 D6 04 82 1C 60 31 82 1C 5C 30 82 1C 58
+06 0A 2B 06 01 04 01 82 37 02 03 02 31 82 1C 48 04 82 1C 44 00 00 00 00 AF 1B FC 09 9B 5C 1C 88
+
+                                       [... skipped ...]
+
+67 0C 5C 7F 8A 33 E1 52 47 4D C4 A0 08 D9 5E 82 5B 30 57 51 6A BB 36 E5 2F 19 3F 54 46 5F 7A E3
+43 14 2C 4A F1 0A C3 09 98 01 91 EC E9 F2 0A A9 44 61 B6 5C 6E 1E 7C 36 74 D1 75 D5 AD F1 78 3B
+63 B0 9C E3 BB 32 E7 72 08 52 23 BE B9 F5 4C 43 DE F8 4E 81 90 37 D4 A7 79 50 73 8A 34 EA F2 AF
+40 B4 D1 64 E3 F3 C8 88 29 A2 FF 45 8A DF AD 96 B4 F5 5E 20 ED EE C5 17 44 DC 9C 32 75 61 37 8C
+CC F8 49 4B 43 4F 62 7B
+--------------------------------------- End Of CertData ---------------------------------------
+
+```
+
+---
+
+### Base Relocation Directory
+**Syntax:**
+```bash
+$ PEDump -br <file>
+$ PEDump --basereloc <file>
+```
+**Description:**
+Print the base relocation directory for address fixups when loading the PE in memory.
+
+**Example:**
+```
+$ PEDump -br C:/Windows/System32/notepad.exe
+[Note: Some entries are skipped in this example for readability]
+
+0000000140059000        - BASE RELOCATION DIRECTORY -
+
+Block VA: 0000000140029000  FO: 00029000  Size: 000001FC (508)  Entries: 250
+
+  Entry #   Offset    Relocated VA        Type
+  -------   ------    ----------------    ----------------
+  1         0x0000    0x0000000140029000  RISCV_LOW12I
+  2         0x0008    0x0000000140029008  RISCV_LOW12I
+  3         0x0010    0x0000000140029010  RISCV_LOW12I
+  4         0x0018    0x0000000140029018  RISCV_LOW12I
+  5         0x0020    0x0000000140029020  RISCV_LOW12I
+
+  [... skipped entries for brevity ...]
+
+Block VA: 0000000140039000  FO: 00037000  Size: 0000003C (60)  Entries: 26
+
+  Entry #   Offset    Relocated VA        Type
+  -------   ------    ----------------    ----------------
+  1         0x0000    0x0000000140039000  RISCV_LOW12I
+  2         0x0008    0x0000000140039008  RISCV_LOW12I
+  3         0x0018    0x0000000140039018  RISCV_LOW12I
+  4         0x0020    0x0000000140039020  RISCV_LOW12I
+  5         0x0028    0x0000000140039028  RISCV_LOW12I
+  6         0x0030    0x0000000140039030  RISCV_LOW12I
+  7         0x0038    0x0000000140039038  RISCV_LOW12I
+  8         0x0040    0x0000000140039040  RISCV_LOW12I
+  9         0x0048    0x0000000140039048  RISCV_LOW12I
+  10        0x0050    0x0000000140039050  RISCV_LOW12I
+  ...
+  25        0x00E8    0x00000001400390E8  RISCV_LOW12I
+  26        0x0000    0x0000000140039000  ABSOLUTE  <- special entry, ignored in relocation
+
+  --------------------------------------------------------
+
+```
+
+---
+
+### Debug Directory
+**Syntax:**
+```bash
+$ PEDump -d <file>
+$ PEDump --debug <file>
+```
+**Description:**
+Print the debug directory with debugging information like PDB paths.
+
+**Example:**
+```
+$ PEDump -d C:/Windows/System32/notepad.exe
+
+0002E2F0        - DEBUG DIRECTORY - number of debug entries: 4 -
+
+[1] Type Name: CODEVIEW (FO=2E2F0)
+        Characteristics: 0 | ReproChecksum: 7C74B70C (2088023820) | Version: 0.0 | Type: 2 | Size Of Data: 24
+        Address Of Raw Data: 0002ED50  [VA: 14002ED50] [FO: 2ED50] [.rdata  ] | Pointer To Raw Data: 0002ED50
+
+            0002ED50    - CodeView pdb70 Debug Info -
+
+            FO        Size              Field          Value
+            0002ED50  [ 4]              CV Signature : RSDS
+            0002ED54  [16]              Signature    : 44543F42-253F-628F-2EE1-6BFAF8488CA6
+            0002ED64  [ 4]              Age          :        1
+            0002ED68  [ 8]              PDB FileName : notepad.
+
+[2] Type Name: POGO (FO=2E30C)
+        Characteristics: 0 | ReproChecksum: 7C74B70C (2088023820) | Version: 0.0 | Type: D | Size Of Data: 47C
+        Address Of Raw Data: 0002ED74  [VA: 14002ED74] [FO: 2ED74] [.rdata  ] | Pointer To Raw Data: 0002ED74
+
+[3] Type Name: REPRO (FO=2E328)
+        Characteristics: 0 | ReproChecksum: 7C74B70C (2088023820) | Version: 0.0 | Type: 10 | Size Of Data: 24
+        Address Of Raw Data: 0002F218  [VA: 14002F218] [FO: 2F218] [.rdata  ] | Pointer To Raw Data: 0002F218
+
+            00020000     - REPRO Debug Info -
+
+            REPRO hash (hash type: SHA-256 (256-bit)): 423F54443F258F622EE16BFAF8488CA67FB28E16E050ED37B1D89FBB0CB7747C
+
+[4] Type Name: EX_DLLCHARACTERISTICS (FO=2E344)
+        Characteristics: 0 | ReproChecksum: 7C74B70C (2088023820) | Version: 0.0 | Type: 14 | Size Of Data: 4
+        Address Of Raw Data: 0002F23C  [VA: 14002F23C] [FO: 2F23C] [.rdata  ] | Pointer To Raw Data: 0002F23C
+
+```
+
+---
+
+### TLS Directory
+**Syntax:**
+```bash
+$ PEDump -tls <file>
+$ PEDump --tls <file>
+```
+**Description:**
+Print the Thread Local Storage directory used for thread-specific data.
+
+**Example:**
+```
+$ PEDump -tls C:\Tools\Sysinternals\Autoruns.exe   (Sysinternals Autoruns)
+
+00000000004CDA00        - TLS DIRECTORY -
+
+VA                FO        Field       Value
+00000000004CDA00  000CCC00  [4]         Start Address Of Raw Data : 004D3A3C
+00000000004CDA04  000CCC04  [4]         End Address Of Raw Data   : 004D3A98
+
+00000000004CDA08  000CCC08  [4]         Address Of Index          : 004FCC44
+
+00000000004CDA0C  000CCC0C  [4]         Address Of Call Backs     : 004B3884
+
+00000000004CDA10  000CCC10  [4]         Size Of Zero Fill         : 00000000
+
+00000000004CDA14  000CCC14  [4]         Characteristics           : 00300000
+
+
+00000000004B3884        - CALL BACK ENTRIES -
+
+Idx    AddrOfCallBacks   OffOfCallBacks    CallBackEntries
+1      00000000004B3884  000B2A84          0047E667
+
+                          [End of entries]
+
+```
+
+---
+
+### Load Config Directory
+**Syntax:**
+```bash
+$ PEDump -lc <file>
+```
+**Description:**
+Print the load configuration directory with security and runtime flags.
+
+**Example:**
+```
+PEDump -lc C:/Windows/System32/kernel32.dll
+[Note: Some tables are skipped in this example for readability]
+
+0000000180088E00        - LOAD CONFIG DIRECTORY -
+
+VA                FO        Field       Value
+0000000180088E00  00088E00  [4]         Size                                           : 00000148
+
+0000000180088E04  00088E04  [4]         Time Date Stamp                                : 00000000
+
+0000000180088E08  00088E08  [2]         Minor Version                                  : 0000
+0000000180088E0A  00088E0A  [2]         Major Version                                  : 0000
+
+0000000180088E0C  00088E0C  [4]         Global Flag Clear                              : 00000000
+0000000180088E10  00088E10  [4]         Global Flag Set                                : 00000000
+
+0000000180088E14  00088E14  [4]         Critical Section Default Timeout               : 00000000
+
+0000000180088E18  00088E18  [8]         DeCommit Block Free Threshold                  : 0000000000000000
+0000000180088E20  00088E20  [8]         DeCommit Total Free Threshold                  : 0000000000000000
+
+0000000180088E28  00088E28  [8]         Lock Prefix Table                              : 0000000000000000
+0000000180088E30  00088E30  [8]         Maximum Allocation Size                        : 0000000000000000
+
+0000000180088E38  00088E38  [8]         Virtual Memory Threshold                       : 0000000000000000
+
+0000000180088E40  00088E40  [8]         Process Affinity Mask                          : 0000000000000000
+
+0000000180088E48  00088E48  [4]         Process Heap Flags                             : 00000000
+
+0000000180088E4C  00088E4C  [2]         CSD Version                                    : 0000
+
+0000000180088E4E  00088E4E  [2]         Dependent Load Flags                           : 0000
+
+0000000180088E50  00088E50  [8]         Edit List                                      : 0000000000000000
+
+0000000180088E58  00088E58  [8]         Security Cookie                                : 00000001800BF230
+
+0000000180088E60  00088E60  [8]         SEHandler Table                                : 0000000000000000
+0000000180088E68  00088E68  [8]         SEHandler Count                                : 0000000000000000
+
+0000000180088E70  00088E70  [8]         Guard CF Check Function Pointer                : 000000018008BA50
+0000000180088E78  00088E78  [8]         Guard CF Dispatch Function Pointer             : 000000018008BA58
+
+0000000180088E80  00088E80  [8]         Guard CF Function Table                        : 000000000008BBCC  [VA: 18008BBCC] [FO: 8BBCC] [ .rdata  ]
+0000000180088E88  00088E88  [8]         Guard CF Function Count                        : 00000000000005FA
+
+0000000180088E90  00088E90  [4]         Guard Flags                                    : 10417500
+                                                                                       + 00000100  IMAGE_GUARD_CF_INSTRUMENTED
+                                                                                       + 00000400  IMAGE_GUARD_CF_FUNCTION_TABLE_PRESENT
+                                                                                       + 00001000  IMAGE_GUARD_PROTECT_DELAYLOAD_IAT
+                                                                                       + 00002000  IMAGE_GUARD_DELAYLOAD_IAT_IN_ITS_OWN_SECTION
+                                                                                       + 00004000  IMAGE_GUARD_CF_EXPORT_SUPPRESSION_INFO_PRESENT
+                                                                                       + 00010000  IMAGE_GUARD_CF_LONGJUMP_TABLE_PRESENT
+                                                                                       + 00400000  IMAGE_GUARD_EH_CONTINUATION_TABLE_PRESENT
+                                                                                       + 10000000  IMAGE_GUARD_JUMPTABLE_PRESENT
+
+0000000180088E94  00088E94  [2]         CodeIntegrity.Flags                            : 0000
+0000000180088E96  00088E96  [2]         CodeIntegrity.Catalog                          : 0000
+0000000180088E98  00088E98  [4]         CodeIntegrity.CatalogOffset                    : 00000000
+0000000180088E9C  00088E9C  [4]         CodeIntegrity.Reserved                         : 00000000
+
+0000000180088EA0  00088EA0  [8]         Guard Address Taken IAT Entry Table            : 000000000008D9B0  [VA: 18008D9B0] [FO: 8D9B0] [ .rdata  ]
+0000000180088EA8  00088EA8  [8]         Guard Address Taken IAT Entry Count            : 0000000000000003
+
+0000000180088EB0  00088EB0  [8]         Guard Long Jump Target Table                   : 0000000000000000
+0000000180088EB8  00088EB8  [8]         Guard Long Jump Target Count                   : 0000000000000000
+
+0000000180088EC0  00088EC0  [8]         Dynamic Value Reloc Table                      : 0000000000000000
+
+0000000180088EC8  00088EC8  [8]         CHPE Metadata Pointer                          : 0000000000000000
+
+0000000180088ED0  00088ED0  [8]         Guard RF Failure Routine                       : 0000000000000000
+0000000180088ED8  00088ED8  [8]         Guard RF Failure Routine Function Pointer      : 0000000000000000
+
+0000000180088EE0  00088EE0  [4]         Dynamic Value Reloc Table Offset               : 000005F8
+0000000180088EE4  00088EE4  [2]         Dynamic Value Reloc Table Section              : 0008
+
+0000000180088EE6  00088EE6  [2]         Reserved2                                      : 0000
+
+0000000180088EE8  00088EE8  [8]         Guard RF Verify Stack Pointer Function Pointer : 0000000000000000
+
+0000000180088EF0  00088EF0  [4]         Hot Patch Table Offset                         : 00000000
+
+0000000180088EF4  00088EF4  [4]         Reserved3                                      : 00000000
+
+0000000180088EF8  00088EF8  [8]         Enclave Configuration Pointer                  : 0000000000000000
+
+0000000180088F00  00088F00  [8]         Volatile Metadata Pointer                      : 0000000000000000
+
+0000000180088F08  00088F08  [8]         Guard Address Taken IAT Entry Table            : 000000000008BA80  [VA: 18008BA80] [FO: 8BA80] [ .rdata  ]
+0000000180088F10  00088F10  [8]         Guard EH Continuation Count                    : 0000000000000042
+
+0000000180088F18  00088F18  [8]         Guard XFG Check Function Pointer               : 000000018008BA60
+0000000180088F20  00088F20  [8]         Guard XFG Dispatch Function Pointer            : 000000018008BA68
+0000000180088F28  00088F28  [8]         Guard XFG Table Dispatch Function Pointer      : 000000018008BA70
+
+0000000180088F30  00088F30  [8]         Cast Guard Os Determined Failure Mode          : 000000018008BA78
+
+0000000180088F38  00088F38  [8]         Guard Memcpy Function Pointer                  : 0000000000000000
+
+        - GuardCFFunctionTable table (VA: 18008BBCC) - 1530 entries -
+
+ ----------------------------------------------------------------------------------
+  [0001] VA: 18008BBCC        FO: 8BBCC     Value: 1130     Meta: 0   [   .text   ]
+  [0002] VA: 18008BBD1        FO: 8BBD1     Value: 1220     Meta: 0   [   .text   ]
+  [0003] VA: 18008BBD6        FO: 8BBD6     Value: 2520     Meta: 0   [   .text   ]
+  [0004] VA: 18008BBDB        FO: 8BBDB     Value: 5C40     Meta: 0   [   .text   ]
+  [0005] VA: 18008BBE0        FO: 8BBE0     Value: ACF0     Meta: 2   [   .text   ]
+
+  [... skipped entries for brevity ...]
+
+        - GuardEHContinuationTable table (VA: 18008BA80) - 66 entries -
+
+ ----------------------------------------------------------------------------------
+  [01] VA: 18008BA80        FO: 8BA80     Value: D05E     Meta: 0   [   .text   ]
+  [02] VA: 18008BA85        FO: 8BA85     Value: D172     Meta: 0   [   .text   ]
+  [03] VA: 18008BA8A        FO: 8BA8A     Value: D733     Meta: 0   [   .text   ]
+  [04] VA: 18008BA8F        FO: 8BA8F     Value: DD26     Meta: 0   [   .text   ]
+  [05] VA: 18008BA94        FO: 8BA94     Value: 12AD5    Meta: 0   [   .text   ]
+  [06] VA: 18008BA99        FO: 8BA99     Value: 19E16    Meta: 0   [   .text   ]
+  [07] VA: 18008BA9E        FO: 8BA9E     Value: 19F8D    Meta: 0   [   .text   ]
+  [08] VA: 18008BAA3        FO: 8BAA3     Value: 1A2AF    Meta: 0   [   .text   ]
+  [09] VA: 18008BAA8        FO: 8BAA8     Value: 1A41E    Meta: 0   [   .text   ]
+  [10] VA: 18008BAAD        FO: 8BAAD     Value: 1F078    Meta: 0   [   .text   ]
+  ...
+  [65] VA: 18008BBC0        FO: 8BBC0     Value: 7D983    Meta: 0   [   .text   ]
+  [66] VA: 18008BBC5        FO: 8BBC5     Value: 7DBAF    Meta: 0   [   .text   ]
+ ----------------------------------------------------------------------------------
+
+```
+
+---
+
+### Bound Import Directory
+**Syntax:**
+```bash
+$ PEDump -bi <file>
+```
+**Description:**
 
 **Example:**
 ```
@@ -653,13 +1004,35 @@ Print the respective data directory.
 
 ---
 
-## CLR (Common Language Runtime)
+### IAT Directory
+**Syntax:**
+```bash
+$ PEDump -iat <file>
+```
+**Description:**
 
-***Commands to show CLR headers and metadata for .NET assemblies.***
+**Example:**
+```
+# output example placeholder
+```
 
 ---
 
-### CLR Header
+### Delay Import Directory
+**Syntax:**
+```bash
+$ PEDump -di <file>
+```
+**Description:**
+
+**Example:**
+```
+# output example placeholder
+```
+
+---
+
+### CLR Header Directory
 **Syntax:**
 ```bash
 PEDump -ch <file>
@@ -667,6 +1040,20 @@ PEDump --clr-header <file>
 ```
 **Description:**
 Print CLR header (not fully implemented).
+
+**Example:**
+```
+# output example placeholder
+```
+
+---
+
+### All Data Directories
+**Syntax:**
+```bash
+$ PEDump -dd <file>
+```
+**Description:**
 
 **Example:**
 ```

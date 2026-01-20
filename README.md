@@ -57,7 +57,7 @@ PEDump [options] file [file2]
 - `-fh`,  `--file-header`       Print File header  
 - `-oh`,  `--optional-header`   Print Optional header  
 - `-nth`, `--nt-headers`        Print NT headers  
-- `-sec`, `--sections`          Print section table  
+- `-s`,   `--sections`          Print section table  
 
 ### Data Directories
 - `-e`,    `--exports`          Print export directory  
@@ -73,9 +73,7 @@ PEDump [options] file [file2]
 - `-iat`,  `--iat`              Print Import Address Table  
 - `-di`,   `--delay-import`     Print delay imports  
 - `-dd`,   `--data-directories` Print all data directories  
-
-### CLR (Common Language Runtime)
-- `-ch`, `--clr-header`         Print CLR header  
+- `-ch`,   `--clr-header`       Print CLR header  
 
 ### Miscellaneous
 - `-rh`,  `--rich`              Print Rich header  
