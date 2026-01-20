@@ -1051,7 +1051,7 @@ $ PEDump -iat C:/Windows/System32/notepad.exe
 0000000140029928  00029928  [8]            33510
 ```
 
->Note: IAT output uses the same function as the Import Directory parser, so it’s just not perfectly aligned.
+>**Note**: IAT output uses the same function as the Import Directory parser, so it’s just not perfectly aligned.
 
 ---
 
