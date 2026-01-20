@@ -325,10 +325,10 @@ void print_help(void) {
         "  -bi,   --bound-import                        Print Bound imports\n"
         "  -iat,  --iat                                 Print IAT\n"
         "  -di,   --delay-import                        Print Delay imports\n"
+        "  -ch,   --clr-header                          Print CLR Header\n"
         "  -dd,   --data-directories                    Print all Data directories\n"
         "\n"
-        "CLR (Common Language Runtime):\n" // not fully implemented yet
-        "  -ch,   --clr-header                          Print CLR Header\n"
+        // "CLR (Common Language Runtime):\n" // not fully implemented yet
         // "  -cm,   --clr-metadata                        Print CLR Metadata\n"
         // "  -crr,  --clr-readytorun                      Print CLR ReadyToRun info\n"
         // "  -cs,   --clr-streams                         Print CLR Streams\n"

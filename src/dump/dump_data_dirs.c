@@ -1359,7 +1359,7 @@ void print_MIPS_or_alpha32_entries(PIMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY entries, 
 
     // Header includes Index, File Offset, Virtual Address, and entry fields
     printf("%-5s %-12s %-8s   %-10s %-10s %-10s %-10s %-10s\n",
-           "Idx", "VirtAddr", "FileOff", "Begin", "End", "Handler", "Data", "Prolog");
+           "Idx", "VA", "FO", "Begin", "End", "Handler", "Data", "Prolog");
 
     for (DWORD i = 0; i < maxEntries; i++, currentFo += sizeOfEntry, currentVa += sizeOfEntry) {
 
@@ -1373,8 +1373,6 @@ void print_MIPS_or_alpha32_entries(PIMAGE_ALPHA_RUNTIME_FUNCTION_ENTRY entries, 
                entries[i].HandlerData,
                entries[i].PrologEndAddress);
     }
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 void print_alpha64_entries(PIMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase, DWORD foBase, DWORD maxEntries, WORD sizeOfEntry) {
@@ -1384,7 +1382,7 @@ void print_alpha64_entries(PIMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY entries, ULONGL
     // Header includes Index, File Offset, Virtual Address, and entry fields
     // Longer header for clarity and 64-bit addresses
     printf("%-5s %-16s %-8s   %-16s   %-16s   %-16s   %-16s   %-16s\n",
-           "Idx", "VirtAddr", "FileOff", "Begin", "End", "Handler", "Data", "Prolog");
+           "Idx", "VA", "FO", "Begin", "End", "Handler", "Data", "Prolog");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
 
@@ -1398,8 +1396,6 @@ void print_alpha64_entries(PIMAGE_ALPHA64_RUNTIME_FUNCTION_ENTRY entries, ULONGL
                entries[i].HandlerData,
                entries[i].PrologEndAddress);
     }
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 void print_winCE_entries(PIMAGE_CE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase, DWORD foBase, DWORD maxEntries, WORD sizeOfEntry) {
@@ -1408,7 +1404,7 @@ void print_winCE_entries(PIMAGE_CE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaB
 
     // Compact header
     printf("%-5s %-16s %-8s   %-8s   %-6s   %-6s   %-4s   %-4s\n",
-           "Idx", "VirtAddr", "FileOff", "FuncStart", "Prolog", "FuncLen", "32Bit", "Flag");
+           "Idx", "VA", "FO", "FuncStart", "Prolog", "FuncLen", "32Bit", "Flag");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
         printf("%-5lu %016llX %08lX   %08lX   %03X   %03X   %02X   %02X\n",
@@ -1421,8 +1417,6 @@ void print_winCE_entries(PIMAGE_CE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaB
                entries[i].ThirtyTwoBit,    // 1 bit
                entries[i].ExceptionFlag);  // 1 bit
     }
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 void print_ARM_entries(PIMAGE_ARM_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase, DWORD foBase, DWORD maxEntries, WORD sizeOfEntry) {
@@ -1431,7 +1425,7 @@ void print_ARM_entries(PIMAGE_ARM_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBa
     
     // Compact header for ARM runtime entries
     printf("%-5s %-16s %-8s %-8s %-12s %-4s %-4s %-4s %-2s %-4s %-2s %-2s %-2s %-10s\n",
-           "Idx", "VirtAddr", "FileOff", "Begin", "UnwindData",
+           "Idx", "VA", "FO", "Begin", "UnwindData",
            "Flg", "FnLen", "Ret", "H", "Reg", "R", "L", "C", "StackAdj");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
@@ -1451,10 +1445,6 @@ void print_ARM_entries(PIMAGE_ARM_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBa
                entries[i].C,
                entries[i].StackAdjust);
     }
-
-    // Simple consistent ending
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 void print_ARM64_entries(PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase, DWORD foBase, DWORD maxEntries, WORD sizeOfEntry) {
@@ -1463,7 +1453,7 @@ void print_ARM64_entries(PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG 
 
     // Compact header for ARM64 runtime entries
     printf("%-5s %-16s %-10s %-10s %-12s %-3s %-26s %-5s %-5s %-3s %-30s %-7s\n",
-        "Idx", "VirtAddr", "FileOff", "Begin", "UnwindData",
+        "Idx", "VA", "FO", "Begin", "UnwindData",
         "Flg", "FnLen", "RegF", "RegI", "H", "CR", "FrameSz");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
@@ -1482,10 +1472,6 @@ void print_ARM64_entries(PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG 
             getArm64CrToString(entries[i].CR),
             entries[i].FrameSize);
     }
-
-    // Simple consistent ending
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 void print_x64_entries(_PIMAGE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase, DWORD foBase, DWORD maxEntries, WORD sizeOfEntry) {
@@ -1494,7 +1480,7 @@ void print_x64_entries(_PIMAGE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase,
 
     // Header
     printf("%-5s %-16s %-8s   %-8s   %-8s   %-12s\n",
-           "Idx", "VirtAddr", "FileOff", "Begin", "End", "UnwindInfo");
+           "Idx", "VA", "FO", "Begin", "End", "UnwindInfo");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
         printf("%-5lu %016llX %08lX   %08lX   %08lX   %08lX\n",
@@ -1506,9 +1492,6 @@ void print_x64_entries(_PIMAGE_RUNTIME_FUNCTION_ENTRY entries, ULONGLONG vaBase,
             entries[i].UnwindInfoAddress  // RVA of UNWIND_INFO
         );
     }
-    // Simple consistent ending
-    printf("\n\t\t\t[End of entries]\n");
-    fflush(stdout);
 }
 
 RET_CODE dump_exception_dir(
@@ -1673,6 +1656,9 @@ RET_CODE dump_exception_dir(
         return RET_ERROR;
     }
 
+    // Simple consistent ending
+    printf("\n\t\t\t[End of entries]\n\n");
+
     fflush(stdout);
     return RET_SUCCESS;
 }
@@ -1694,7 +1680,7 @@ RET_CODE dump_security_dir(FILE *peFile, PIMAGE_DATA_DIRECTORY securityDirData) 
     DWORD start = securityDirData->VirtualAddress;
     DWORD size  = securityDirData->Size;
 
-    printf("\n%08lX\t- SECURITY DIRECTORY -\n\n", start);
+    printf("\n%08lX\t\t\t- SECURITY DIRECTORY -\n\n", start);
 
     BYTE *buffer = parse_table_from_fo(peFile, start, size, 1);
     if (!buffer) return RET_ERROR;
@@ -1705,7 +1691,7 @@ RET_CODE dump_security_dir(FILE *peFile, PIMAGE_DATA_DIRECTORY securityDirData) 
     while (offset < size) {
         WIN_CERTIFICATE *cert = (WIN_CERTIFICATE *)(buffer + offset);
 
-        printf("%-3s  %-8s  %-8s  %-20s         %-20s\n", "idx", "FileOff", "Length", "Revision", "CertType");
+        printf("%-3s  %-8s  %-8s  %-20s         %-20s\n", "idx", "FO", "Length", "Revision", "CertType");
 
         printf("%-3d  %08lX  %08lX  %04X-(%s) %04X-(%s)\n",
             certNumber,
@@ -1804,7 +1790,7 @@ RET_CODE dump_reloc_dir(
             ULONGLONG entryVA = blockVA + off;
 
             printf("  %-8u  0x%04X    0x%016llX  %s\n",
-                   i, off, entryVA, getRelocTypeName(type));
+                   i + 1, off, entryVA, getRelocTypeName(type));
         }
 
         printf("  --------------------------------------------------------\n");
@@ -1941,7 +1927,7 @@ RET_CODE dump_CodeView_debug_info(
     int isPdb70 = (memcmp(sig, "RSDS", 4) == 0);
     printf("%s%08lX\t- CodeView %s Debug Info -\n\n", INDENT(level), foBase, 
            isPdb70 ? "pdb70" : "pdb20");
-    printf("%sFO        Field         Value\n", INDENT(level));
+    printf("%sFO        Size              Field          Value\n", INDENT(level));
 
     CV_INFO_PDB70 pdb70 = {0};
     CV_INFO_PDB20 pdb20 = {0};
@@ -2176,7 +2162,7 @@ void print_exception_debug_entries(
 
     // Header
     printf("%s%-5s %-16s %-8s   %-10s   %-10s   %-10s\n",
-           INDENT(level), "Idx", "VirtAddr", "FileOff",
+           INDENT(level), "Idx", "VA", "FO",
            "StartingAddr", "EndingAddr", "EndOfPrologue");
 
     for (DWORD i = 0; i < maxEntries; i++, currentVa += sizeOfEntry, currentFo += sizeOfEntry) {
@@ -2216,7 +2202,7 @@ void print_exception_debug_entries64(
 
     // Header
     printf("%s%-5s %-16s %-8s   %-16s   %-16s   %-16s\n",
-           INDENT(level), "Idx", "VirtAddr", "FileOff",
+           INDENT(level), "Idx", "VA", "FO",
            "StartingAddr", "EndingAddr",
            isAlpha ? "EndOfPrologue" : "UnwindInfoAddr");
 
@@ -2233,7 +2219,7 @@ void print_exception_debug_entries64(
     }
 
     // Consistent footer
-    printf("\n%s\t\t\t[End of entries]\n", INDENT(level));
+    printf("\n%s\t\t\t[End of entries]\n\n", INDENT(level));
     fflush(stdout);
 }
 
@@ -2353,7 +2339,7 @@ RET_CODE dump_OMAP_debug_info(
 
     printf("%s%-*s %-16s %-8s   %-8s   %-8s\n",
         INDENT(level), digitMax + 2,
-        "idx", "virtualAddrOff", "fileOff", "RVA", "RVA To");
+        "idx", "VA", "FO", "RVA", "RVA To");
 
     for (DWORD i = 0; i < entriesCount; i++, vaBase += entrySize, foBase += entrySize) {
         printf("%s[%0*lu] %016llX %08lX   %08lX   %08lX\n",
@@ -2520,7 +2506,7 @@ RET_CODE dump_debug_dir( // NOT FINISHED YET
         if ((ts >= SOME_REASONABLE_EPOCH && ts <= CURRENT_EPOCH_PLUS_MARGIN) || ts == 0) {
             snprintf(tsStr, sizeof(tsStr), "Time Data Stamp: %lX %s", ts, format_timestamp(ts));
         } else {
-            snprintf(tsStr, sizeof(tsStr), "ReproChecksum: %lu", ts);
+            snprintf(tsStr, sizeof(tsStr), "ReproChecksum: %lX (%lu)", ts, ts);
         }
 
         // Prepare RVA/Raw Data info
@@ -2697,7 +2683,6 @@ RET_CODE dump_tls_dir(
 
     printf("VA                FO        Field       Value\n");
 
-
     if (is64bit) {
         printf("%016llX  %08lX  [8]\t\tStart Address Of Raw Data : %016llX\n",
             vaBase, foBase, tls64->StartAddressOfRawData);
@@ -2754,30 +2739,41 @@ RET_CODE dump_tls_dir(
 
         if (FSEEK64(peFile, offOfCallBacks, SEEK_SET) != 0) return RET_ERROR;
 
-        printf("\n%016llX\t- CALL BACK ENTRIES -\n\n", addressOfCallBacks);
-
-
-        printf("%-5s  %-16s  %-16s  %-16s\n",
-            "Idx", "AddrOfCallBacks", "OffOfCallBacks", "CallBackEntries");
-
         int i = 0;
+        int hasCallbacks = 0;
 
         while (1) {
             DWORD callBackEntry;
 
-            if (fread(&callBackEntry, sizeof(DWORD), 1, peFile) != 1) continue;
+            if (fread(&callBackEntry, sizeof(DWORD), 1, peFile) != 1)
+                break;
 
-            if (callBackEntry == 0) break;
+            if (callBackEntry == 0)
+                break;
+
+            if (!hasCallbacks) {
+                hasCallbacks = 1;
+
+                printf("\n%016llX\t- CALL BACK ENTRIES -\n\n", addressOfCallBacks);
+                printf("%-5s  %-16s  %-16s  %-16s\n",
+                    "Idx", "AddrOfCallBacks", "OffOfCallBacks", "CallBackEntries");
+            }
 
             printf("%-5d  %016llX  %08lX          %08lX\n",
                 i + 1, addressOfCallBacks, offOfCallBacks, callBackEntry);
-                addressOfCallBacks += 4; offOfCallBacks += 4;            
 
+            addressOfCallBacks += 4;
+            offOfCallBacks += 4;
             i++;
         }
-        printf("\n");
-    }
 
+        if (!hasCallbacks) {
+            printf("\t\t\t\t\tTLS Callbacks             : empty (NULL-terminated)\n\n");
+        } else {
+            printf("\n\t\t\t  [End of entries]\n\n");
+        }
+    }
+    
     fflush(stdout);
 
     return RET_SUCCESS;

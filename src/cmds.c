@@ -26,16 +26,16 @@ CommandEntry g_command_table[] = {
     {"--bound-import",     "-bi",   CMD_BOUND_IMPORT},
     {"--iat",              "-iat",  CMD_IAT},
     {"--delay-import",     "-di",   CMD_DELAY_IMPORT},
+    {"--clr-header",       "-ch",   CMD_CLR_HEADER},
     {"--data-directories", "-dd",   CMD_DATA_DIRECTORIES},
 
     // CLR family
-    {"--clr-header",     "-ch",  CMD_CLR_HEADER},
-    {"--clr-metadata",   "-cm",  CMD_CLR_METADATA},
-    {"--clr-readytorun", "-crr", CMD_CLR_READYTORUN},
-    {"--clr-streams",    "-cs",  CMD_CLR_STREAMS},
-    {"--clr-strings",    "-csg", CMD_CLR_STRINGS},
-    {"--clr-tables",     "-ct",  CMD_CLR_TABLES},
-    {"--clr-all",        "-ca",  CMD_CLR_ALL},
+    // {"--clr-metadata",   "-cm",  CMD_CLR_METADATA},
+    // {"--clr-readytorun", "-crr", CMD_CLR_READYTORUN},
+    // {"--clr-streams",    "-cs",  CMD_CLR_STREAMS},
+    // {"--clr-strings",    "-csg", CMD_CLR_STRINGS},
+    // {"--clr-tables",     "-ct",  CMD_CLR_TABLES},
+    // {"--clr-all",        "-ca",  CMD_CLR_ALL},
 
     {"--rich",             "-rh",   CMD_RICH},
     {"--version-info",     "-vi",   CMD_VERSION_INFO},
@@ -1030,20 +1030,23 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 break;
 
-                // to be continued
-            case CMD_CLR_METADATA:
-                break;
-            case CMD_CLR_READYTORUN:
-                break;
-            case CMD_CLR_STREAMS:
-                break;
-            case CMD_CLR_STRINGS:
-                break;
-            case CMD_CLR_TABLES:
-                break;
-            case CMD_CLR_ALL:
-                // handle CLR family
-                break;
+            //
+            // to be continued
+            //
+            
+            // case CMD_CLR_METADATA:
+            //     break;
+            // case CMD_CLR_READYTORUN:
+            //     break;
+            // case CMD_CLR_STREAMS:
+            //     break;
+            // case CMD_CLR_STRINGS:
+            //     break;
+            // case CMD_CLR_TABLES:
+            //     break;
+            // case CMD_CLR_ALL:
+            //     // handle CLR family
+            //     break;
 
             case CMD_RICH:
                 if (peCtx->richHeader) {
