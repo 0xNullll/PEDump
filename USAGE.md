@@ -37,6 +37,7 @@
   - [CLR Header Directory](#clr-header-directory)
   - [All Data Directories](#all-data-directories)
 - [Miscellaneous](#miscellaneous)
+  - [Rich Header](#Rich-Header)
 - [Output Formatting](#output-formatting)
 - [Strings Extraction](#strings-extraction)
 - [Extraction](#extraction)
