@@ -84,10 +84,6 @@ PEDump [options] file [file2]
 - `-ov`,  `--overview`          Print high-level file overview  
 - `-a`,   `--all`               Print all available information  
 
-### Strings
-- `-str`, `--strings [rgex:<pattern>]`  
-Dump ASCII and UTF-16LE strings. Optional regex filtering using POSIX regex or TinyRegex fallback.  
-
 ### Output Formatting
 - `-v2f`, `--va2file <NUMBER>`  Convert virtual address to file offset  
 - `-f`,   `--format <type[:spec]>` Output format:  
@@ -100,6 +96,10 @@ Range specifiers:
 - `:N`              First N lines  
 - `:start,max`      Line or byte range  
 - `0x...`           Byte offset (aligned to line size)  
+
+### Strings
+- `-str`, `--strings [rgex:<pattern>]`  
+Dump ASCII and UTF-16LE strings. Optional regex filtering using POSIX regex or TinyRegex fallback.  
 
 ### Extraction
 - `-x`, `--extract <target[:spec]>`  

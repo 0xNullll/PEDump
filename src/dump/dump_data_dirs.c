@@ -929,7 +929,7 @@ RET_CODE dump_rsrc_dir(
 
 
 void print_version_header(VS_VERSIONINFO_HEADER *versionInfo, ULONGLONG vaBase, DWORD foBase, int level) {
-    printf("%s", INDENT(level));
+    printf("\n%s", INDENT(level));
     wprintf(L"%ls", versionInfo->szKey);
     printf(" - (VA=%llX, FO=%lX) [%u bytes]:\n", vaBase, foBase, versionInfo->wLength);
 
@@ -1346,8 +1346,9 @@ RET_CODE dump_version_info(
     // -- parsing/dumping of Var --
     status = dump_var(peFile, &vaBase, &foBase, &varfileinfo, szKeyBytesLen);
     if (status != RET_SUCCESS) goto cleanup;
-
+    
     cleanup:
+    putchar('\n');
     fflush(stdout);
 
     return status;
