@@ -337,7 +337,7 @@ void print_help(void) {
         // "  -ca,   --clr-all                             Print all CLR-related info\n"
         "\n"
         "Miscellaneous:\n"
-        "  -rh,   --rich                                Print Rich header\n"
+        "  -rh,   --rich-header                         Print Rich header\n"
         "  -vi,   --version-info                        Print Version info\n"
         "  -sym,  --symbol-table                        Print Symbol table\n"
         "  -st,   --string-table                        Print String table\n"
@@ -483,12 +483,13 @@ RET_CODE decrypt_rich_header(PIMAGE_RICH_HEADER encRichHdr, PIMAGE_RICH_HEADER d
     for (int i = 0; i < (int)numberOfEntries; i++) {
         ULONGLONG encEntry = rawEntries[i];
 
-        DWORD compid = (DWORD)(encEntry & 0xFFFFFFFFULL) ^ XORKey;      // low 32 bits
-        DWORD count  = (DWORD)((encEntry >> 32) & 0xFFFFFFFFULL) ^ XORKey; // high 32 bits
+        DWORD count  = (DWORD)( encEntry       & 0xFFFFFFFFULL) ^ XORKey; // lower 32 bits
+        WORD buildID = (WORD)(((encEntry >> 32) & 0xFFFFULL) ^ (XORKey & 0xFFFF)); 
+        WORD prodID  = (WORD)(((encEntry >> 48) & 0xFFFFULL) ^ (XORKey >> 16)); // if key split or rotated
 
-        decRichHdr->Entries[i].BuildID = compid & 0xFFFF;         // low 16 bits
-        decRichHdr->Entries[i].ProdID  = (WORD)((compid >> 16) & 0xFFFF); // high 16 bits
-        decRichHdr->Entries[i].Count   = count;
+        decRichHdr->Entries[i].BuildID = buildID;  // top 16 bits
+        decRichHdr->Entries[i].ProdID  = prodID;   // next 16 bits
+        decRichHdr->Entries[i].Count   = count;    // lower 32 bits
     }
 
     return RET_SUCCESS;

@@ -126,11 +126,9 @@ RET_CODE dump_dos_header(PIMAGE_DOS_HEADER dosHeader, ULONGLONG imageBase) {
 
 RET_CODE dump_rich_header(
     FILE *peFile,
-    DWORD begRichOff,
-    DWORD endRichOff,
     PIMAGE_RICH_HEADER encRichHeader) {
 
-    if (!peFile || !begRichOff || !endRichOff || !encRichHeader) return RET_INVALID_PARAM;
+    if (!peFile || !encRichHeader) return RET_INVALID_PARAM;
 
     PIMAGE_RICH_HEADER decRichHdr = NULL;
     DWORD foBase;
@@ -155,45 +153,78 @@ RET_CODE dump_rich_header(
         return RET_ERROR;
     }
 
-    printf("\n%08lX\t\t\t\t\t\t- RICH HEADER -\n\n", foBase);
+    printf("\n%08lX\t\t\t\t\t\t\t- RICH HEADER -\n\n", foBase);
 
-    printf("Index | FileOff    | Value              | Unmasked Value     | Meaning                            | BuildID | ProdID                             | Count     | Name\n");
-    printf("------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+    // DanS marker
+    printf("%08lX  [4]  DanS marker      : %08X  (\"%c%c%c%c\")\n\n",
+        foBase, decRichHdr->DanS,
+        (decRichHdr->DanS & 0xFF),
+        (decRichHdr->DanS >> 8) & 0xFF,
+        (decRichHdr->DanS >> 16) & 0xFF,
+        (decRichHdr->DanS >> 24) & 0xFF);
+    foBase += 4;
 
-    foBase += sizeof(DWORD) * 4; // Skip over DanS marker (1 DWORD) and 3 checksum padding DWORDs
+    // Checksum paddings
+    printf("%08lX  [4]  Checksum padding : %08X\n",
+        foBase, decRichHdr->checksumPadding1);
+    foBase += 4;
 
-    for (WORD i = 0; i < decRichHdr->NumberOfEntries; i++) {
+    printf("%08lX  [4]  Checksum padding : %08X\n",
+        foBase, decRichHdr->checksumPadding2);
+    foBase += 4;
 
-        PRICH_ENTRY encEntry = &encRichHeader->Entries[i];
-        PRICH_ENTRY decEntry = &decRichHdr->Entries[i];
+    printf("%08lX  [4]  Checksum padding : %08X\n\n\n",
+        foBase, decRichHdr->checksumPadding3);
+    foBase += 4;
 
-        ULONGLONG encRawEntry = ((ULONGLONG)encEntry->Count   << 32) |  // top 32 bits
-                                ((ULONGLONG)encEntry->ProdID << 16) |  // next 16 bits
-                                ((ULONGLONG)encEntry->BuildID);        // lower 16 bits
+    printf("Index | FO         | Value              | Unmasked Value     | Meaning                            | ProdID                               | BuildID  | Count\n");
+    printf("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
 
-        ULONGLONG decRawEntry = ((ULONGLONG)decEntry->Count   << 32) |  // top 32 bits
-                                ((ULONGLONG)decEntry->ProdID << 16) |  // next 16 bits
-                                ((ULONGLONG)decEntry->BuildID);        // lower 16 bits
+    // Note: RICH entries are cross-packed:
+    // ProdID, BuildID, and Count are shifted across adjacent entries,
+    // so I did use i-1 and i in different fields to match the original encoding.
+    for (WORD i = 1; i < decRichHdr->NumberOfEntries; i++) {
+        ULONGLONG encRawEntry =
+            ((ULONGLONG)encRichHeader->Entries[i - 1].ProdID  << 48) |  // top 16 bits
+            ((ULONGLONG)encRichHeader->Entries[i].BuildID << 32) |      // next 16 bits
+            ((ULONGLONG)encRichHeader->Entries[i - 1].Count);           // lower 32 bits (END)
 
+        ULONGLONG decRawEntry =
+            ((ULONGLONG)decRichHdr->Entries[i].Count << 32) |        // top 32 bits
+            ((ULONGLONG)decRichHdr->Entries[i - 1].ProdID  << 16) |  // next 16 bits
+            ((ULONGLONG)decRichHdr->Entries[i - 1].BuildID);         // lower 16 bits (END)
 
-        DWORD comId = REBUILD_RICH_COMID(decEntry->BuildID, decEntry->ProdID);
-
-        printf("%5d | 0x%08lX | 0x%016llX | 0x%016llX | %08u.%08u.%016u | 0x%04X  | 0x%04X - %-25s | %9lu | %s\n",
+        printf("%5d | 0x%08lX | 0x%016llX | 0x%016llX | %08u.%08u.%016u | %08u - %-25s | %08u | %9lu\n",
             i,
             foBase,
             encRawEntry,
             decRawEntry,
-            (unsigned) decEntry->BuildID,
-            (unsigned) decEntry->ProdID,
-            (unsigned) decEntry->Count,
-            decEntry->BuildID,
-            decEntry->ProdID,
-            getRichProductIdName(decEntry->ProdID),
-            decEntry->Count,
-            GetRichCompIdString(comId));
+            (unsigned) decRichHdr->Entries[i - 1].BuildID,
+            (unsigned) decRichHdr->Entries[i - 1].ProdID,
+            (unsigned) decRichHdr->Entries[i].Count,
+            decRichHdr->Entries[i - 1].ProdID,
+            getRichProductIdName(decRichHdr->Entries[i - 1].ProdID),
+            decRichHdr->Entries[i - 1].BuildID,
+            decRichHdr->Entries[i].Count);
 
         foBase += 8; // size of ULONGLONG
     }
+
+    printf("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
+
+
+    // Rich marker and XOR key
+    printf("%08lX  [4]  Rich marker      : %08X  (\"%c%c%c%c\")\n",
+        foBase, decRichHdr->Rich,
+        (decRichHdr->Rich & 0xFF),            // lowest byte
+        (decRichHdr->Rich >> 8) & 0xFF,
+        (decRichHdr->Rich >> 16) & 0xFF,
+        (decRichHdr->Rich >> 24) & 0xFF);
+    foBase += 4;
+
+    printf("%08lX  [4]  Checksum         : %08X\n",
+        foBase, decRichHdr->XORKey);
+    foBase += 4;
 
     printf("\n");
 

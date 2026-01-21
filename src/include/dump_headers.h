@@ -20,15 +20,11 @@ RET_CODE dump_dos_header
 
 // Dumps and analyzes the Rich Header of a PE file.
 // peFile         : handle to the opened PE file.
-// begRichOff     : file offset to the beginning of the Rich header.
-// endRichOff     : file offset to the end of the Rich header.
 // encRichHeader  : pointer to the IMAGE_RICH_HEADER structure.
 // Returns        : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_rich_header
 (
     IN FILE *peFile,
-    IN DWORD begRichOff,
-    IN DWORD endRichOff,
     IN PIMAGE_RICH_HEADER encRichHeader
 );
 

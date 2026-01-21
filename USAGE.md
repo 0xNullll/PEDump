@@ -1217,8 +1217,44 @@ $ PEDump -dd C:\Windows\System32\notepad.exe
 
 ---
 
+### Rich Header
+**Syntax:**
+```bash
+$ PEDump -rh <file>
+$ PEDump --rich-header <file>
+```
+**Description:**
+Print Rich header (Microsoft-specific metadata in PE files, mostly used for compiler/tool identification). Not all values may be fully interpreted.
+**Example:**
+```
+$ PEDump -rh C:\Windows\System32\kernel32.dll
+
+00000080                                                        - RICH HEADER -
+
+00000080  [4]  DanS marker      : 536E6144  ("DanS")
+
+00000084  [4]  Checksum padding : 75037CFD
+00000088  [4]  Checksum padding : 75037CFD
+0000008C  [4]  Checksum padding : 75037CFD
+
+
+Index | FO         | Value              | Unmasked Value     | Meaning                            | ProdID                               | BuildID  | Count
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    1 | 0x00000090 | 0x75037CF97402FD84 | 0x0000000401018179 | 00033145.00000257.0000000000000004 | 00000257 - prodidImplib1400          | 00033145 |         4
+    2 | 0x00000098 | 0x75037C2C759004F4 | 0x000000D100937809 | 00030729.00000147.0000000000000209 | 00000147 - prodidImplib900           | 00030729 |       209
+...
+    9 | 0x000000D0 | 0x75037CFC75FCFD84 | 0x0000000100FF8179 | 00033145.00000255.0000000000000001 | 00000255 - prodidCvtres1400          | 00033145 |         1
+   10 | 0x000000D8 | 0x75037CFC7401FD84 | 0x0000000101028179 | 00033145.00000258.0000000000000001 | 00000258 - prodidLinker1400          | 00033145 |         1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+000000E0  [4]  Rich marker      : 68636952  ("Rich")
+000000E4  [4]  Checksum         : 75037CFD
+
+```
+
+---
+
 Commands include:
-- Rich Header: `-rh`
 - Version Info: `-vi`
 - Symbol Table: `-sym`
 - String Table: `-st`

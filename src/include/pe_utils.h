@@ -25,18 +25,6 @@
     printf("\n\n========================================================================================================\n"); \
     printf("========================================================================================================\n\n")
 
-// Combines a 16-bit BuildID (lower 16 bits) and a 16-bit ProdID (upper 16 bits)
-// into a single 32-bit DWORD representing a comp.id entry in the Rich header.
-#define REBUILD_RICH_COMID(BuildID, ProdID)  ((DWORD)(((WORD)(ProdID) << 16) | ((WORD)(BuildID))))
-
-// Extracts the lower 16 bits (BuildID) from a 32-bit comp.id value.
-// The BuildID typically represents the version/build of the specific tool.
-#define GET_RICH_BUILDID(compid) ((WORD)((compid) & 0xFFFF))
-
-// Extracts the upper 16 bits (ProdID) from a 32-bit comp.id value.
-// The ProdID identifies the product/tool (compiler, linker, etc.) used.
-#define GET_RICH_PRODID(compid)  ((WORD)(((compid) >> 16) & 0xFFFF))
-
 // Extract the high WORD (major or build)
 #define __HIWORD(dw) ((WORD)(((DWORD)(dw) >> 16) & 0xFFFF))
 

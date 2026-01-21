@@ -37,7 +37,7 @@ CommandEntry g_command_table[] = {
     // {"--clr-tables",     "-ct",  CMD_CLR_TABLES},
     // {"--clr-all",        "-ca",  CMD_CLR_ALL},
 
-    {"--rich",             "-rh",   CMD_RICH},
+    {"--rich-header",      "-rh",   CMD_RICH},
     {"--version-info",     "-vi",   CMD_VERSION_INFO},
     {"--symbol-table",     "-sym",  CMD_SYMBOL_TABLE},
     {"--string-table",     "-st",   CMD_STRING_TABLE},
@@ -1044,7 +1044,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
             case CMD_RICH:
                 if (peCtx->richHeader) {
                     if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_rich_header(peCtx->fileHandle, 0x40, (DWORD)dosHeader->e_lfanew, peCtx->richHeader) != RET_SUCCESS) {
+                        if (dump_rich_header(peCtx->fileHandle, peCtx->richHeader) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Rich Header\n");
                         }
                     } else {
@@ -1184,7 +1184,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
 
                     // Dump Rich Header if present
                     if (peCtx->richHeader) {
-                        if (dump_rich_header(peCtx->fileHandle, 0x40, (DWORD)dosHeader->e_lfanew, peCtx->richHeader) != RET_SUCCESS) {
+                        if (dump_rich_header(peCtx->fileHandle, peCtx->richHeader) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump Rich Header\n");
                         }
                     }
