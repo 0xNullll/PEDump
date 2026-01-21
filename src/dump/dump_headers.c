@@ -759,11 +759,11 @@ RET_CODE dump_optional_header(
     vaBase += 4; foBase += 4;
 
     RVA_INFO BaseOfCodeRVAInfo = get_rva_info(is64bit ? opt64->BaseOfCode : opt32->BaseOfCode, sections, numberOfSections, imageBase);
-    printf("%016llX  %08lX  [4]\t\tBase of Code               : %08lX  [VA: %llX] [FO: %lX] [  %-8s]\n%c",
+    printf("%016llX  %08lX  [4]\t\tBase of Code               : %08lX  [VA: %llX] [FO: %lX] [  %-8s]\n%s",
     vaBase, foBase,
         is64bit ? opt64->BaseOfCode : opt32->BaseOfCode,
         BaseOfCodeRVAInfo.va, BaseOfCodeRVAInfo.fileOffset, BaseOfCodeRVAInfo.sectionName,
-    is64bit ? '\n' : ' ');
+    is64bit ? "\n" : "");
 
     vaBase += 4; foBase += 4;
 
@@ -795,51 +795,51 @@ RET_CODE dump_optional_header(
 
     vaBase += 2; foBase += 2;
 
-    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
+    printf("%016llX  %08lX  [2]\t\tOS Version (Minor)         : %04X\n",
+    vaBase, foBase, is64bit ? opt64->MinorOperatingSystemVersion : opt32->MinorOperatingSystemVersion);
+
+    vaBase += 2; foBase += 2;
+
+    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n\n",
             is64bit ? opt64->MajorOperatingSystemVersion : opt32->MajorOperatingSystemVersion,
             MAX_STR_LEN_OS_VERSION,
             osVersionToString(
                 is64bit ? opt64->MajorOperatingSystemVersion : opt32->MajorOperatingSystemVersion,
                 is64bit ? opt64->MinorOperatingSystemVersion : opt32->MinorOperatingSystemVersion));
 
-    printf("%016llX  %08lX  [2]\t\tOS Version (Minor)         : %04X\n\n",
-    vaBase, foBase, is64bit ? opt64->MinorOperatingSystemVersion : opt32->MinorOperatingSystemVersion);
-
-    vaBase += 2; foBase += 2;
-
     printf("%016llX  %08lX  [2]\t\tImage Version (Major)      : %04X\n",
     vaBase, foBase, is64bit ? opt64->MajorImageVersion : opt32->MajorImageVersion);
 
     vaBase += 2; foBase += 2;
 
-    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
+    printf("%016llX  %08lX  [2]\t\tImage Version (Minor)      : %04X\n",
+    vaBase, foBase, is64bit ? opt64->MinorImageVersion : opt32->MinorImageVersion);
+
+    vaBase += 2; foBase += 2;
+
+    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n\n",
             is64bit ? opt64->MajorImageVersion : opt32->MinorImageVersion,
             MAX_STR_LEN_IMAGE_VERSION,
             imageVersionToString(
                 is64bit ? opt64->MajorImageVersion : opt32->MajorImageVersion,
                 is64bit ? opt64->MinorImageVersion: opt32->MinorImageVersion));
 
-    printf("%016llX  %08lX  [2]\t\tImage Version (Minor)      : %04X\n\n",
-    vaBase, foBase, is64bit ? opt64->MinorImageVersion : opt32->MinorImageVersion);
-
-    vaBase += 2; foBase += 2;
-
     printf("%016llX  %08lX  [2]\t\tSubsystem Version (Major)  : %04X\n",
     vaBase, foBase, is64bit ? opt64->MajorSubsystemVersion : opt32->MajorSubsystemVersion);
 
     vaBase += 2; foBase += 2;
 
-    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n",
+    printf("%016llX  %08lX  [2]\t\tSubsystem Version (Minor)  : %04X\n",
+    vaBase, foBase, is64bit ? opt64->MinorSubsystemVersion : opt32->MinorSubsystemVersion);
+
+    vaBase += 2; foBase += 2;
+
+    printf("\t\t\t\t\t\t\t\t   + %04X  %-*s\n\n",
             is64bit ? opt64->MajorSubsystemVersion : opt32->MinorSubsystemVersion,
             MAX_STR_LEN_SUBSYSTEM_VERSION_FLAG,
             subSystemVersionFlagToString(
                 is64bit ? opt64->MajorSubsystemVersion : opt32->MajorSubsystemVersion,
                 is64bit ? opt64->MinorSubsystemVersion: opt32->MinorSubsystemVersion));
-
-    printf("%016llX  %08lX  [2]\t\tSubsystem Version (Minor)  : %04X\n\n",
-    vaBase, foBase, is64bit ? opt64->MinorSubsystemVersion : opt32->MinorSubsystemVersion);
-
-    vaBase += 2; foBase += 2;
 
     printf("%016llX  %08lX  [4]\t\tWin32 Version Value        : %08lX\n\n",
     vaBase, foBase, is64bit ? opt64->Win32VersionValue : opt32->Win32VersionValue);
@@ -964,10 +964,14 @@ RET_CODE dump_optional_header(
     for (int i = 0; i < IMAGE_NUMBEROF_DIRECTORY_ENTRIES; i++) {
         if (dir[i].Size != 0 && dir[i].VirtualAddress != 0)  {
 
-            RVA_INFO DataDirectoryRvaInfo = get_rva_info(dir[i].VirtualAddress, sections, numberOfSections, imageBase);
-
-            printf("%016llX  %08lX  [8]\t\t%s [VA: %llX] [FO: %lX] [  %-8s]\n",
-            vaBase, foBase, data_directory_names[i], DataDirectoryRvaInfo.va, DataDirectoryRvaInfo.fileOffset, DataDirectoryRvaInfo.sectionName);             
+            // Security Table and Bound Import exist only at file offsets, not in memory (no VA)
+            if (i == 4 || i == 11) {
+                printf("%016llX  %08lX  [8]\t\t%s\n", vaBase, foBase, data_directory_names[i]);
+            } else {
+                RVA_INFO DataDirectoryRvaInfo = get_rva_info(dir[i].VirtualAddress, sections, numberOfSections, imageBase);
+                printf("%016llX  %08lX  [8]\t\t%s [VA: %llX] [FO: %lX] [  %-8s]\n",
+                vaBase, foBase, data_directory_names[i], DataDirectoryRvaInfo.va, DataDirectoryRvaInfo.fileOffset, DataDirectoryRvaInfo.sectionName);
+            }
 
             printf("%016llX  %08lX  [4]\t\t    Virtual Address         :  %08lX\n",
             vaBase + 4, foBase + 4, dir[i].VirtualAddress);

@@ -185,16 +185,16 @@ VA                FO        Size        Value
 0000000140000134  00000134  [4]         File Alignment             : 00001000
 
 0000000140000138  00000138  [2]         OS Version (Major)         : 000A
-                                                                   + 000A  IMAGE_OS_WIN10
 000000014000013A  0000013A  [2]         OS Version (Minor)         : 0000
+                                                                   + 000A  IMAGE_OS_WIN10
 
 000000014000013C  0000013C  [2]         Image Version (Major)      : 000A
-                                                                   + 000A  IMAGE_VER_UNKNOWN
 000000014000013E  0000013E  [2]         Image Version (Minor)      : 0000
+                                                                   + 000A  IMAGE_VER_10_0
 
 0000000140000140  00000140  [2]         Subsystem Version (Major)  : 000A
-                                                                   + 000A  IMAGE_SUBSYS_WIN10
 0000000140000142  00000142  [2]         Subsystem Version (Minor)  : 0000
+                                                                   + 000A  IMAGE_SUBSYS_WIN10
 
 0000000140000144  00000144  [4]         Win32 Version Value        : 00000000
 
@@ -518,7 +518,7 @@ VA                FO        Size        Value
 00000001400299F0  000299F0  [8]            31960
 00000001400299F8  000299F8  [8]            31838
 
-------------- END FO IMPORT DESCRIPTOR 1 (25 functions) -------------
+------------- END OF IMPORT DESCRIPTOR 1 (25 functions) -------------
 
 [... skipped ...]
 
@@ -552,7 +552,7 @@ VA                FO        Size        Value
 
 0000000140029D60  00029D60  [8]            3354C
 
-------------- END FO IMPORT DESCRIPTOR 50 (1 function) -------------
+------------- END OF IMPORT DESCRIPTOR 50 (1 function) -------------
 ```
 
 ### Resource Directory
@@ -1111,7 +1111,7 @@ VA                FO        Size        Value
 0000000140039000  00037000  [8]        140002B24
 0000000140039008  00037008  [8]        140002B12
 
---------------------------- END FO DELAY IMPORT DESCRIPTOR 1 (2 functions) ---------------------------
+--------------------------- END OF DELAY IMPORT DESCRIPTOR 1 (2 functions) ---------------------------
 
 [... skipped entries for brevity ...]
 
@@ -1132,7 +1132,7 @@ Print CLR header (not fully implemented).
 ```
 $ PEDump -ch C:/Windows/Microsoft.NET/Framework/v4.0.30319/mscorlib.dll
 
-0000000079722008 - CLR/.NET HEADER DIRECTORY -
+0000000079722008        - CLR/.NET HEADER DIRECTORY -
 
 VA                FO        Size        Value
 0000000079722008  00000208  [4]         cb                           : 00000048
@@ -1176,12 +1176,36 @@ VA                FO        Size        Value
 **Syntax:**
 ```bash
 $ PEDump -dd <file>
+$ PEDump --data-directories <file>
 ```
 **Description:**
+Prints all available data directories (Export, Import, Resource, Exception, Security, Relocations, Debug, TLS, Load Config, Bound Import, IAT, Delay Import, COM Descriptor) in a single command.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -dd C:\Windows\System32\notepad.exe
+
+00000001400308D0        - IMPORT DIRECTORY - number of import descriptors: 50
+# ... import directory details ...
+
+
+========================================================================================================
+========================================================================================================
+
+
+000000004003a000        - RESOURCE DIRECTORY -
+# ... import directory details ...
+
+
+========================================================================================================
+========================================================================================================
+
+
+0000000140029790        - LOAD CONFIG DIRECTORY -
+# ... resource directory details ...
+
+
+# ... additional directories printed similarly ...
 ```
 
 ---
