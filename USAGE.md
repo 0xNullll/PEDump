@@ -37,7 +37,11 @@
   - [CLR Header Directory](#clr-header-directory)
   - [All Data Directories](#all-data-directories)
 - [Miscellaneous](#miscellaneous)
-  - [Rich Header](#Rich-Header)
+  - [Rich Header](#rich-header)
+  - [Version Info](#version-info)
+  - [Symbol Table](#symbol-table)
+  - [String Table](#string-table)
+  - [Overlay](#overlay)
 - [Output Formatting](#output-formatting)
 - [Strings Extraction](#strings-extraction)
 - [Extraction](#extraction)
@@ -1256,13 +1260,122 @@ Index | FO         | Value              | Unmasked Value     | Meaning          
 
 ---
 
+### Version Info
+**Syntax:**
+```bash
+$ PEDump -vi <file>
+$ PEDump --version-info <file>
+```
+**Description:**
+Print Version Information (VS_VERSION_INFO) resource, including fixed metadata and string tables (company, version, product, etc.).
+
+**Example:**
+```
+$ PEDump -vi C:\Windows\System32\kernel32.dll
+
+VS_VERSION_INFO - (VA=1800C70B0, FO=C60B0) [928 bytes]:
+    wValueLength : 0034 (52)
+    wType        : binary data
+
+    VS_FIXEDFILEINFO - (VA=1800C70D8, FO=C60D8) [52 bytes]:
+        dwSignature    : FEEF04BD
+        StrucVersion   : 00010000
+        FileVersion    : 10.0.26100.7623
+        ProductVersion : 10.0.26100.7623
+        FileFlagsMask  : 0000003F
+        dwFileFlags    : 00000000
+        FileOS         : 00040004 (VOS_NT_WINDOWS32)
+        FileType       : 00000002 (VFT_DLL)
+        FileSubtype    : 00000000
+        FileDate       : 00000000
+
+StringFileInfo - (VA=1800C710C, FO=C610C) [768 bytes]:
+    040904B0 (U.S. English, Unicode) - (VA=1800C7130, FO=C6130) [732 bytes]:
+        (VA=1800C7148, FO=C6148)   CompanyName        : Microsoft Corporation                                                [76 bytes]
+        (VA=1800C7194, FO=C6194)   FileDescription    : Windows NT BASE API Client DLL                                       [102 bytes]
+        (VA=1800C71FC, FO=C61FC)   FileVersion        : 10.0.26100.7623 (WinBuild.160101.0800)                               [110 bytes]
+        (VA=1800C726C, FO=C626C)   InternalName       : kernel32                                                             [50 bytes]
+        (VA=1800C72A0, FO=C62A0)   LegalCopyright     : ⌐ Microsoft Corporation. All rights reserved.                        [128 bytes]
+        (VA=1800C7320, FO=C6320)   OriginalFilename   : kernel32                                                             [58 bytes]
+        (VA=1800C735C, FO=C635C)   ProductName        : Microsoft« Windows« Operating System                                 [106 bytes]
+        (VA=1800C73C8, FO=C63C8)   ProductVersion     : 10.0.26100.7623                                                      [68 bytes]
+
+VarFileInfo - (VA=1800C740C, FO=C640C) [68 bytes]:
+     Var - (VA=1800C742C, FO=C642C) [36 bytes]:
+        Translation : 4B00409 (Unicode, U.S. English) - (VA=1800C744C, FO=C644C) [4 bytes]
+
+```
+
+---
+
+### Symbol Table
+**Syntax:**
+```bash
+$ PEDump -sym <file>
+$ PEDump --symbol-table <file>
+```
+**Description:**
+Print COFF symbol table, including symbol names, section references, and auxiliary symbol records.
+
+**Example:**
+```
+
+```
+
+---
+
+### String Table
+**Syntax:**
+```bash
+$ PEDump -st <file>
+$ PEDump --string-table <file>
+```
+**Description:**
+Print PE string table, including all long COFF symbol names, their offsets, and references used by the symbol table.
+
+**Example:**
+```
+
+```
+
+---
+
+### Overlay
+**Syntax:**
+```bash
+$ PEDump -o <file>
+$ PEDump --overlay <file>
+```
+**Description:**
+Print PE overlay, including any extra data appended after the last section, and dump the raw bytes with offsets, showing the full content as-is.
+
+**Example:**
+```
+PEDump -o C:\Windows\System32\kernel32.dll
+
+[+] Dump
+    Start offset : 0x000C8000
+    End offset   : 0x000CC22F
+    Size         : 0x00004230 (16944 bytes)
+    Bytes/line   : 16
+
+ADDR         HEX BYTES                                            ASCII              NAME
+0x000C8000   30 42 00 00  00 02 02 00  30 82 42 24  06 09 2A 86   |0B......0.B$..*.| * Security Directory * Overlay (after last section)
+0x000C8010   48 86 F7 0D  01 07 02 A0  82 42 15 30  82 42 11 02   |H........B.0.B..|
+0x000C8020   01 01 31 0F  30 0D 06 09  60 86 48 01  65 03 04 02   |..1.0...`.H.e...|
+0x000C8030   01 05 00 30  82 1C DC 06  0A 2B 06 01  04 01 82 37   |...0.....+.....7|
+0x000C8040   02 01 04 A0  82 1C CC 30  82 1C C8 30  82 1C 91 06   |.......0...0....|
+
+# ... additional lines printed similarly ...
+
+```
+
+---
+
 Commands include:
-- Version Info: `-vi`
-- Symbol Table: `-sym`
-- String Table: `-st`
 - Overlay: `-o`
 - Overview: `-ov`
-- All Info: `-a` (not implemented yet)
+- All Info: `-a`
 
 **Example for Overview:**
 ```
@@ -1276,7 +1389,6 @@ Commands include:
 ***Commands to adjust how output is displayed, including tables, raw formats, or VA conversions.***
 
 ---
-
 **Syntax:**
 ```bash
 PEDump -f <type[:spec]> <file>
