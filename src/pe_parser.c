@@ -108,7 +108,7 @@ RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RI
 
     if (!richIdx) { SAFE_FREE(rawBytes); return RET_NO_VALUE; }
 
-    for (int i = richIdx - 1; i >= 0; i--) {
+    for (int i = richIdx; i >= 0; i--) {
         DWORD decrypted = raw[i] ^ checksum;
 
         if (decrypted == tagEndId) {
@@ -130,7 +130,7 @@ RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RI
 
     if (!danSIdx) { SAFE_FREE(rawBytes); return RET_NO_VALUE; }
 
-    numberOfEntries = (WORD)rawEntryDWORDs / 2;
+    numberOfEntries = (WORD)((rawEntryDWORDs / 2) + 1);
 
 
     *richHeader = calloc(1, sizeof(IMAGE_RICH_HEADER));
@@ -161,7 +161,7 @@ RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RI
 
     (*richHeader)->NumberOfEntries = numberOfEntries;
 
-    memcpy((*richHeader)->Entries, &raw[entryIdx], numberOfEntries * sizeof(RICH_ENTRY));
+    memcpy((*richHeader)->Entries, &raw[entryIdx - 2], numberOfEntries * sizeof(RICH_ENTRY));
 
     (*richHeader)->richHdrOff = richHdrStartOff;
 

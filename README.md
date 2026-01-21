@@ -76,7 +76,7 @@ PEDump [options] file [file2]
 - `-dd`,   `--data-directories` Print all data directories  
 
 ### Miscellaneous
-- `-rh`,  `--rich`              Print Rich header  
+- `-rh`,  `--rich-header`       Print Rich header  
 - `-vi`,  `--version-info`      Print version information  
 - `-sym`, `--symbol-table`      Print COFF symbol table  
 - `-st`,  `--string-table`      Print COFF string table  
