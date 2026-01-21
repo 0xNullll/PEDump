@@ -119,7 +119,7 @@ RET_CODE dump_pe_overview(PPEContext peCtx) {
 
     // -------------------- Basic Sizes --------------------
     printf("Disk File Size             : %llu bytes\n", (ULONGLONG)peCtx->fileSize);
-    printf("In-Memory Size             : %llu bytes\n", peCtx->sizeOfImage);
+    printf("In Memory Size             : %llu bytes\n", peCtx->sizeOfImage);
     printf("Computed Image Size        : %lu bytes (from sections + SectionAlignment)\n", computeImpliedImageSize(peCtx));
     printf("Disk vs Memory Delta       : %lld bytes (Memory - Disk)\n", (LONGLONG)peCtx->sizeOfImage - peCtx->fileSize);
     printf("Memory vs Computed Delta   : %lld bytes (Memory - Computed Image Size)\n", getLoadedVsImpliedDelta(peCtx));

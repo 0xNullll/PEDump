@@ -71,6 +71,12 @@ const char* imageVersionToString(WORD major, WORD minor) {
         case IMAGE_VER_4_1:     return "IMAGE_VER_4_1";
         case IMAGE_VER_5_0:     return "IMAGE_VER_5_0";
         case IMAGE_VER_5_1:     return "IMAGE_VER_5_1";
+        case IMAGE_VER_6_0:     return "IMAGE_VER_6_0";
+        case IMAGE_VER_6_1:     return "IMAGE_VER_6_1";
+        case IMAGE_VER_6_2:     return "IMAGE_VER_6_2";
+        case IMAGE_VER_6_3:     return "IMAGE_VER_6_3";
+        case IMAGE_VER_10_0:    return "IMAGE_VER_10_0";
+        case IMAGE_VER_11_0:    return "IMAGE_VER_11_0";
         default:                return "IMAGE_VER_UNKNOWN";
     }
 }

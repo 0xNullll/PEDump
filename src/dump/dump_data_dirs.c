@@ -575,7 +575,7 @@ RET_CODE dump_import_dir(
         }
 
         // End of one DLL import descriptor
-        printf("\n------------- END FO IMPORT DESCRIPTOR %d (%llu function%s) -------------\n\n", 
+        printf("\n------------- END OF IMPORT DESCRIPTOR %d (%llu function%s) -------------\n\n", 
             i + 1, numIAT, numIAT == 1 ? "" : "s");
 
         fflush(stdout);
@@ -802,7 +802,7 @@ RET_CODE dump_rsrc_dir(
     int level = 0;
              
     // Print resource directory header (root)
-    printf("\n\t\t\t\t  - RESOURCE DIRECTORY -\n\n");
+    printf("\n%016lx\t\t  - RESOURCE DIRECTORY -\n\n", vaBase);
     printf("Root Directory (VA=%llX, FO=%lX):\n", vaBase, foBase);
 
     level += 1;
@@ -4197,11 +4197,11 @@ RET_CODE dump_delay_import_dir(
 
         // End of one DLL import descriptor
         char header[64];
-        sprintf(header, "END FO DELAY IMPORT DESCRIPTOR %d (%ld function%s)", i + 1, numIAT, numIAT == 1 ? "" : "s");
+        sprintf(header, "END OF DELAY IMPORT DESCRIPTOR %d (%ld function%s)", i + 1, numIAT, numIAT == 1 ? "" : "s");
 
         printf("\n");
         print_centered_header(header, '-', 102);
-        printf("\n");
+        printf("\n\n");
 
         fflush(stdout);
     }
@@ -4238,7 +4238,7 @@ RET_CODE dump_clr_header_dir(
     }
 
     // Print CLR/.NET Header directory header
-    printf("\n%016llX - CLR/.NET HEADER DIRECTORY -\n\n",
+    printf("\n%016llX\t- CLR/.NET HEADER DIRECTORY -\n\n",
         vaBase); 
 
     printf("VA                FO        Size        Value\n");

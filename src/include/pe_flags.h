@@ -303,19 +303,28 @@ typedef enum _IMAGE_OS_VERSION {
 // Image version for IMAGE_OPTIONAL_HEADER
 // ---------------------------------------------------------------------
 #ifndef IMAGE_VER_UNKNOWN
+// Used for informational purposes only; loader ignores this
 typedef enum _IMAGE_FILE_VERSION {
     IMAGE_VER_UNKNOWN  = 0x00000000,
     IMAGE_VER_DEFAULT  = 0x00000000,
-    IMAGE_VER_1_0      = 0x00010000,
-    IMAGE_VER_1_1      = 0x00010001,
-    IMAGE_VER_2_0      = 0x00020000,
-    IMAGE_VER_2_1      = 0x00020001,
-    IMAGE_VER_3_0      = 0x00030000,
-    IMAGE_VER_3_1      = 0x00030001,
-    IMAGE_VER_4_0      = 0x00040000,
-    IMAGE_VER_4_1      = 0x00040001,
-    IMAGE_VER_5_0      = 0x00050000,
-    IMAGE_VER_5_1      = 0x00050001
+
+    IMAGE_VER_1_0      = 0x00010000, // Windows 1.0 era / early DOS programs
+    IMAGE_VER_1_1      = 0x00010001, // Windows 1.1 era
+    IMAGE_VER_2_0      = 0x00020000, // Windows 2.0
+    IMAGE_VER_2_1      = 0x00020001, // Windows 2.1
+    IMAGE_VER_3_0      = 0x00030000, // Windows 3.0
+    IMAGE_VER_3_1      = 0x00030001, // Windows 3.1
+    IMAGE_VER_4_0      = 0x00040000, // Windows 95 / Windows NT 4.0 era
+    IMAGE_VER_4_1      = 0x00040001, // Windows NT 4.0 SP1 / 95 minor updates
+    IMAGE_VER_5_0      = 0x00050000, // Windows 2000
+    IMAGE_VER_5_1      = 0x00050001, // Windows XP
+
+    IMAGE_VER_6_0      = 0x00060000, // Windows Vista / 7
+    IMAGE_VER_6_1      = 0x00060001, // Windows 7
+    IMAGE_VER_6_2      = 0x00060002, // Windows 8
+    IMAGE_VER_6_3      = 0x00060003, // Windows 8.1
+    IMAGE_VER_10_0     = 0x000A0000, // Windows 10
+    IMAGE_VER_11_0     = 0x000B0000  // Windows 11
 } IMAGE_FILE_VERSION;
 #endif
 
