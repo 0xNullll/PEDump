@@ -1226,6 +1226,7 @@ $ PEDump --rich-header <file>
 ```
 **Description:**
 Print Rich header (Microsoft-specific metadata in PE files, mostly used for compiler/tool identification). Not all values may be fully interpreted.
+
 **Example:**
 ```
 $ PEDump -rh C:\Windows\System32\kernel32.dll
