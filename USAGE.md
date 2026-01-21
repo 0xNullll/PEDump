@@ -2,13 +2,14 @@
 
 > **Note:** This file provides detailed command explanations, examples, and tips for using `PEDump`.
 > For a quick reference, see [README.md](README.md).
+> **Windows Version for Examples:** All Windows files used in these tests are from Version 25H2 (OS Build 26200.7623).
 
 ---
 
 ## Overview
 
 `PEDump` is a PE (Portable Executable) analysis tool that allows you to inspect headers, sections, data directories, extract strings, hash sections, and compare files.
-> **Windows Version for Examples:** All Windows files used in these tests are from Version 25H2 (OS Build 26200.7623).
+
 ---
 
 ## Table of Contents
