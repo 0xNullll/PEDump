@@ -85,17 +85,23 @@ PEDump [options] file [file2]
 - `-a`,   `--all`               Print all available information  
 
 ### Output Formatting
-- `-v2f`, `--va2file <NUMBER>`  Convert virtual address to file offset  
-- `-f`,   `--format <type[:spec]>` Output format:  
-  - `hex`   Hexadecimal bytes (16 bytes per line)  
-  - `dec`   Decimal bytes (0–255)  
-  - `bin`   Binary bytes  
-  - `table` Offset | Hex | ASCII  
 
-Range specifiers:  
-- `:N`              First N lines  
-- `:start,max`      Line or byte range  
-- `0x...`           Byte offset (aligned to line size)  
+- `-v2f`, `--va2file <NUMBER>`  
+  Convert a virtual address to a file offset.
+
+- `-f`, `--format <type[:spec]>`  
+  Output format and optional range:  
+
+  **Types:**  
+  - `hex`   – hexadecimal bytes (16 per line)  
+  - `dec`   – decimal bytes (0–255)  
+  - `bin`   – binary bytes  
+  - `table` – offset | hex | ASCII (range ignored)  
+
+  **Range:**  
+  - `:N`          – first N lines (`-N` → last |N| lines)  
+  - `:start,max`  – from start to max (lines or offsets, no negatives)  
+  - `:start..end` – from start to end offsets (decimal or hex, no negatives)  
 
 ### Strings
 - `-str`, `--strings [rgex:<pattern>]`  
