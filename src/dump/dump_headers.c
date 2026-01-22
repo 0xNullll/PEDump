@@ -580,13 +580,14 @@ RET_CODE dump_string_table(FILE *peFile, DWORD symTableOffset, DWORD numberOfSym
     }
 
     printf("\n%08lX\t- COFF STRING TABLE -\n\n", stringTableOffset);
-    printf("Offset    Length    String\n");
-    printf("--------  -------   ------------------------------\n");
+    printf("Idx      FO        Length   String\n");
+    printf("-------  --------  -------  ------------------------------\n");
 
     foBase = stringTableOffset + sizeof(DWORD);
     cursor = stringTable + sizeof(DWORD);
     end    = stringTable + stringTableSize;
 
+    DWORD idx = 1;
     while (cursor < end) {
         if (*cursor == '\0') {
             printf("%08lX  %-7d  \n", foBase, 0);
@@ -596,10 +597,12 @@ RET_CODE dump_string_table(FILE *peFile, DWORD symTableOffset, DWORD numberOfSym
         }
 
         len = strlen(cursor);
-        printf("%08lX  %-7zu  %s\n", foBase, len, cursor);
+        printf("%-7u  %08lX  %-7zu  %s\n", idx, foBase, len, cursor);
+        idx++;
         cursor += len + 1;
         foBase += (DWORD)(len + 1);
     }
+    printf("----------------------------------------------------------\n");
 
     status = RET_SUCCESS;
 

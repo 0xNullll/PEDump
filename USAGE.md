@@ -6,7 +6,7 @@
 
 ---
 
-## Overview
+## Summary
 
 `PEDump` is a PE (Portable Executable) analysis tool that allows you to inspect headers, sections, data directories, extract strings, hash sections, and compare files.
 
@@ -14,7 +14,7 @@
 
 ## Table of Contents
 
-- [General](#general)
+- [Help & Usage](#help--usage)
 - [Headers & PE Information](#headers--pe-information)
   - [DOS Header](#dos-header)
   - [File Header](#file-header)
@@ -42,7 +42,10 @@
   - [Symbol Table](#symbol-table)
   - [String Table](#string-table)
   - [Overlay](#overlay)
-- [Output Formatting](#output-formatting)
+  - [Overview](#overview)
+- [Formatting](#formatting)
+  -[Address Translation](#address-translation)
+  -[Output Formatting](#output-formatting)
 - [Strings Extraction](#strings-extraction)
 - [Extraction](#extraction)
 - [Hashing](#hashing)
@@ -50,7 +53,7 @@
 
 ---
 
-## General
+## Help & Usage
 
 ***Basic usage, global flags, and help commands.***
 
@@ -1319,6 +1322,42 @@ Print COFF symbol table, including symbol names, section references, and auxilia
 
 **Example:**
 ```
+$ PEDump -sym PEDump.exe
+
+0008D000   - COFF SYMBOL TABLE: 3502 Entries -
+
+    [0001] .file (FO=8D000)
+        Value: 5F (RVA=0 | FO=0) | Type: (NULL, NULL) | Section: (DEBUG symbol) | Storage: (IMAGE_SYM_CLASS_FILE - File)
+        Aux:
+            [0002] Auxiliary File Symbol (FO=8D012)
+                File Name : crtexe.c
+
+    [0003] __mingw_invalidParameterHandler (FO=8D024)
+        Value: 0 (RVA=0 | FO=0) | Type: (NULL, FUNCTION) | Section: (.text) | Storage: (IMAGE_SYM_CLASS_STATIC - Static Symbol)
+        Aux:
+            [0004] Auxiliary Section Definition Symbol (FO=0008D036)
+                Length              : 0x00000000 (0)
+                NumberOfRelocations : 0x0000 (0)
+                NumberOfLinenumbers : 0x0000 (0)
+                CheckSum            : 0x00000000
+                Number              : 4 (0x4)
+                Selection           : 0
+
+
+    [... skipped entries for brevity ...]
+
+
+    [3500] __imp_fputwc (FO=9C606)
+        Value: 488 (RVA=58488 | FO=54488) | Type: (NULL, NULL) | Section: (.idata) | Storage: (IMAGE_SYM_CLASS_EXTERNAL - External Symbol)
+        Aux: None
+
+    [3501] free (FO=9C618)
+        Value: 3ACA8 (RVA=3BCA8 | FO=3B2A8) | Type: (NULL, FUNCTION) | Section: (.text) | Storage: (IMAGE_SYM_CLASS_EXTERNAL - External Symbol)
+        Aux: None
+
+    [3502] __mingw_app_type (FO=9C62A)
+        Value: 3A0 (RVA=0 | FO=0) | Type: (NULL, NULL) | Section: (.bss) | Storage: (IMAGE_SYM_CLASS_EXTERNAL - External Symbol)
+        Aux: None
 
 ```
 
@@ -1335,6 +1374,26 @@ Print PE string table, including all long COFF symbol names, their offsets, and 
 
 **Example:**
 ```
+$ PEDump -st PEDump.exe
+
+0009CA3C        - COFF STRING TABLE -
+
+Idx      FO        Length   String
+-------  --------  -------  ------------------------------
+1        0009CA40  14       .debug_aranges
+2        0009CA4F  11       .debug_info
+3        0009CA5B  13       .debug_abbrev
+4        0009CA69  11       .debug_line
+5        0009CA75  12       .debug_frame
+6        0009CA82  10       .debug_str
+7        0009CA8D  15       .debug_line_str
+8        0009CA9D  15       .debug_loclists
+9        0009CAAD  15       .debug_rnglists
+10       0009CABD  31       __mingw_invalidParameterHandler
+...
+663      0009FBA0  12       __imp_fputwc
+664      0009FBAD  16       __mingw_app_type
+----------------------------------------------------------
 
 ```
 
@@ -1372,38 +1431,153 @@ ADDR         HEX BYTES                                            ASCII         
 
 ---
 
-Commands include:
-- Overlay: `-o`
-- Overview: `-ov`
-- All Info: `-a`
 
-**Example for Overview:**
-```
-# output example placeholder
-```
-
----
-
-## Output Formatting
-
-***Commands to adjust how output is displayed, including tables, raw formats, or VA conversions.***
-
----
+### Overview
 **Syntax:**
 ```bash
-PEDump -f <type[:spec]> <file>
-PEDump -v2f NUMBER <file>
+$ PEDump -ov <file>
+$ PEDump --overview <file>
 ```
 **Description:**
-Format output, convert VA to file offset.
-
-**Types:** hex, dec, bin, table
-
-**Range Specifiers:** :N, :start,max, 0xHEX
+Print a computed overview of the PE file, summarizing disk vs memory layout, image size calculations, alignment effects, overlay presence, section statistics, and density metrics derived from headers and sections. Values are computed from the parsed PE structures and may differ from raw on-disk sizes.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -ov C:\Windows\System32\kernel32.dll
+
+======================================================================
+Computed Overview : C:\Windows\System32\kernel32.dll
+----------------------------------------------------------------------
+Disk File Size             : 836144 bytes
+In Memory Size             : 823296 bytes
+Computed Image Size        : 823296 bytes (from sections + SectionAlignment)
+Disk vs Memory Delta       : -12848 bytes (Memory - Disk)
+Memory vs Computed Delta   : 0 bytes (Memory - Computed Image Size)
+Truncated                  : no
+
+Overlay Present            : yes
+Overlay Offset             : 0xC8000 bytes
+Overlay Size               : 16944 bytes (2.03% of file)
+
+File Alignment             : 0x1000 bytes
+Memory Alignment           : 0x1000 bytes
+Alignment Waste (disk)     : 0 bytes (0.00% of file)
+Alignment Expansion (mem)  : 16532 bytes (2.01% of memory image)
+
+Header + Section Table     : 824 bytes (DOS + NT + Sections)
+
+Section Count              : 8
+Executable Sections Count  : 2
+Writable Sections Count    : 2
+Total Raw Data             : 815104 bytes
+Total Virtual Data         : 802668 bytes
+Executable/Data Ratio      : 214.65% (RX vs RW)
+
+Header Density             : 0.10% of file
+Memory Density             : 97.49% of memory image
+----------------------------------------------------------------------
+
+```
+
+---
+
+## Formatting
+
+***Commands for VA-to-file offset conversions and adjusting output formats, including tables and raw***
+
+---
+
+### Address Translation
+**Syntax:**
+```bash
+$ PEDump -v2f NUMBER <file>
+$ PEDump --va2file NUMBER <file>
+```
+**Description:**
+convert VA to file offset.
+
+**Example:**
+```
+$ PEDump -v2f 180016967 C:\Windows\System32\kernel32.dll
+
+=== VA -> File Offset ===
+VA  :  0x0000000180016967
+RVA :  0x00016967
+FO  :  0x00016967
+Sec :  .text (Index 1)
+
+```
+
+---
+
+### Output Formatting
+**Syntax:**
+```bash
+$ PEDump -f <type[:spec]> <file>
+$ PEDump --format <type[:spec]> <file>
+```
+
+**Description:**
+Controls how PEDump formats its output and optionally restricts the displayed byte range. When a format is specified, it is applied consistently across **all streamed commands** for the duration of the current run. If no format is explicitly selected, PEDump defaults to the `table` view.
+
+**Types:**
+- `hex`   – display bytes in **hexadecimal**, 16 bytes per line
+- `dec`   – display bytes as **decimal values** (0–255)
+- `bin`   – display bytes in **binary**, 8 bits per byte
+- `table` – combined view: `offset | hex | ASCII` (**range specifiers are ignored**)
+
+**Range Specifiers (for hex/dec/bin only):**
+- `:N`           – print the first N lines; if negative, print |N| lines from the end
+- `:start,max`   – print from **start** to **max**
+  - decimal → **line index**
+  - `0xHEX` → **file offset**, rounded up to the nearest line boundary
+  - **negative values are not allowed**
+- `:start..end`  – print from **start** to **end** offsets
+  - decimal → **byte offset**, rounded up to the nearest line boundary
+  - `0xHEX` → **hex byte offset**
+  - **negative values are not allowed**
+
+**Notes:**
+- The selected output format applies to **all streamed commands** for the duration of the current run.
+- If no format is specified, PEDump uses the `table` format by default.
+- Bytes-per-line depends on the format (16 for hex/dec/bin).
+- Offsets starting with `0x` are treated as byte offsets and **aligned to the view's bytes-per-line**.
+
+**Example:**
+```
+# Print the File Header in hexadecimal
+PEDump -f hex -fh C:\Windows\System32\kernel32.dll
+
+[+] Dump
+    Start offset : 0x000000F4
+    End offset   : 0x00000107
+    Size         : 0x00000014 (20 bytes)
+    Bytes/line   : 16
+
+ADDR         HEX BYTES                                            ASCII              NAME
+0x000000F4   64 86 08 00  7F 00 3A D8  00 00 00 00  00 00 00 00   |d.....:.........| * File Header
+0x00000104   F0 00 22 20                                          |.."             |
+
+# Print first 10 lines of the file in hexadecimal (:N syntax)
+PEDump -f hex:10 -a C:\Windows\System32\kernel32.dll
+
+# Print last 10 lines of the file in decimal (:N syntax with negative value)
+PEDump -f dec:-10 -a C:\Windows\System32\kernel32.dll
+
+# Print bytes from 0x100 to 0x1FF in binary (:start,max syntax using byte offsets)
+PEDump -f bin:0x100,0x1FF -a C:\Windows\System32\kernel32.dll
+
+# Print lines 5 to 15 in hexadecimal (:start,max syntax using line numbers)
+PEDump -f hex:5,15 -a C:\Windows\System32\kernel32.dll
+
+# Print byte offsets from 0x200 to 0x2FF in hexadecimal (:start,max syntax using byte offsets)
+PEDump -f hex:0x200,0x2FF -a C:\Windows\System32\kernel32.dll
+
+# Print byte offsets from 0x300 to 0x350 in hexadecimal (:start..end syntax)
+PEDump -f hex:0x300..0x350 -a C:\Windows\System32\kernel32.dll
+
+# Display a combined table view of the DOS header
+PEDump -f table -dh C:\Windows\System32\kernel32.dll
 ```
 
 ---

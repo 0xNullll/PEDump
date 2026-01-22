@@ -113,7 +113,7 @@ RET_CODE dump_pe_overview(PPEContext peCtx) {
     double overlayDensity      = overlaySize ? (double)overlaySize / (double)peCtx->fileSize * 100.0 : 0.0;
 
     // ----------------------------------------------------------------------
-    printf("======================================================================\n");
+    printf("\n======================================================================\n");
     printf("Computed Overview : %s\n", peCtx->filePath);
     printf("----------------------------------------------------------------------\n");
 
@@ -166,7 +166,7 @@ RET_CODE dump_pe_overview(PPEContext peCtx) {
     // -------------------- Density Info --------------------
     printf("Header Density             : %.2f%% of file\n", headerDensity);
     printf("Memory Density             : %.2f%% of memory image\n", memDensity);
-    printf("----------------------------------------------------------------------\n");
+    printf("----------------------------------------------------------------------\n\n");
 
     fflush(stdout);
     return RET_SUCCESS;

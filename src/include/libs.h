@@ -21,6 +21,7 @@
 
 #else
     // On non-Windows platforms, enable system regex
+    #include <unistd.h>
     #include <regex.h>
     #define ENABLE_REGEX 1
 #endif
@@ -37,7 +38,6 @@
 #include <stdbool.h>
 #include <time.h>
 #include <ctype.h>
-#include <unistd.h>
 #include <wchar.h>
 #include <wtypes.h>
 

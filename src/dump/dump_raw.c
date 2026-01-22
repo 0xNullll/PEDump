@@ -188,7 +188,7 @@ RET_CODE print_range(
                 }
             }
         }
-        printf("\n");
+        putchar('\n');
 
         printedLines++;
         lineOff += dumpWidthBytes;
@@ -198,6 +198,7 @@ RET_CODE print_range(
         } 
     }
 
+    putchar('\n');
     fflush(stdout);
 
     SAFE_FREE(rawByte);

@@ -140,10 +140,18 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
     DWORD fileHeaderSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER);
     DWORD optionalHeaderSize = is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64)
                                        : sizeof(IMAGE_OPTIONAL_HEADER32);
-    DWORD ntHeadersSize = fileHeaderSize + optionalHeaderSize;
+    // DWORD ntHeadersSize = fileHeaderSize + optionalHeaderSize;
+
+    DWORD ntHeadersSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + fileHdr->SizeOfOptionalHeader;
 
     if (add_section(outList, ntOffset, ntHeadersSize,
                     is64bit ? "NT Headers 64" : "NT Headers 32") != RET_SUCCESS) goto cleanup;
+
+    if (add_section(outList, ntOffset + sizeof(DWORD), sizeof(IMAGE_FILE_HEADER), "File Header") != RET_SUCCESS) goto cleanup;;
+
+    if (add_section(outList, ntOffset + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER),
+                    fileHdr->SizeOfOptionalHeader,
+                    is64bit ? "Optional Header 64" : "Optional Header 32") != RET_SUCCESS) goto cleanup;
 
     // --- Optional Header + Entry Point ---
     DWORD epRva = 0;
