@@ -57,7 +57,7 @@ PEDump [options] file [file2]
 - `-fh`,  `--file-header`       Print File header  
 - `-oh`,  `--optional-header`   Print Optional header  
 - `-nth`, `--nt-headers`        Print NT headers  
-- `-s`,   `--sections`          Print section table  
+- `-sh`,   `--section-headers`  Print section headers
 
 ### Data Directories
 - `-e`,    `--exports`          Print export directory  
@@ -102,6 +102,11 @@ PEDump [options] file [file2]
   - `:N`          – first N lines (`-N` → last |N| lines)  
   - `:start,max`  – from start to max (lines or offsets, no negatives)  
   - `:start..end` – from start to end offsets (decimal or hex, no negatives)  
+
+- `-tf`, `--temp-format <type[:spec]>`  
+  Temporary output format for current operation (overrides `-f`):  
+
+  **Types and range:** same as `-f`.
 
 ### Strings
 - `-str`, `--strings [rgex:<pattern>]`  
