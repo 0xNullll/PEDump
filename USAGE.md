@@ -1546,7 +1546,7 @@ Controls how PEDump formats its output and optionally restricts the displayed by
 **Example:**
 ```
 # Print the File Header in hexadecimal
-PEDump -f hex -fh C:\Windows\System32\kernel32.dll
+PEDump -f hex -fh test.exe
 
 [+] Dump
     Start offset : 0x000000F4
@@ -1559,25 +1559,25 @@ ADDR         HEX BYTES                                            ASCII         
 0x00000104   F0 00 22 20                                          |.."             |
 
 # Print first 10 lines of the file in hexadecimal (:N syntax)
-PEDump -f hex:10 -a C:\Windows\System32\kernel32.dll
+PEDump -f hex:10 -a test.exe
 
 # Print last 10 lines of the file in decimal (:N syntax with negative value)
-PEDump -f dec:-10 -a C:\Windows\System32\kernel32.dll
+PEDump -f dec:-10 -a test.exe
 
 # Print bytes from 0x100 to 0x1FF in binary (:start,max syntax using byte offsets)
-PEDump -f bin:0x100,0x1FF -a C:\Windows\System32\kernel32.dll
+PEDump -f bin:0x100,0x1FF -a test.exe
 
 # Print lines 5 to 15 in hexadecimal (:start,max syntax using line numbers)
-PEDump -f hex:5,15 -a C:\Windows\System32\kernel32.dll
+PEDump -f hex:5,15 -a test.exe
 
 # Print byte offsets from 0x200 to 0x2FF in hexadecimal (:start,max syntax using byte offsets)
-PEDump -f hex:0x200,0x2FF -a C:\Windows\System32\kernel32.dll
+PEDump -f hex:0x200,0x2FF -a test.exe
 
 # Print byte offsets from 0x300 to 0x350 in hexadecimal (:start..end syntax)
-PEDump -f hex:0x300..0x350 -a C:\Windows\System32\kernel32.dll
+PEDump -f hex:0x300..0x350 -a test.exe
 
 # Display a combined table view of the DOS header
-PEDump -f table -dh C:\Windows\System32\kernel32.dll
+PEDump -f table -dh test.exe
 ```
 
 ---
