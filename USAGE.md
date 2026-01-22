@@ -49,8 +49,9 @@
 - [Data Extraction](#data-extraction)
   - [String Extraction](#string-extraction)
   - [Metadata Extraction](#metadata-extraction)
-- [Hashing](#hashing)
-- [Comparison](#comparison)
+- [Hashing & Comparison](#hashing--comparison)
+  - [Hashing](#hashing)
+  - [Comparison](#comparison)
 
 ---
 
@@ -1550,7 +1551,7 @@ If no format is explicitly selected, PEDump defaults to the table view.
 - Bytes-per-line depends on the format (16 for hex/dec/bin).
 - Offsets starting with `0x` are treated as byte offsets and **aligned to the view's bytes-per-line**.
 
-**Example:**
+**Commands Example:**
 ```
 # Print the File Header in hexadecimal
 PEDump -f hex -fh test.exe
@@ -1578,6 +1579,37 @@ PEDump -f table -dh test.exe
 
 # Use a temporary format for a single operation
 PEDump -tf dec:10 -a test.exe
+```
+
+**Output Example:**
+```
+$ PEDump -f hex -nth C:\Windows\System32\kernel32.dll
+
+[+] Dump
+    Start offset : 0x000000F0
+    End offset   : 0x000001F7
+    Size         : 0x00000108 (264 bytes)
+    Bytes/line   : 16
+
+ADDR         HEX BYTES                                            ASCII              NAME
+0x000000F0   50 45 00 00  64 86 08 00  7F 00 3A D8  00 00 00 00   |PE..d.....:.....| * NT Headers 64 * File Header
+0x00000100   00 00 00 00  F0 00 22 20  0B 02 0E 26  00 60 08 00   |......" ...&.`..| * Optional Header 64
+0x00000110   00 20 04 00  00 00 00 00  20 E1 02 00  00 10 00 00   |. ...... .......|
+0x00000120   00 00 00 80  01 00 00 00  00 10 00 00  00 10 00 00   |................|
+0x00000130   0A 00 00 00  0A 00 00 00  0A 00 00 00  00 00 00 00   |................|
+0x00000140   00 90 0C 00  00 10 00 00  D0 6C 0D 00  03 00 60 41   |.........l....`A|
+0x00000150   00 00 04 00  00 00 00 00  00 10 00 00  00 00 00 00   |................|
+0x00000160   00 00 10 00  00 00 00 00  00 10 00 00  00 00 00 00   |................|
+0x00000170   00 00 00 00  10 00 00 00  60 4B 0A 00  4C EC 00 00   |........`K..L...|
+0x00000180   AC 37 0B 00  34 08 00 00  00 70 0C 00  20 05 00 00   |.7..4....p.. ...|
+0x00000190   00 10 0C 00  58 47 00 00  00 80 0C 00  30 42 00 00   |....XG......0B..|
+0x000001A0   00 80 0C 00  F8 05 00 00  E4 D4 09 00  70 00 00 00   |............p...|
+0x000001B0   00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00   |................|
+0x000001C0   00 00 00 00  00 00 00 00  00 8E 08 00  48 01 00 00   |............H...|
+0x000001D0   00 00 00 00  00 00 00 00  48 8F 08 00  08 2B 00 00   |........H....+..|
+0x000001E0   48 46 0A 00  80 00 00 00  00 00 00 00  00 00 00 00   |HF..............|
+0x000001F0   00 00 00 00  00 00 00 00                             |........        |
+
 ```
 
 ---
@@ -1610,7 +1642,7 @@ Dump ASCII and UTF-16LE strings from the file, with optional regex filtering.
 - Both ASCII and UTF-16LE strings are supported.
 - If no regex is provided, all printable strings in the file are dumped.
 
-**Examples:**
+**Commands Example:**
 ```
 # Dump all strings
 PEDump -s test.exe
@@ -1620,6 +1652,26 @@ PEDump -s rgex:^Hello test.exe
 
 # Dump strings containing digits
 PEDump --strings rgex:\d+ test.exe
+```
+
+**Output Example:**
+```
+$ PEDump -s rgex:^code C:\Windows\System32\kernel32.dll
+
+Idx      FO            Type    Length    String
+1        0x0008EF30    A       40        RtlAppendUnicodeStringBuffer failed [%x]
+2        0x0008F3F8    A       61        RtlAppendUnicodeStringToString failed for root HKCU path [%x]
+3        0x0008F438    A       59        RtlAppendUnicodeToString failed for shell folders path [%x]
+4        0x0008F968    A       34        RtlInitUnicodeStringEx failed [%x]
+5        0x00090398    W       19        AuthenticodeEnabled
+6        0x0009173F    A       34        @RtlHashUnicodeString failed: 0x%x
+7        0x00091780    A       35        RtlInitUnicodeStringEx failed: 0x%x
+8        0x00091E88    A       37        Failed to upcase unicode string "%ws"
+9        0x00095438    A       60        SXS: %s() CsrCaptureMessageMultiUnicodeStringsInPlace failed
+10       0x00096430    A       62        WER/CrashAPI/%u:%u: ERROR RtlInitUnicodeStringEx returned 0x%x
+...
+69       0x000BE55C    A       20        RtlHashUnicodeString
+70       0x000BE674    A       22        RtlUpcaseUnicodeString
 ```
 
 ---
@@ -1671,7 +1723,7 @@ Extract specific parts of a PE file according to the selected target.
 - `HEXh` (Intel)        – e.g., `rva/401000h`
 - Parsers are case-insensitive for hex digits and the trailing `h`.
 
-**Examples:**
+**Commands Example:**
 ```
 # Extract the .text section by name
 PEDump -x section:.text test.exe
@@ -1704,42 +1756,190 @@ PEDump -x import:USER32.dll test.exe
 PEDump -x import:KERNEL32.dll/CreateFileA test.exe
 ```
 
+**Output Example:**
+```
+$ PEDump -x import:ntdll.dll C:\Windows\System32\kernel32.dll
+
+[ DLL Import ntdll.dll ] Import Entries : 365
+
+    * IAT Entry: 1
+        Function : RtlUnicodeStringToInteger
+        Hint     : 0x0636
+        Thunk    : 0x000B7BBC [VA: 1800B7BBC] [FO: B7BBC] [.rdata  ]
+        CallVia  : 0x0008AEE0 [VA: 18008AEE0] [FO: 8AEE0] [.rdata  ]
+
+    * IAT Entry: 2
+        Function : RtlGetUILanguageInfo
+        Hint     : 0x0470
+        Thunk    : 0x000B7BA4 [VA: 1800B7BA4] [FO: B7BA4] [.rdata  ]
+        CallVia  : 0x0008AEE8 [VA: 18008AEE8] [FO: 8AEE8] [.rdata  ]
+
+    * IAT Entry: 3
+        Function : EtwEventEnabled
+        Hint     : 0x003B
+        Thunk    : 0x000B7B92 [VA: 1800B7B92] [FO: B7B92] [.rdata  ]
+        CallVia  : 0x0008AEF0 [VA: 18008AEF0] [FO: 8AEF0] [.rdata  ]
+
+    * IAT Entry: 4
+        Function : RtlpConvertLCIDsToCultureNames
+        Hint     : 0x069C
+        Thunk    : 0x000B7B70 [VA: 1800B7B70] [FO: B7B70] [.rdata  ]
+        CallVia  : 0x0008AEF8 [VA: 18008AEF8] [FO: 8AEF8] [.rdata  ]
+
+    [... skipped entries for brevity ...]
+```
+
+> **Note**: Output layout may vary depending on the mode you choose. For example, the section header details, field order, or inclusion of global vs per-DLL imports can differ.
+
 ---
 
-## Hashing
+## Hashing & Comparison
 
-***Commands to compute hashes of sections or the whole file for verification or comparison.***
+***Commands to compute or compare hashes of files or sections.***
 
 ---
 
+### Hashing
 **Syntax:**
 ```bash
-PEDump -H <target[@alg]> <file>
+$ PEDump -H <target[@alg]> <file>
+$ PEDump --hash <target[@alg]> <file>
 ```
+
 **Description:**
-Compute hash of file, section, range, or rich header.
+Compute the hash of a file, section, range, or PE Rich Header.
 
-**Example:**
+- **-H / --hash** computes a hash for verification or comparison.
+- `<target>` specifies what to hash, with optional `@alg` to select the algorithm.
+
+**Targets:**
+- `file`                    – entire file
+- `section:NAME`             – hash a section by name (e.g., `section:.text`)
+- `section:#IDX`             – hash a section by index (e.g., `section:#2`)
+- `section:rva/VAL`          – hash data at a specific RVA (e.g., `section:rva/0x401000`)
+- `section:fo/VAL`           – hash data at a specific file offset (e.g., `section:fo/0x200`)
+- `range:START-END`          – hash an arbitrary range (e.g., `range:0x260-0x500`)
+- `richheader`               – hash the PE Rich Header
+
+**Algorithms (optional):**
+- `@md5` (default)
+- `@sha1`
+- `@sha224`
+- `@sha256`
+- `@sha384`
+- `@sha512`
+- `@sha512_224`
+- `@sha512_256`
+
+**Commands Example:**
 ```
-# output example placeholder
+# Compute MD5 of the entire file
+PEDump -H file test.exe
+
+# Compute SHA256 of the .text section
+PEDump -H section:.text@sha256 test.exe
+
+# Compute SHA1 of a file range
+PEDump -H range:0x260-0x500@sha1 test.exe
+
+# Compute hash of the PE Rich Header
+PEDump -H richheader@sha512 test.exe
 ```
+
+**Output Example:**
+```
+$ PEDump -H section:.text@sha1 C:\Windows\System32\kernel32.dll
+
+[HASH INFO]
+Algorithm : SHA1 (160-bit)
+
+File      : C:\Windows\System32\kernel32.dll
+Target    : Section (.text, 544768 bytes)
+
+Digest    : 1e5c37ac5f5f36af88ca2c373530862f94aef6f6
+----------------------------------------------------
+
+```
+
+>**Note**: The output layout may vary depending on the selected format, mode, or target type. Field order, included details, and presentation style can differ.
 
 ---
 
-## Comparison
-
-***Commands to compare files or sections using hashes or internal algorithms to detect differences.***
-
----
-
+### Comparison
 **Syntax:**
 ```bash
-PEDump -cc <target1>::<target2[@alg]> <file1> [file2]
+$ PEDump -cc <target1>::<target2[@alg]> <file1> [file2]
+$ PEDump --compare-targets <target1>::<target2[@alg]> <file1> [file2]
 ```
-**Description:**
-Compare two targets within the same file or between two files.
 
-**Example:**
+**Description:**
+Compare two targets within the same file or between two files using a hash algorithm.
+
+- **-cc / --compare-targets** compares `<target1>` and `<target2>` either **within a single file** or **between two files**.
+- Use `::` to separate the two targets (`target1::target2`).
+
+**Targets:**
+- `file`                    – entire file
+- `section:NAME`             – section by name (e.g., `section:.text`)
+- `section:#IDX`             – section by index (e.g., `section:#2`)
+- `section:rva/VAL`          – data at a specific RVA (e.g., `section:rva/0x401000`)
+- `section:fo/VAL`           – data at a specific file offset (e.g., `section:fo/0x200`)
+- `range:START-END`          – arbitrary file range (e.g., `range:0x260-0x500`)
+- `richheader`               – PE Rich Header
+
+**Algorithms (optional):**
+- `@md5` (default)
+- `@sha1`
+- `@sha224`
+- `@sha256`
+- `@sha384`
+- `@sha512`
+- `@sha512_224`
+- `@sha512_256`
+
+**Commands Example:**
 ```
-# output example placeholder
+# Compare entire file hashes between two files using SHA512_256
+PEDump -cc file::file@sha512_256 sample1.exe sample2.exe
+
+# Compare .text section of first file with .rdata section of second file using SHA512
+PEDump -cc section:.text::section:.rdata@sha512 sample1.exe sample2.exe
+
+# Compare ranges between two files using SHA224
+PEDump -cc range:0x100-0x200::range:0x300-0x400@sha224 sample1.exe sample2.exe
+
+# Compare .text section with a range in the same file using SHA256
+PEDump -cc section:.text::range:0x400-0x600@sha256 sample1.exe sample2.exe
+
+# Compare sections by index using SHA512_224
+PEDump -cc section:#2::section:#3@sha512_224 sample1.exe sample2.exe
+
+# Compare Rich Headers using SHA384
+PEDump -cc richheader::richheader@sha384 sample1.exe sample2.exe
+
+# Compare two sections within the same file using MD5 (default)
+PEDump -cc section:.text::section:.rdata@md5 sample.exe
 ```
+
+**Output Example:**
+```
+$ PEDump -cc section:.rdata::range:0x300-0x400@sha224 C:\Windows\System32\kernel32.dll C:\Windows\System32\notepad.exe
+
+[HASH COMPARE]
+Algorithm : SHA224 (224-bit)
+Mode      : Target Compare
+
+File A    : C:\Windows\System32\kernel32.dll
+Target A  : Section (.rdata, 229376 bytes)
+
+File B    : C:\Windows\System32\notepad.exe
+Target B  : Range (0x300-0x400, 256 bytes)
+
+Digest A  : 1707a48ef5e34b2882015cbb1716dc3a1c3f36ef1bfa67d28e754f74
+Digest B  : a54ccf7f9c73996d82943243b409f154e7b958f2676cfe08921e0bb0
+Result    : DIFFERENT
+--------------------------------------------------------------------
+
+```
+
+>**Note**: Actual output layout may vary depending on the selected algorithm, file content, and whether the comparison is within the same file or between two files.

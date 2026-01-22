@@ -147,7 +147,7 @@ typedef enum {
 } ExtractKind;
 
 typedef struct _SectionExtract {
-    char  name[IMAGE_SIZEOF_SHORT_NAME];
+    char  name[IMAGE_SIZEOF_SHORT_NAME + 1]; // 1+ for null-terminate
     WORD  index;
     BYTE  useName;
     BYTE  useIdx;
