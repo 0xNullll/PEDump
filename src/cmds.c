@@ -1272,7 +1272,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 break;
 
-            case CMD_TEMP_FORMAT: // check if works
+            case CMD_TEMP_FORMAT:
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     // save the format config state
                     tempFormatConfig = config.formatConfig;
@@ -1284,7 +1284,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 break;
 
-            case CMD_STRINGS: // NOT FINSHED
+            case CMD_STRINGS:
                 char *regexFilter;
 
                 if (argv[i + 1] && argv[i + 1][0] != '\0' && strncmp(argv[i + 1], "rgex:", strlen("rgex:")) == 0) {

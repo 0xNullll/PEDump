@@ -13,7 +13,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
     ULONGLONG i = 0;
     ULONG stringNum = 0;
 
-    printf("%-5s    %-10s    %-4s    %-6s    %-s\n",
+    printf("\n%-5s    %-10s    %-4s    %-6s    %-s\n",
            "Idx", "FO", "Type", "Length", "String");
 
     while (i < fileSize) {
@@ -71,6 +71,8 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
 
         i++;
     }
+    putchar('\n');
+    fflush(stdout);
 
     SAFE_FREE(fileBuffer);
     return RET_SUCCESS;
@@ -448,7 +450,7 @@ void print_digest_line(const char* label, PTarget target, int level) {
 void dump_extracted_hash(PHashConfig hashCfg, int level) {
     if (!hashCfg) return;
 
-    printf("%s[HASH %s]\n", INDENT(level),
+    printf("\n%s[HASH %s]\n", INDENT(level),
            hashCfg->mode == HASHCMD_HASH_TARGET ? "INFO" : "COMPARE");
 
     // --- Algorithm ---
@@ -540,7 +542,7 @@ void dump_extracted_hash(PHashConfig hashCfg, int level) {
     printf("%s------------", INDENT(level));
     for (ULONGLONG i = 0; i < footerLen; i++)
         putchar('-');
-    putchar('\n');
+    printf("\n\n");
 
     fflush(stdout);
 }

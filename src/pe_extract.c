@@ -13,8 +13,7 @@ RET_CODE extract_section(
     BYTE match = 0;  // reset here each iteration
     for (WORD i = 0; i < numberOfSections && !match; i++) {
         if (sectionCfg->useName) {
-            if (memcmp(sectionCfg->name, sections[i].Name,
-                       sizeof(sectionCfg->name)) == 0) {
+            if (memcmp(sectionCfg->name, sections[i].Name, IMAGE_SIZEOF_SHORT_NAME) == 0) {
                 match = 1;
             }
         }
@@ -40,6 +39,12 @@ RET_CODE extract_section(
             *outFo      = sections[i].PointerToRawData;
             *outSize    = sections[i].SizeOfRawData;
             *outSectionIdx = i + 1;
+
+            // Copy section name and null-terminate
+            memcpy(sectionCfg->name, sections[i].Name, 8);  // copy 8 bytes
+            sectionCfg->name[8] = '\0';                     // null-terminate
+            sectionCfg->useName = 1;                        // mark that name is valid
+
             status = RET_SUCCESS;  // exits loop immediately on first match
         }
     }
@@ -618,15 +623,18 @@ RET_CODE load_target_buffer(PPEContext ctx, PTarget target) {
             break;
         }
 
-        case TARGET_RANGE:
-            target->buffer = (PBYTE)parse_table_from_fo(ctx->fileHandle, (DWORD)target->rangeStart, target->rangeEnd, 1);
-            if (!target->buffer && target->bufferSize == 0) {
+        case TARGET_RANGE: {
+            ULONGLONG size = target->rangeEnd - target->rangeStart;
+            target->buffer = (PBYTE)parse_table_from_fo(ctx->fileHandle, (DWORD)target->rangeStart, size, 1);
+            target->bufferSize = size;
+            if (!target->buffer || target->bufferSize == 0) {
                 fprintf(stderr, "[!!] Failed to allocate memory for range buffer\n");
                 target->ownsBuffer = false;
                 return status;
             }
             target->hashPresent = true;
             break;
+        }
 
         default:
             fprintf(stderr, "[!!] Unknown target type (%d)\n", target->type);
