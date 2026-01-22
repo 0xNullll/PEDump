@@ -1643,11 +1643,15 @@ Extract specific parts of a PE file according to the selected target.
 - `section:rva/VAL`     – extract data at a specific RVA (e.g., `section:rva/0x401000`)
 - `section:fo/VAL`      – extract data at a specific file offset (e.g., `section:fo/0x200`)
 
+---
+
 - `export:NAME`         – extract an exported function by name (e.g., `export:CreateFileA`)
 - `export:#ORD`         – extract an exported function by ordinal (e.g., `export:#37`)
 - `export:rva/VAL`      – extract an exported entry by RVA; matches either Func-RVA or Name-RVA (e.g., `export:rva/0x401000`)
 - `export:FWD`          – extract a forwarded export (e.g., `export:KERNEL32.CreateFileA`)
 - `export:LIB`          – extract ALL exports from the specified DLL (must include `.dll`, e.g., `export:KERNEL32.dll`)
+
+---
 
 - `import:NAME`         – extract a function by name globally (e.g., `CreateFileA`)
 - `import:#ORD`         – extract a function by ordinal globally (e.g., `#0x287`)
