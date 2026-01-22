@@ -20,7 +20,7 @@
   - [File Header](#file-header)
   - [Optional Header](#optional-header)
   - [NT Headers](#nt-headers)
-  - [Sections](#sections)
+  - [Section Headers](#section-headers)
 - [Data Directories](#data-directories)
   - [Export Directory](#export-directory)
   - [Import Directory](#import-directory)
@@ -46,8 +46,9 @@
 - [Formatting](#formatting)
   - [Address Translation](#address-translation)
   - [Output Formatting](#output-formatting)
-- [Strings Extraction](#strings-extraction)
-- [Extraction](#extraction)
+- [Data Extraction](#data-extraction)
+  - [String Extraction](#string-extraction)
+  - [Metadata Extraction](#metadata-extraction)
 - [Hashing](#hashing)
 - [Comparison](#comparison)
 
@@ -325,18 +326,18 @@ VA                FO        Size        Value
 # ... same output as -oh ...
 ```
 
-### Sections
+### Section Headers
 **Syntax:**
 ```bash
-$ PEDump -s <file>
-$ PEDump --sections <file>
+$ PEDump -sh <file>
+$ PEDump --section-headers <file>
 ```
 **Description:**
-Print Sections table.
+Print Section Headers.
 
 **Example:**
 ```
-$ PEDump -s C:\Windows\System32\notepad.exe
+$ PEDump -sh C:\Windows\System32\notepad.exe
 
 0000000140001000  00001000      SECTION HEADERS - number of sections : 8
 
@@ -1515,10 +1516,15 @@ Sec :  .text (Index 1)
 ```bash
 $ PEDump -f <type[:spec]> <file>
 $ PEDump --format <type[:spec]> <file>
+$ PEDump -tf <type[:spec]> <file>
+$ PEDump --temp-format <type[:spec]> <file>
 ```
 
 **Description:**
-Controls how PEDump formats its output and optionally restricts the displayed byte range. When a format is specified, it is applied consistently across **all streamed commands** for the duration of the current run. If no format is explicitly selected, PEDump defaults to the `table` view.
+Controls how PEDump formats its output and optionally restricts the displayed byte range.
+- **-f / --format** sets the persistent output format, applied consistently across all streamed commands for the duration of the current run.
+- **-tf / --temp-format** sets a temporary output format that overrides `-f` for the current command or operation only.
+If no format is explicitly selected, PEDump defaults to the table view.
 
 **Types:**
 - `hex`   – display bytes in **hexadecimal**, 16 bytes per line
@@ -1538,7 +1544,8 @@ Controls how PEDump formats its output and optionally restricts the displayed by
   - **negative values are not allowed**
 
 **Notes:**
-- The selected output format applies to **all streamed commands** for the duration of the current run.
+- The selected output format applies to **all streamed commands** for the duration of the current run (-f).
+- Temporary format (-tf) overrides the persistent format only for the current operation.
 - If no format is specified, PEDump uses the `table` format by default.
 - Bytes-per-line depends on the format (16 for hex/dec/bin).
 - Offsets starting with `0x` are treated as byte offsets and **aligned to the view's bytes-per-line**.
@@ -1547,16 +1554,6 @@ Controls how PEDump formats its output and optionally restricts the displayed by
 ```
 # Print the File Header in hexadecimal
 PEDump -f hex -fh test.exe
-
-[+] Dump
-    Start offset : 0x000000F4
-    End offset   : 0x00000107
-    Size         : 0x00000014 (20 bytes)
-    Bytes/line   : 16
-
-ADDR         HEX BYTES                                            ASCII              NAME
-0x000000F4   64 86 08 00  7F 00 3A D8  00 00 00 00  00 00 00 00   |d.....:.........| * File Header
-0x00000104   F0 00 22 20                                          |.."             |
 
 # Print first 10 lines of the file in hexadecimal (:N syntax)
 PEDump -f hex:10 -a test.exe
@@ -1578,46 +1575,129 @@ PEDump -f hex:0x300..0x350 -a test.exe
 
 # Display a combined table view of the DOS header
 PEDump -f table -dh test.exe
+
+# Use a temporary format for a single operation
+PEDump -tf dec:10 -a test.exe
 ```
 
 ---
 
-## Strings Extraction
+## Data Extraction
 
-***Commands to extract printable strings from the PE file or specific sections.***
+***Commands to extract sections, resources, data blocks, or printable strings from the PE file or its specific sections into separate files.***
 
 ---
-
+### String Extraction
 **Syntax:**
 ```bash
-PEDump -s [rgex:<pattern>] <file>
-PEDump --strings [rgex:<pattern>] <file>
+$ PEDump -s [rgex:<pattern>] <file>
+$ PEDump --strings [rgex:<pattern>] <file>
 ```
+
 **Description:**
-Dump ASCII/UTF-16LE strings with optional regex filtering.
+Dump ASCII and UTF-16LE strings from the file, with optional regex filtering.
 
-**Example:**
+- **-s / --strings** dumps all strings if no `<pattern>` is provided.
+- Optional regex filtering allows you to extract only strings matching a specific pattern.
+
+**Regex Filtering:**
+- `rgex:<pattern>` – filters strings matching `<pattern>`
+- Regex backend:
+  - Uses system POSIX regex if available
+  - Otherwise falls back to TinyRegex
+
+**Notes:**
+- Both ASCII and UTF-16LE strings are supported.
+- If no regex is provided, all printable strings in the file are dumped.
+
+**Examples:**
 ```
-# output example placeholder
+# Dump all strings
+PEDump -s test.exe
+
+# Dump strings starting with "Hello"
+PEDump -s rgex:^Hello test.exe
+
+# Dump strings containing digits
+PEDump --strings rgex:\d+ test.exe
 ```
 
 ---
 
-## Extraction
-
-***Commands to extract sections, resources, or data blocks from the PE file into separate files.***
-
----
-
+### Metadata Extraction
 **Syntax:**
 ```bash
-PEDump -x <target[:spec]> <file>
+$ PEDump -x <target[:spec]> <file>
+$ PEDump --extract <target[:spec]> <file>
 ```
-**Targets:** section, export, import, RVA, FO, etc.
 
-**Example:**
+**Description:**
+Extract specific parts of a PE file according to the selected target.
+
+- **-x / --extract** extracts a specific part of the PE file.
+- `<target>` specifies what to extract, with optional `:spec` modifiers.
+
+**Targets:**
+- `section:NAME`        – extract a section by name (e.g., `section:.text`, `section:.rdata`)
+- `section:#IDX`        – extract a section by index (e.g., `section:#2`)
+- `section:rva/VAL`     – extract data at a specific RVA (e.g., `section:rva/0x401000`)
+- `section:fo/VAL`      – extract data at a specific file offset (e.g., `section:fo/0x200`)
+
+- `export:NAME`         – extract an exported function by name (e.g., `export:CreateFileA`)
+- `export:#ORD`         – extract an exported function by ordinal (e.g., `export:#37`)
+- `export:rva/VAL`      – extract an exported entry by RVA; matches either Func-RVA or Name-RVA (e.g., `export:rva/0x401000`)
+- `export:FWD`          – extract a forwarded export (e.g., `export:KERNEL32.CreateFileA`)
+- `export:LIB`          – extract ALL exports from the specified DLL (must include `.dll`, e.g., `export:KERNEL32.dll`)
+
+- `import:NAME`         – extract a function by name globally (e.g., `CreateFileA`)
+- `import:#ORD`         – extract a function by ordinal globally (e.g., `#0x287`)
+- `import:@HNT`         – extract a function by hint globally (e.g., `@37`)
+- `import:LIB`          – extract ALL imports from the specified DLL (must include `.dll`, e.g., `import:KERNEL32.dll`)
+- `import:LIB/NAME`     – extract a function by name (e.g., `KERNEL32.dll/CreateFileA`)
+- `import:LIB/#ORD`     – extract a function by ordinal (e.g., `KERNEL32.dll/#0x287`)
+- `import:LIB/@HNT`     – extract a function by hint (e.g., `KERNEL32.dll/@37`)
+
+**Address Specifiers:**
+- `rva/VAL`             – use Relative Virtual Address (RVA)
+- `fo/VAL`              – use File Offset (FO)
+
+**Value Formats Accepted for VAL:**
+- `HEX`                 – e.g., `rva/4198400`
+- `0xHEX`               – e.g., `rva/0x401000`
+- `HEXh` (Intel)        – e.g., `rva/401000h`
+- Parsers are case-insensitive for hex digits and the trailing `h`.
+
+**Examples:**
 ```
-# output example placeholder
+# Extract the .text section by name
+PEDump -x section:.text test.exe
+
+# Extract the second section by index
+PEDump -x section:#2 test.exe
+
+# Extract the section that contains the RVA 0x3050
+PEDump -x section:rva/0x3050 test.exe
+
+# Extract the section that contains the file offset 0x1100
+PEDump -x section:fo/0x1100 test.exe
+
+# Extract exported function by name
+PEDump -x export:CreateFileA test.exe
+
+# Extract exported function by ordinal
+PEDump -x export:#37 test.exe
+
+# Extract all exports from KERNEL32.dll
+PEDump -x export:KERNEL32.dll test.exe
+
+# Extract import function globally by name
+PEDump -x import:CreateFileA test.exe
+
+# Extract all imports from USER32.dll
+PEDump -x import:USER32.dll test.exe
+
+# Extract import by name from a specific DLL
+PEDump -x import:KERNEL32.dll/CreateFileA test.exe
 ```
 
 ---
@@ -1658,3 +1738,4 @@ Compare two targets within the same file or between two files.
 **Example:**
 ```
 # output example placeholder
+```

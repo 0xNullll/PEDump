@@ -1099,8 +1099,8 @@ RET_CODE print_section_header(
     ULONGLONG vaBase = imageBase + sec->VirtualAddress;
     DWORD     foBase = sec->PointerToRawData;
 
-    printf("%016llX  %08lX\t - SECTION: #%u -\n\n",
-           vaBase, foBase, index + 1);
+    printf("\n%016llX  %08lX\t - SECTION: #%u -\n\n",
+           vaBase, foBase, index);
 
     printf("VA                FO        Size        Value\n");
 
@@ -1232,7 +1232,7 @@ RET_CODE print_section_header(
         }
     }
 
-    printf("\n");
+    putchar('\n');
 
     fflush(stdout);
     return RET_SUCCESS;
@@ -1280,7 +1280,7 @@ RET_CODE dump_section_headers(
                                  symTableOffset,
                                  NumberOfSymbols,
                                  &sections[i],
-                                 i,
+                                 i + 1,
                                  imageBase) != RET_SUCCESS)
         {
             return RET_ERROR;

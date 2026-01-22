@@ -14,7 +14,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
     ULONG stringNum = 0;
 
     printf("%-5s    %-10s    %-4s    %-6s    %-s\n",
-           "Idx", "Offset", "Type", "Length", "String");
+           "Idx", "FO", "Type", "Length", "String");
 
     while (i < fileSize) {
         // ---- Detect UTF-16LE strings ----
@@ -40,7 +40,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
                     if (regexFilter != NULL) {
                         if (!regex_search(regexFilter, (const char *)uniConverted)) continue;
                     }
-                    printf("%-5lu    0x%8llX    %-4c    %-6zu    %s\n",
+                    printf("%-5lu    0x%08llX    %-4c    %-6zu    %s\n",
                            ++stringNum, start, 'W', j, uniConverted);
                 }
                 continue;
@@ -63,7 +63,7 @@ RET_CODE dump_pe_strings(FILE* peFile, const char* regexFilter) {
                     if (!regex_search(regexFilter, (const char *)asciiTemp)) continue;
                 }
 
-                printf("-%5lu    0x%8llX    %-4c    %-6zu    %s\n",
+                printf("%-5lu    0x%08llX    %-4c    %-6zu    %s\n",
                        ++stringNum, start, 'A', len, asciiTemp);
             }
             continue;
@@ -177,6 +177,8 @@ void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 
     int entries_level = level;
     
+    putchar('\n');
+
     // printing the extraction dump header
     if (expMatchHdr->type & EXPORT_TYPE_DLL_NAME && expMatchHdr->isForwarded) {
         printf("%s[ Forward DLL Export: %s ] Export Entries : %llu\n\n", INDENT(entries_level), expMatchHdr->dllName, MatchList->count);
@@ -244,28 +246,52 @@ void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 
         } else {
             printf("%sDLL Name      : %s\n",   INDENT(entries_level + 2), expMatch->dllName);
+            RVA_INFO nameDataRvaInfo = get_rva_info(expMatch->nameRva, sections, numberOfSections, imageBase);
 
-            if ((expMatch->type & EXPORT_TYPE_ORDINAL) == 0) {
-                RVA_INFO nameDataRvaInfo = get_rva_info(expMatch->nameRva, sections, numberOfSections, imageBase);
-
-                if (expMatch->type & EXPORT_TYPE_RVA || expMatch->isForwarded) {
-                    printf("%sFunction      : %s\n",   INDENT(entries_level + 2), expMatch->funcName);
-                }
-
-                printf("%sOrdinal       : #%lu\n", INDENT(entries_level + 2), expMatch->ordinal);
-
-                printf("%sFunc RVA      : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
-                    INDENT(entries_level + 2), expMatch->funcRva, funcDataRvaInfo.va, funcDataRvaInfo.fileOffset, funcDataRvaInfo.sectionName);
-                printf("%sName RVA      : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
-                    INDENT(entries_level + 2), expMatch->nameRva, nameDataRvaInfo.va, nameDataRvaInfo.fileOffset, nameDataRvaInfo.sectionName);
-            } else {
-                printf("%sFunc RVA      : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
-                    INDENT(entries_level + 2), expMatch->funcRva, funcDataRvaInfo.va, funcDataRvaInfo.fileOffset, funcDataRvaInfo.sectionName);              
+            /* Function name (may exist even for ordinal exports) */
+            if ((expMatch->type & EXPORT_TYPE_NAME) == 0 && expMatch->funcName && expMatch->funcName[0]) {
+                printf("%sFunction      : %s\n",
+                    INDENT(entries_level + 2), expMatch->funcName);
             }
+
+            /* Print ordinal ONLY if NOT ordinal-only */
+            if ((expMatch->type & EXPORT_TYPE_ORDINAL) == 0) {
+                printf("%sOrdinal       : #%lu\n",
+                    INDENT(entries_level + 2), expMatch->ordinal);
+            }
+
+            /* Function RVA (always valid) */
+            printf("%sFunc RVA      : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
+                INDENT(entries_level + 2),
+                expMatch->funcRva,
+                funcDataRvaInfo.va,
+                funcDataRvaInfo.fileOffset,
+                funcDataRvaInfo.sectionName);
         }
 
+        /* Name RVA only if present */
+        if (expMatch->nameRva != 0) {
+            RVA_INFO nameDataRvaInfo =
+                get_rva_info(expMatch->nameRva, sections, numberOfSections, imageBase);
+
+            printf("%sName RVA      : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
+                INDENT(entries_level + 2),
+                expMatch->nameRva,
+                nameDataRvaInfo.va,
+                nameDataRvaInfo.fileOffset,
+                nameDataRvaInfo.sectionName);
+        }
+
+        /* EAT entry */
         printf("%sEAT Entry RVA : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
-            INDENT(entries_level + 2), expMatch->rva, funcRvaInfo.va, funcRvaInfo.fileOffset, funcRvaInfo.sectionName);
+            INDENT(entries_level + 2),
+            expMatch->rva,
+            funcRvaInfo.va,
+            funcRvaInfo.fileOffset,
+            funcRvaInfo.sectionName);
+
+        // printf("%sEAT Entry RVA : 0x%08lX [VA: %llX] [FO: %lX] [  %-8s]\n",
+        //     INDENT(entries_level + 2), expMatch->rva, funcRvaInfo.va, funcRvaInfo.fileOffset, funcRvaInfo.sectionName);
 
         putchar('\n');
     }
@@ -276,6 +302,8 @@ void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 
 void dump_extracted_imports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER sections, WORD numberOfSections, ULONGLONG imageBase, int level) {
     PIMPORT_MATCH impMatchHdr = &((PIMPORT_MATCH)MatchList->items)[0];
+
+    putchar('\n');
 
     // printing the extraction dump header
     if (impMatchHdr->isGlobal && (impMatchHdr->type & IMPORT_TYPE_DLL_NAME) == 0) {

@@ -19,7 +19,7 @@ RET_CODE extract_section(
             }
         }
         else if (sectionCfg->useIdx) {
-            if (sectionCfg->index == (ULONG)i + 1) {
+            if (sectionCfg->index == (ULONG)i) {
                 match = 1;
             }
         }
@@ -397,7 +397,7 @@ RET_CODE perform_extract(
 
             if (config->formatConfig.view == VIEW_TABLE) {
                 WORD sectionIdx = config->extractConfig.section.index;
-                status = print_section_header(peFile, symTableOffset, NumberOfSymbols, &sections[sectionIdx], sectionIdx, imageBase);
+                status = print_section_header(peFile, symTableOffset, NumberOfSymbols, &sections[sectionIdx], sectionIdx + 1, imageBase);
             } else {
                 status = print_range(peFile, inFo,  inSize, fileSize, &config->formatConfig, fileSectionList, 1);
             }

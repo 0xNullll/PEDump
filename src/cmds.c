@@ -12,7 +12,7 @@ CommandEntry g_command_table[] = {
     {"--file-header",      "-fh",   CMD_FILE_HEADER},
     {"--optional-header",  "-oh",   CMD_OPTIONAL_HEADER},
     {"--nt-headers",       "-nth",  CMD_NT_HEADERS},
-    {"--sections",         "-s",    CMD_SECTIONS},
+    {"--section-headers",  "-sh",   CMD_SECTION_HEADERS},
 
     {"--exports",          "-e",    CMD_EXPORTS},
     {"--imports",          "-i",    CMD_IMPORTS},
@@ -281,7 +281,7 @@ RET_CODE handle_section_extract(char *val, PSectionExtract section) {
         section->useName = 1;
     }
     else if (*val == '#') {
-        section->index  = (WORD)convert_to_hex(val + 1);
+        section->index  = (WORD)convert_to_hex(val + 1) - 1;
         section->useIdx = 1;
     }
     else if (strncmp(val, "rva", 3) == 0) {
@@ -311,7 +311,7 @@ RET_CODE handle_export_extract(char *val, PExportExtract exp) {
     memset(exp, 0, sizeof(*exp));
 
     if (*val == '#') {
-        exp->ordinal     = (WORD)convert_to_hex(val + 1);
+        exp->ordinal     = (WORD)strtol(val + 1, NULL, 0);
         exp->useOrdinal  = 1;
     }
     else if (strncmp(val, "rva/", 4) == 0) {
@@ -347,37 +347,53 @@ RET_CODE handle_import_extract(char *val, PImportExtract imp) {
     memset(imp, 0, sizeof(*imp));
 
     char *slash = strchr(val, '/');
-    size_t len = strlen(val);
+    size_t len  = strlen(val);
 
     if (slash) {
+        // DLL + something
         *slash++ = '\0';
         strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
         imp->isGlobal = 0;
+
+        if (*slash == '\0') return RET_INVALID_PARAM;
+
+        if (*slash == '#') {
+            imp->ordinal    = (WORD)convert_to_hex(slash + 1);
+            imp->useOrdinal = 1;
+        }
+        else if (*slash == '@') {
+            imp->hint      = (WORD)convert_to_hex(slash + 1);
+            imp->useHint   = 1;
+        }
+        else {
+            strncpy(imp->funcName, slash, sizeof(imp->funcName) - 1);
+            imp->useName = 1;
+        }
     }
     else {
+        // No slash -> global import
         if (len >= 4 && STREQI(val + len - 4, ".dll") == 0) {
+            // DLL only
             strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
             imp->useDll   = 1;
             imp->isGlobal = 0;
-            return RET_SUCCESS;
         }
-        imp->dllName[0] = '\0';
-        imp->isGlobal   = 1;
-    }
-
-    if (!slash || *slash == '\0') return RET_INVALID_PARAM;
-
-    if (*slash == '#') {
-        imp->ordinal    = (WORD)convert_to_hex(slash + 1);
-        imp->useOrdinal = 1;
-    }
-    else if (*slash == '@') {
-        imp->hint      = (WORD)convert_to_hex(slash + 1);
-        imp->useHint   = 1;
-    }
-    else {
-        strncpy(imp->funcName, slash, sizeof(imp->funcName) - 1);
-        imp->useName = 1;
+        else if (*val == '#') {
+            imp->ordinal    = (WORD)convert_to_hex(val + 1);
+            imp->useOrdinal = 1;
+            imp->isGlobal   = 1;
+        }
+        else if (*val == '@') {
+            imp->hint      = (WORD)convert_to_hex(val + 1);
+            imp->useHint   = 1;
+            imp->isGlobal  = 1;
+        }
+        else {
+            // Global function
+            strncpy(imp->funcName, val, sizeof(imp->funcName) - 1);
+            imp->useName  = 1;
+            imp->isGlobal = 1;
+        }
     }
 
     return RET_SUCCESS;
@@ -760,7 +776,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 break;
 
-            case CMD_SECTIONS:
+            case CMD_SECTION_HEADERS:
                 if (config.formatConfig.view == VIEW_TABLE) {
                     if (dump_section_headers(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections, fileSize, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Section Headers\n");
