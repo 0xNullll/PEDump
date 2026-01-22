@@ -183,17 +183,11 @@ LONG parseNumber(const char *s, int *isLine) {
         buf[len - 1] = '\0';
     }
 
+    // base = hex ? 16 : 10
     LONG val = (LONG)strtol(buf, NULL, hex ? 16 : 10);
 
-    if (hex) {
-        *isLine = 0;
-        // round up to nearest line
-        return val;
-        // return (val + bytesPerLine - 1) / bytesPerLine;
-    } else {
-        *isLine = 1;
-        return val;
-    }
+    // do not change isLine automatically
+    return val;
 }
 
 RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
@@ -221,23 +215,50 @@ RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
         *sep = '\0';
         char *rangeStr = sep + 1;
 
-        char *comma = strchr(rangeStr, ',');
-        if (comma) {
-            *comma = '\0';
+        // --- Check for absolute range mode "start..end"
+        char *dotdot = strstr(rangeStr, "..");
+        if (dotdot) {
+            *dotdot = '\0';
             char *startStr = rangeStr;
-            char *endStr   = comma + 1;
+            char *endStr   = dotdot + 2;
 
-            formatCfg.startLine = parseNumber(startStr, &formatCfg.startIsLine);
-            formatCfg.maxLine   = parseNumber(endStr, &formatCfg.endIsLine);
-        } else {
-            // single value
-            formatCfg.startLine = parseNumber(rangeStr, &formatCfg.startIsLine);
-            formatCfg.endIsLine = formatCfg.startIsLine;
-            formatCfg.maxLine = (formatCfg.startIsLine) ? 0 : formatCfg.startLine; // 0 = full for lines
+            int startVal = parseNumber(startStr, &formatCfg.startIsLine);
+            int endVal   = parseNumber(endStr, &formatCfg.endIsLine);
+
+            formatCfg.startLine = startVal;
+            formatCfg.maxLine   = endVal - startVal + 1; // count = end - start + 1
+        }
+        // --- Check for start,count mode
+        else {
+            char *comma = strchr(rangeStr, ',');
+            if (comma) {
+                *comma = '\0';
+                char *startStr = rangeStr;
+                char *endStr   = comma + 1;
+
+                formatCfg.startLine = parseNumber(startStr, &formatCfg.startIsLine);
+                formatCfg.maxLine   = parseNumber(endStr, &formatCfg.endIsLine);
+            }
+            // --- Single value mode
+            else {
+                int val = parseNumber(rangeStr, &formatCfg.startIsLine);
+
+                formatCfg.endIsLine = formatCfg.startIsLine;
+
+                if (val >= 0) {
+                    // positive: from base, take N
+                    formatCfg.startLine = 0;
+                    formatCfg.maxLine   = val;
+                } else {
+                    // negative: from end - N, take |N|
+                    formatCfg.startLine = val;  // negative start = relative to end
+                    formatCfg.maxLine   = -val;
+                }
+            }
         }
     }
 
-    // select view mode
+    // --- select view mode
     if (strcmp(buf, "table") == 0)      formatCfg.view = VIEW_TABLE;
     else if (strcmp(buf, "hex") == 0)   formatCfg.view = VIEW_HEX;
     else if (strcmp(buf, "dec") == 0)   formatCfg.view = VIEW_DEC;
@@ -1146,12 +1167,11 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 break;
 
             case CMD_ALL: // NOT FINSHED
-                // Dump PE Overview
-                if (dump_pe_overview(peCtx) != RET_SUCCESS) {
-                    fprintf(stderr, "[!] Failed to dump PE Overview\n");
-                }
-
                 if (config.formatConfig.view == VIEW_TABLE) {
+                    // Dump PE Overview
+                    if (dump_pe_overview(peCtx) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump PE Overview\n");
+                    }
                     // Dump DOS Header
                     if (dump_dos_header(dosHeader, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Dos Header\n");
@@ -1236,7 +1256,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 break;
 
-            case CMD_TEMP_FORMAT:
+            case CMD_TEMP_FORMAT: // check if works
                 if (argv[i + 1] && argv[i + 1][0] != '\0') {
                     // save the format config state
                     tempFormatConfig = config.formatConfig;
