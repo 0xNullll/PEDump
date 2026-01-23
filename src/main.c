@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     FILE *peFile = NULL;
     PPEContext peCtx = NULL;
     int status = RET_SUCCESS;
-    
+
     // Load PE context
     status = loadPEContext(fileName, &peCtx, &peFile);
     if (status != RET_SUCCESS) {
