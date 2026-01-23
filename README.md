@@ -1,14 +1,14 @@
 # PEDump
 
 A cross-platform **Portable Executable (PE)** inspection and analysis tool written in C.  
-`PEDump` performs static analysis of Windows PE files on Linux, Windows, and macOS.
+`PEDump` performs static analysis of Windows PE files on Linux, Windows, with macOS support planned.
 
 ---
 
 ## Features
 
 - **Comprehensive PE Analysis** – Full parsing of headers, sections, and directories; **CLR inspection limited to header only**
-- **Cross-Platform Support** – Works on Windows, Linux, and macOS
+- **Cross-Platform Support** – Works on Windows, Linux; macOS support is planned
 - **Robust Parsing** – Handles malformed or non-standard PE files
 - **Stream Output** – Incremental or piped output for live analysis
 - **Targeted Extraction** – Extract specific sections, imports, exports, or arbitrary ranges
@@ -39,7 +39,7 @@ cmake --build build
 The binary will be located in **build/bin/**:
 
 - **Windows**: `PEDump.exe`  
-- **Linux / macOS**: `PEDump`
+- **Linux**: `PEDump`
 
 ---
 
@@ -161,24 +161,19 @@ Supported algorithms:
 ## Example Usage
 
 ```bash
-PEDump -ov sample.exe
-PEDump -i sample.exe
-PEDump -H section:.text@sha256 sample.exe
+PEDump -ov test.exe
+PEDump -i test.exe
+PEDump -H section:.text@sha256 test.exe
 ```
 
 > **Note:** For detailed usage examples, advanced options, and command demonstrations, see [USAGE.md](USAGE.md).
 
 ---
 
-## Project Status
+## Notes & Status
 
-Under active development. Some options may be partially implemented or subject to change.
-
----
-
-## Disclaimer
-
-For educational and research purposes only.
+- All commands are implemented and fully tested on Windows.  
+- Linux support is available but not yet fully verified; macOS support is planned and partially implemented.
 
 ---
 

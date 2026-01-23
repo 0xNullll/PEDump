@@ -1,7 +1,7 @@
 # PEDump Detailed Usage Guide
 
-> **Note:** This file provides detailed command explanations, examples, and tips for using `PEDump`.
-> For a quick reference, see [README.md](README.md).
+> **Note:** This guide provides detailed command explanations, examples, and tips for using `PEDump`.  
+> For a quick reference, see [README.md](README.md).  
 > **Windows Version for Examples:** All Windows files used in these tests are from Version 25H2 (OS Build 26200.7623).
 
 ---
