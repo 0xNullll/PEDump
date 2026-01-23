@@ -179,10 +179,10 @@ RET_CODE extract_exports(
             ExportMatch.ordinal = funcIdx + expDir->Base;
 
             if (ExportMatch.type & EXPORT_TYPE_DLL_NAME) {
-                if (expCfg->useDll) {
-                    strncpy(ExportMatch.dllName, ExportDllName, sizeof(ExportMatch.dllName) - 1);
-                } else {
+                if (!isForwarded) {
                     strncpy(ExportMatch.dllName, forwardDllName, sizeof(ExportMatch.dllName) - 1);
+                } else {
+                    strncpy(ExportMatch.dllName, ExportDllName, sizeof(ExportMatch.dllName) - 1);
                 }
             }
 
