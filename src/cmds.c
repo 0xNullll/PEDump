@@ -724,7 +724,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
         }
 
         COMMAND command = parse_command(argv[i], &config);
-
+        DWORD fo = 0;
         
         switch (command) {
             case CMD_UNKNOWN:
@@ -796,262 +796,314 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 break;
 
             case CMD_EXPORTS:
-                if (pExportDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pExportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Export Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pExportDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Export Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_export_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExportDataDir, peCtx->dirs->exportDir, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Export Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pExportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Export Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pExportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Export Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_export_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExportDataDir, peCtx->dirs->exportDir, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Export Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pExportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Export Directory\n");
                     }
                 }
+                
                 break;
 
             case CMD_IMPORTS:
-                if (pImportDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Import Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pImportDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Import Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pImportDataDir, peCtx->dirs->importDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Import Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Import Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Import Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pImportDataDir, peCtx->dirs->importDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Import Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Import Directory\n");
                     }
                 }
+            
                 break;
 
             case CMD_RESOURCES:
-                if (pRsrcDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pRsrcDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Resource Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pRsrcDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Resource Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_rsrc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir, peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Resource Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pRsrcDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Resource Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pRsrcDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Resource Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_rsrc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir, peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Resource Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pRsrcDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Resource Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_EXCEPTION:
-                if (pExceptionDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pExceptionDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Exception Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pExceptionDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Exception Directory");
+                    break;
+                }
+                
+                fo = 0;
+                status = rva_to_offset(pExceptionDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Exception Directory RVA to file offset\n");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_exception_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExceptionDataDir, machine, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Exception Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pExceptionDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Exception Directory\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_exception_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pExceptionDataDir, machine, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Exception Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pExceptionDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Exception Directory\n");
                     }
                 }
+            
                 break;
 
             case CMD_SECURITY:
-                if (pSecurityDataDir->VirtualAddress) {
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_security_dir(peCtx->fileHandle, pSecurityDataDir) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Security Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, pSecurityDataDir->VirtualAddress, pSecurityDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Security Directory\n");
-                        }
+                if (!pSecurityDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Security Directory");
+                    break;
+                }
+                
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_security_dir(peCtx->fileHandle, pSecurityDataDir) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Security Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, pSecurityDataDir->VirtualAddress, pSecurityDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Security Directory\n");
                     }
                 }
+                
                 break;
 
             case CMD_BASERELOC:
-                if (pRelocDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pRelocDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Base Relocation Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pRelocDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Base Relocation Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_reloc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRelocDataDir, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pRelocDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pRelocDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Base Relocation Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_reloc_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pRelocDataDir, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pRelocDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Base Relocation Directory\n");
                     }
                 }
+            
                 break;
 
             case CMD_DEBUG:
-                if (pDebugDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pDebugDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Debug Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pDebugDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Debug Directory Directory");
+                    break;
+                }
+                
+                fo = 0;
+                status = rva_to_offset(pDebugDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Debug Directory RVA to file offset\n");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_debug_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDebugDataDir, peCtx->dirs->debugDir, machine, imageBase, is64bit) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Debug Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pDebugDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Debug Directory\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_debug_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDebugDataDir, peCtx->dirs->debugDir, machine, imageBase, is64bit) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Debug Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pDebugDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Debug Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_TLS:
-                if (pTlsDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pTlsDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert TLS Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pTlsDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("TLS Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_tls_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pTlsDataDir, peCtx->dirs->tls64, peCtx->dirs->tls32, imageBase, is64bit) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump TLS Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pTlsDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump TLS Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pTlsDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!!] Failed to convert TLS Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_tls_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pTlsDataDir, peCtx->dirs->tls64, peCtx->dirs->tls32, imageBase, is64bit) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump TLS Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pTlsDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump TLS Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_LOAD_CONFIG:
-                if (pLcfgDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pLcfgDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Load Config Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pLcfgDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Load Config Directory");
+                    break;
+                }
+                
+                fo = 0;
+                status = rva_to_offset(pLcfgDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Load Config Directory RVA to file offset\n");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_load_config_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pLcfgDataDir, peCtx->dirs->loadConfig64, peCtx->dirs->loadConfig32, imageBase, is64bit) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pLcfgDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_load_config_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pLcfgDataDir, peCtx->dirs->loadConfig64, peCtx->dirs->loadConfig32, imageBase, is64bit) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pLcfgDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Load Config Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_BOUND_IMPORT:
-                if (pBoundImportDataDir->VirtualAddress) {
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_bound_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, pBoundImportDataDir->VirtualAddress, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
-                        }
+                if (!pBoundImportDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Bound Import Directory");
+                    break;
+                }
+                
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_bound_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, pBoundImportDataDir->VirtualAddress, pBoundImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_IAT:
-                if (pIatDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pIatDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert IAT Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pIatDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("IAT Directory");
+                    break;
+                }
+                    
+                fo = 0;
+                status = rva_to_offset(pIatDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert IAT Directory RVA to file offset\n");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_iat_table(peCtx->fileHandle, peCtx->sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump IAT Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pIatDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump IAT Directory\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_iat_table(peCtx->fileHandle, peCtx->sections, numberOfSections, pIatDataDir->VirtualAddress, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump IAT Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pIatDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump IAT Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_DELAY_IMPORT:
-                if (pDelayImportDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pDelayImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert Delay Import Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pDelayImportDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Delay Import Directory");
+                    break;
+                }
+                
+                fo = 0;
+                status = rva_to_offset(pDelayImportDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert Delay Import Directory RVA to file offset\n");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_delay_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDelayImportDataDir, peCtx->dirs->delayImportDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pDelayImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_delay_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pDelayImportDataDir, peCtx->dirs->delayImportDir, imageBase, is64bit, fileSize) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pDelayImportDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Delay Import Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_CLR_HEADER:
-                if (pClrHeaderDataDir->VirtualAddress) {
-                    DWORD fo = 0;
-                    status = rva_to_offset(pClrHeaderDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
-                    if (status != RET_SUCCESS) {
-                        fprintf(stderr, "[!] Failed to convert CLR/.NET Header Directory RVA to file offset\n");
-                        break;
-                    }
+                if (!pClrHeaderDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("CLR/.NET Header Directory");
+                    break;
+                }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_clr_header_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pClrHeaderDataDir, peCtx->dirs->clrHeader, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, fo, pClrHeaderDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
-                        }
+                fo = 0;
+                status = rva_to_offset(pClrHeaderDataDir->VirtualAddress, peCtx->sections, numberOfSections, &fo);
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr, "[!] Failed to convert CLR/.NET Header Directory RVA to file offset\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_clr_header_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pClrHeaderDataDir, peCtx->dirs->clrHeader, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, fo, pClrHeaderDataDir->Size, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump CLR/.NET Header Directory\n");
                     }
                 }
+
                 break;
 
             case CMD_DATA_DIRECTORIES:
@@ -1086,89 +1138,105 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
             //     break;
 
             case CMD_RICH:
-                if (peCtx->richHeader) {
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_rich_header(peCtx->fileHandle, peCtx->richHeader) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Rich Header\n");
-                        }
-                    } else {
-                        if (print_range(peCtx->fileHandle, peCtx->richHeader->richHdrOff, peCtx->richHeader->richHdrSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Rich Header\n");
-                        }
+                if (!peCtx->richHeader) {
+                    PRINT_NOT_PRESENT("Rich Header");
+                    break;
+                }
+                
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_rich_header(peCtx->fileHandle, peCtx->richHeader) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Rich Header\n");
+                    }
+                } else {
+                    if (print_range(peCtx->fileHandle, peCtx->richHeader->richHdrOff, peCtx->richHeader->richHdrSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Rich Header\n");
                     }
                 }
+
                 break;
 
             case CMD_VERSION_INFO:
-                if (pRsrcDataDir->VirtualAddress) {
-                    DWORD versionInfoRva = 0, versionInfoSize = 0;
+                if (!pRsrcDataDir->VirtualAddress) {
+                    PRINT_NOT_PRESENT("Version Info");
+                    break;
+                }
 
-                    status = extract_version_resource(
-                        peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir,
-                        peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize);
-                    
+                DWORD versionInfoRva = 0, versionInfoSize = 0;
+
+                status = extract_version_resource(
+                    peCtx->fileHandle, peCtx->sections, numberOfSections, pRsrcDataDir,
+                    peCtx->dirs->rsrcDir, peCtx->dirs->rsrcEntriesDir, &versionInfoRva, &versionInfoSize);
+                
+                if (status != RET_SUCCESS) {
+                    fprintf(stderr,"[!] Failed to extract Version Info\n");
+                    break;
+                }
+
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_version_info(peCtx->fileHandle, peCtx->sections, numberOfSections, versionInfoRva, versionInfoSize, imageBase) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Version Info\n");
+                    }
+                } else {
+                    DWORD versionInfoFO = 0;
+
+                    status = rva_to_offset(versionInfoRva, peCtx->sections, numberOfSections, &versionInfoFO);
                     if (status != RET_SUCCESS) {
-                        fprintf(stderr,"[!] Version Info was not found\n");
                         break;
                     }
 
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_version_info(peCtx->fileHandle, peCtx->sections, numberOfSections, versionInfoRva, versionInfoSize, imageBase) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Version Info\n");
-                        }
-                    } else {
-                        DWORD versionInfoFO = 0;
-
-                        status = rva_to_offset(versionInfoRva, peCtx->sections, numberOfSections, &versionInfoFO);
-                        if (status != RET_SUCCESS) {
-                            break;
-                        }
-
-                        if (print_range(peCtx->fileHandle, versionInfoFO, versionInfoSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump Version Info\n");
-                        }
+                    if (print_range(peCtx->fileHandle, versionInfoFO, versionInfoSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump Version Info\n");
                     }
                 }
+
                 break;
 
             case CMD_SYMBOL_TABLE:
-                if (PointerToSymbolTable && NumberOfSymbols) {
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_symbol_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
-                        }
-                    } else {
-                        DWORD symbolTableSize = NumberOfSymbols * IMAGE_SIZEOF_SYMBOL;
+                if (!PointerToSymbolTable && NumberOfSymbols == 0) {
+                    PRINT_NOT_PRESENT("Symbol Table");
+                    break;
+                }
 
-                        if (print_range(peCtx->fileHandle, PointerToSymbolTable, symbolTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_symbol_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
+                    }
+                } else {
+                    DWORD symbolTableSize = NumberOfSymbols * IMAGE_SIZEOF_SYMBOL;
+
+                    if (print_range(peCtx->fileHandle, PointerToSymbolTable, symbolTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
                     }
                 }
+
                 break;
 
             case CMD_STRING_TABLE:
-                if (PointerToSymbolTable && NumberOfSymbols) {
-                    if (config.formatConfig.view == VIEW_TABLE) {
-                        if (dump_string_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump COFF String Table\n");    
-                        }
-                    } else {
-                        DWORD stringTableOffset = (DWORD)(PointerToSymbolTable + sizeof(IMAGE_SYMBOL) * NumberOfSymbols);
-                        DWORD stringTableSize;
+                if (!PointerToSymbolTable && NumberOfSymbols == 0) {
+                    PRINT_NOT_PRESENT("String Table");
+                    break;
+                }
 
-                        // Calculate offset to string table
-                        status = get_string_table_size(peCtx->fileHandle, stringTableOffset, fileSize, &stringTableSize);
-                        if (status != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to get the size of COFF String Table\n");
-                            break;
-                        }
+                if (config.formatConfig.view == VIEW_TABLE) {
+                    if (dump_string_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump COFF String Table\n");    
+                    }
+                } else {
+                    DWORD stringTableOffset = (DWORD)(PointerToSymbolTable + sizeof(IMAGE_SYMBOL) * NumberOfSymbols);
+                    DWORD stringTableSize;
 
-                        if (print_range(peCtx->fileHandle, stringTableOffset, stringTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
-                            fprintf(stderr, "[!] Failed to dump COFF String Table\n");
-                        }
+                    // Calculate offset to string table
+                    status = get_string_table_size(peCtx->fileHandle, stringTableOffset, fileSize, &stringTableSize);
+                    if (status != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to get the size of COFF String Table\n");
+                        break;
+                    }
+
+                    if (print_range(peCtx->fileHandle, stringTableOffset, stringTableSize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
+                        fprintf(stderr, "[!] Failed to dump COFF String Table\n");
                     }
                 }
+
                 break;
 
             case CMD_OVERLAY:
@@ -1180,7 +1248,11 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                     if (print_range(peCtx->fileHandle, overlayFo, overlaySize, fileSize, &config.formatConfig, file_section_list, 1) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Overlay\n");
                     }
+                } else {
+                    PRINT_NOT_PRESENT("Overlay");
+                    break;
                 }
+
                 break;
 
             case CMD_OVERVIEW:
@@ -1233,7 +1305,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                     }
 
                     // Dump COFF Symbol Table and String Table
-                    if (PointerToSymbolTable && NumberOfSymbols) {
+                    if (PointerToSymbolTable && NumberOfSymbols != 0) {
                         if (dump_symbol_table(peCtx->fileHandle, PointerToSymbolTable, NumberOfSymbols, peCtx->sections, numberOfSections) != RET_SUCCESS) {
                             fprintf(stderr, "[!] Failed to dump COFF Symbol Table\n");
                         }
