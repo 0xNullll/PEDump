@@ -114,7 +114,7 @@ RET_CODE dump_dos_header(PIMAGE_DOS_HEADER dosHeader, ULONGLONG imageBase) {
 
     vaBase += 2; foBase += 2;
 
-    printf("%016llX  %08lX  [4]\t\tFile address of new exe header    : %08lX\n",
+    printf("%016llX  %08lX  [4]\t\tFile address of new exe header    : %08lX\n\n",
         vaBase, foBase, dosHeader->e_lfanew);
     
     vaBase += 4; foBase += 4;

@@ -8,6 +8,7 @@
 
 CommandEntry g_command_table[] = {
     {"--help",             "-h",    CMD_HELP},
+
     {"--dos-header",       "-dh",   CMD_DOS_HEADER},
     {"--file-header",      "-fh",   CMD_FILE_HEADER},
     {"--optional-header",  "-oh",   CMD_OPTIONAL_HEADER},
