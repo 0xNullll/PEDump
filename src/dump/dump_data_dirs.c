@@ -117,10 +117,10 @@ RET_CODE dump_export_dir(
             fread(ExportName, 1, MAX_DLL_NAME - 1, peFile);
             ExportName[MAX_DLL_NAME - 1] = '\0'; // safety null-termination
         } else {
-            strcpy(ExportName, "<invalid>");
+            STRNCPY(ExportName, "<invalid>");
         }
     } else {
-        strcpy(ExportName, "<invalid>");
+        STRNCPY(ExportName, "<invalid>");
     }
 
     printf("\n%016llX\t- EXPORTS DIRECTORY -\n\n", vaBase);
@@ -448,7 +448,7 @@ void print_import_descriptor_header(
     char dllName[MAX_DLL_NAME] = {0};
 
     if (!read_import_dll_name(peFile, desc, sections, numberOfSections, dllName)) {
-        strcpy(dllName, "<invalid>"); 
+        STRNCPY(dllName, "<invalid>"); 
     }
 
     printf("%016llX\tIMPORT descriptor: %d  - Library: %s\n\n",
@@ -802,7 +802,7 @@ RET_CODE dump_rsrc_dir(
     int level = 0;
              
     // Print resource directory header (root)
-    printf("\n%016lx\t\t  - RESOURCE DIRECTORY -\n\n", vaBase);
+    printf("\n%016llx\t\t  - RESOURCE DIRECTORY -\n\n", vaBase);
     printf("Root Directory (VA=%llX, FO=%lX):\n", vaBase, foBase);
 
     level += 1;
