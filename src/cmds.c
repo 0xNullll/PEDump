@@ -326,10 +326,10 @@ RET_CODE handle_export_extract(char *val, PExportExtract exp) {
         if (ext) {
             if (STREQI(ext, ".dll") == 0 || STREQI(ext, ".exe") == 0 ||
                 STREQI(ext, ".sys") == 0 || STREQI(ext, ".ocx") == 0 ||
-                STREQI(ext, ".cpl") == 0 || STREQI(ext, ".scr") == 0) 
-            {
+                STREQI(ext, ".cpl") == 0 || STREQI(ext, ".scr") == 0) {
                 strncpy(exp->dllName, val, sizeof(exp->dllName) - 1);
                 exp->useDll = 1;
+
                 return RET_SUCCESS;
             }
 
