@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
 
     // For debugging
-    printf("PE parsing completed successfully.\n");
+    // printf("PE parsing completed successfully.\n");
     fflush(stdout);
     
 cleanup:

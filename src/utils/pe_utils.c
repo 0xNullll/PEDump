@@ -1,7 +1,7 @@
 #include "../include/pe_utils.h"
 
 RET_CODE ReportMalformed(const char *reason, const char *context, const char *file, int line) {
-    fprintf(stderr, "[!] Malformed file detected: %s\n", reason);
+    fprintf(stderr, "[*] Malformed file detected: %s\n", reason);
     fprintf(stderr, "   Context  : %s\n", context ? context : "Unknown");
     fprintf(stderr, "   Location : %s:%d\n\n", file, line);
 

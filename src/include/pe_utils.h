@@ -25,6 +25,9 @@
     printf("\n\n========================================================================================================\n"); \
     printf("========================================================================================================\n\n")
 
+#define PRINT_NOT_PRESENT(name) \
+    fprintf(stdout, "\n[i] %s: not present in this image\n", name)
+
 // Extract the high WORD (major or build)
 #define __HIWORD(dw) ((WORD)(((DWORD)(dw) >> 16) & 0xFFFF))
 

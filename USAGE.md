@@ -52,6 +52,7 @@
 - [Hashing & Comparison](#hashing--comparison)
   - [Hashing](#hashing)
   - [Comparison](#comparison)
+- [Error & Status Symbols](#error--status-symbols)
 
 ---
 
@@ -1944,3 +1945,19 @@ Result    : DIFFERENT
 ```
 
 >**Note**: Actual output layout may vary depending on the selected algorithm, file content, and whether the comparison is within the same file or between two files.
+
+---
+
+## Error & Status Symbols
+
+PEDump uses symbols to indicate informational messages, malformed data, and errors, with nesting for deeper function calls.
+
+| Symbol | Meaning | Notes |
+|--------|---------|-------|
+| `i`    | Informational / target not present | The requested target (section, range, Rich Header, etc.) is absent. Multiple `i`s indicate nested levels in the structure. |
+| `*`    | Malformed / invalid | The data or structure is malformed or corrupted. |
+| `!`    | Error (top-level) | Runtime or extraction error occurred in the top-level function. |
+| `!!`   | Error (nested) | Error occurred inside a function called by the top-level function; each additional `!` represents another level deeper in the call stack. |
+| `!!!`  | Error (deeper nested) | Error occurred deeper in the function hierarchy; the number of `!` indicates how many layers deep the error happened. |
+
+> **Note:** Informational messages (`i`) are normal. Errors with `!` reflect depth in the function call hierarchy: more `!` means deeper inside nested functions.
