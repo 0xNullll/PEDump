@@ -250,7 +250,7 @@ void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
             printf("%sDLL Name      : %s\n",   INDENT(entries_level + 2), expMatch->dllName);
 
             /* Function name (may exist even for ordinal exports) */
-            if ((expMatch->type & EXPORT_TYPE_NAME) == 0 && expMatch->funcName && expMatch->funcName[0]) {
+            if ((expMatch->type & EXPORT_TYPE_NAME) == 0 && expMatch->funcName[0]) {
                 printf("%sFunction      : %s\n",
                     INDENT(entries_level + 2), expMatch->funcName);
             }

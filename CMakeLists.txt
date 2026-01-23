@@ -47,6 +47,9 @@ if (MSVC)
         /wd4244
         /wd4267
     )
+
+    # Suppress deprecated “unsafe” function warnings
+    target_compile_definitions(PEDump PRIVATE _CRT_SECURE_NO_WARNINGS)
 else()
     target_compile_options(PEDump PRIVATE
         -Wall

@@ -2137,9 +2137,9 @@ RET_CODE dump_MISC_debug_info(
         BYTE *bdata = misc.Data;
         for (DWORD i = 0; i < misc.Length; i++) {
             if (isprint(bdata[i]))
-                printf("%hs\t\t\t%04lX : %c\n", INDENT(level + 1), i, bdata[i]);
+                printf("%s\t\t\t%04lX : %c\n", INDENT(level + 1), i, bdata[i]);
             else
-                printf("%hs\t\t\t%04lX : 0x%02lX\n", INDENT(level + 1), i, (ULONG)bdata[i]);
+                printf("%s\t\t\t%04lX : 0x%02lX\n", INDENT(level + 1), i, (ULONG)bdata[i]);
         }
     }
 

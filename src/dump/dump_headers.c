@@ -156,24 +156,24 @@ RET_CODE dump_rich_header(
     printf("\n%08lX\t\t\t\t\t\t\t- RICH HEADER -\n\n", foBase);
 
     // DanS marker
-    printf("%08lX  [4]  DanS marker      : %08X  (\"%c%c%c%c\")\n\n",
+    printf("%08lX  [4]  DanS marker      : %08lX  (\"%c%c%c%c\")\n\n",
         foBase, decRichHdr->DanS,
-        (decRichHdr->DanS & 0xFF),
-        (decRichHdr->DanS >> 8) & 0xFF,
-        (decRichHdr->DanS >> 16) & 0xFF,
-        (decRichHdr->DanS >> 24) & 0xFF);
+        (int)(decRichHdr->DanS & 0xFF),
+        (int)(decRichHdr->DanS >> 8) & 0xFF,
+        (int)(decRichHdr->DanS >> 16) & 0xFF,
+        (int)(decRichHdr->DanS >> 24) & 0xFF);
     foBase += 4;
 
     // Checksum paddings
-    printf("%08lX  [4]  Checksum padding : %08X\n",
+    printf("%08lX  [4]  Checksum padding : %08lX\n",
         foBase, decRichHdr->checksumPadding1);
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum padding : %08X\n",
+    printf("%08lX  [4]  Checksum padding : %08lX\n",
         foBase, decRichHdr->checksumPadding2);
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum padding : %08X\n\n\n",
+    printf("%08lX  [4]  Checksum padding : %08lX\n\n\n",
         foBase, decRichHdr->checksumPadding3);
     foBase += 4;
 
@@ -214,15 +214,15 @@ RET_CODE dump_rich_header(
 
 
     // Rich marker and XOR key
-    printf("%08lX  [4]  Rich marker      : %08X  (\"%c%c%c%c\")\n",
+    printf("%08lX  [4]  Rich marker      : %08lX  (\"%c%c%c%c\")\n",
         foBase, decRichHdr->Rich,
-        (decRichHdr->Rich & 0xFF),            // lowest byte
-        (decRichHdr->Rich >> 8) & 0xFF,
-        (decRichHdr->Rich >> 16) & 0xFF,
-        (decRichHdr->Rich >> 24) & 0xFF);
+        (int)(decRichHdr->Rich & 0xFF),            // lowest byte
+        (int)(decRichHdr->Rich >> 8) & 0xFF,
+        (int)(decRichHdr->Rich >> 16) & 0xFF,
+        (int)(decRichHdr->Rich >> 24) & 0xFF);
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum         : %08X\n",
+    printf("%08lX  [4]  Checksum         : %08lX\n",
         foBase, decRichHdr->XORKey);
     foBase += 4;
 
@@ -596,7 +596,7 @@ RET_CODE dump_string_table(FILE *peFile, DWORD symTableOffset, DWORD numberOfSym
         }
 
         len = strlen(cursor);
-        printf("%-7u  %08lX  %-7zu  %s\n", idx, foBase, len, cursor);
+        printf("%-7lu  %08lX  %-7zu  %s\n", idx, foBase, len, cursor);
         idx++;
         cursor += len + 1;
         foBase += (DWORD)(len + 1);
