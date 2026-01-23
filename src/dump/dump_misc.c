@@ -248,7 +248,6 @@ void dump_extracted_exports(PMATCH_LIST MatchList, PIMAGE_SECTION_HEADER section
 
         } else {
             printf("%sDLL Name      : %s\n",   INDENT(entries_level + 2), expMatch->dllName);
-            RVA_INFO nameDataRvaInfo = get_rva_info(expMatch->nameRva, sections, numberOfSections, imageBase);
 
             /* Function name (may exist even for ordinal exports) */
             if ((expMatch->type & EXPORT_TYPE_NAME) == 0 && expMatch->funcName && expMatch->funcName[0]) {
