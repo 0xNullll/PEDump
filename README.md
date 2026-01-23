@@ -174,6 +174,7 @@ PEDump -H section:.text@sha256 test.exe
 
 - All commands are implemented and fully tested on Windows.  
 - Linux support is available but not yet fully verified; macOS support is planned and partially implemented.
+- Developed as my first C project; while fully functional, it reflects a learning process and may not be perfectly polished.
 
 ---
 
