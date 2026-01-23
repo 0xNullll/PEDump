@@ -9,6 +9,9 @@
     #define FSEEK64(file, offset, whence) _fseeki64((file), (LONGLONG)(offset), (whence))
     #define FTELL64(file)                 _ftelli64(file)
     #define STREQI(a, b) _stricmp((a), (b))
+
+    // Safe string copy (null-terminated, truncates if needed)
+    #define STRNCPY(dest, src)            strncpy_s((dest), sizeof(dest), (src), _TRUNCATE)
 #else
     // Check for ftello
     #if defined(__GNUC__) || defined(__linux__) || defined(__unix__)
@@ -31,6 +34,9 @@
     #else
         #define FSEEK64(file, offset, whence) fseek((file), (offset), (whence))  // Fallback to fseek
     #endif
+
+    // Safe string copy (portable, null-terminated)
+    #define STRNCPY(dest, src)            snprintf((dest), sizeof(dest), "%s", (src))
 #endif
 
 //  Optional Function Detection (if not available)

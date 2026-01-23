@@ -14,10 +14,9 @@ void initPEContext(FILE *peFile, const char *fileName, PPEContext peCtx) {
 
     // Copy file name/path safely
     if (fileName && *fileName) {
-        strncpy(peCtx->filePath, fileName, sizeof(peCtx->filePath) - 1);
-        peCtx->filePath[sizeof(peCtx->filePath) - 1] = '\0';
+        STRNCPY(peCtx->filePath, fileName);
     } else {
-        strcpy(peCtx->filePath, "<unknown>");
+        STRNCPY(peCtx->filePath, "<unknown>");
     }
 
     // Allocate essential headers
@@ -175,8 +174,7 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
     for (WORD i = 0; i < numberOfSections; i++) {
         char secName[64] = {0};
         // ensure null termination
-        strncpy(secName, (char*)sections[i].Name, 8);
-        secName[8] = '\0';
+        STRNCPY(secName, (char*)sections[i].Name);
         strncat(secName, " section", sizeof(secName) - strlen(secName) - 1);
 
 
