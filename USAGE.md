@@ -1954,7 +1954,7 @@ PEDump uses symbols to indicate informational messages, malformed data, and erro
 
 | Symbol | Meaning | Notes |
 |--------|---------|-------|
-| `i`    | Informational / target not present | The requested target (section, range, Rich Header, etc.) is absent. Multiple `i`s indicate nested levels in the structure. |
+| `i`    | Informational / target not present | The requested target (section, range, Rich Header, etc.) is absent. |
 | `*`    | Malformed / invalid | The data or structure is malformed or corrupted. |
 | `!`    | Error (top-level) | Runtime or extraction error occurred in the top-level function. |
 | `!!`   | Error (nested) | Error occurred inside a function called by the top-level function; each additional `!` represents another level deeper in the call stack. |
