@@ -1640,6 +1640,7 @@ Dump ASCII and UTF-16LE strings from the file, with optional regex filtering.
 
 **Notes:**
 - Both ASCII and UTF-16LE strings are supported.
+- The minimum string length to be printed is **5 characters**.
 - If no regex is provided, all printable strings in the file are dumped.
 
 **Commands Example:**

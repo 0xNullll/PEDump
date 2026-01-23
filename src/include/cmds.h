@@ -29,6 +29,14 @@ BOOL isHelpCmd
     IN const char *arg
 );
 
+// Checks whether the provided argument corresponds to the "--is-pe" command.
+// arg    : Command-line argument string.
+// Returns: TRUE if the argument requests the is-pe command, FALSE otherwise.
+BOOL isPECmd
+(
+    IN const char *arg
+);
+
 // Initializes a configuration structure to its default state.
 // c      : Output pointer to the configuration structure to initialize.
 void init_config

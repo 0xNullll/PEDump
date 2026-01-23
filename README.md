@@ -49,86 +49,112 @@ The binary will be located in **build/bin/**:
 PEDump [options] file [file2]
 ```
 
-### General
-- `-h`, `--help`                Show help message  
+---
 
-### Headers & PE Information
-- `-dh`,  `--dos-header`        Print DOS header  
-- `-fh`,  `--file-header`       Print File header  
-- `-oh`,  `--optional-header`   Print Optional header  
-- `-nth`, `--nt-headers`        Print NT headers  
-- `-sh`,   `--section-headers`  Print section headers
+## General
 
-### Data Directories
-- `-e`,    `--exports`          Print export directory  
-- `-i`,    `--imports`          Print import directory  
-- `-r`,    `--resources`        Print resources directory  
-- `-ex`,   `--exception`        Print exception directory  
-- `-sec`,  `--security`         Print security directory  
-- `-br`,   `--basereloc`        Print base relocations  
-- `-d`,    `--debug`            Print debug directory  
-- `-tls`,  `--tls`              Print TLS directory  
-- `-lc`,   `--load-config`      Print load config directory  
-- `-bi`,   `--bound-import`     Print bound imports  
-- `-iat`,  `--iat`              Print Import Address Table  
-- `-di`,   `--delay-import`     Print delay imports  
-- `-ch`,   `--clr-header`       Print CLR header  
-- `-dd`,   `--data-directories` Print all data directories  
+| Command | Description |
+|--------|-------------|
+| `-h`, `--help` | Show help message |
 
-### Miscellaneous
-- `-rh`,  `--rich-header`       Print Rich header  
-- `-vi`,  `--version-info`      Print version information  
-- `-sym`, `--symbol-table`      Print COFF symbol table  
-- `-st`,  `--string-table`      Print COFF string table  
-- `-o`,   `--overlay`           Print overlay data  
-- `-ov`,  `--overview`          Print high-level file overview  
-- `-a`,   `--all`               Print all available information  
+---
 
-### Output Formatting
+## Headers & PE Information
 
-- `-v2f`, `--va2file <NUMBER>`  
-  Convert a virtual address to a file offset.
+| Command | Description |
+|--------|-------------|
+| `-dh`, `--dos-header` | Print DOS header |
+| `-fh`, `--file-header` | Print File header |
+| `-oh`, `--optional-header` | Print Optional header |
+| `-nth`, `--nt-headers` | Print NT headers |
+| `-sh`, `--section-headers` | Print section headers |
 
-- `-f`, `--format <type[:spec]>`  
-  Output format and optional range:  
+---
 
-  **Types:**  
-  - `hex`   – hexadecimal bytes (16 per line)  
-  - `dec`   – decimal bytes (0–255)  
-  - `bin`   – binary bytes  
-  - `table` – offset | hex | ASCII (range ignored)  
+## Data Directories
 
-  **Range:**  
-  - `:N`          – first N lines (`-N` → last |N| lines)  
-  - `:start,max`  – from start to max (lines or offsets, no negatives)  
-  - `:start..end` – from start to end offsets (decimal or hex, no negatives)  
+| Command | Description |
+|--------|-------------|
+| `-e`, `--exports` | Print export directory |
+| `-i`, `--imports` | Print import directory |
+| `-r`, `--resources` | Print resources directory |
+| `-ex`, `--exception` | Print exception directory |
+| `-sec`, `--security` | Print security directory |
+| `-br`, `--basereloc` | Print base relocations |
+| `-d`, `--debug` | Print debug directory |
+| `-tls`, `--tls` | Print TLS directory |
+| `-lc`, `--load-config` | Print load config directory |
+| `-bi`, `--bound-import` | Print bound imports |
+| `-iat`, `--iat` | Print Import Address Table |
+| `-di`, `--delay-import` | Print delay imports |
+| `-ch`, `--clr-header` | Print CLR header |
+| `-dd`, `--data-directories` | Print all data directories |
 
-- `-tf`, `--temp-format <type[:spec]>`  
-  Temporary output format for current operation (overrides `-f`):  
+---
 
-  **Types and range:** same as `-f`.
+## Miscellaneous
 
-### Strings
-- `-str`, `--strings [rgex:<pattern>]`  
-Dump ASCII and UTF-16LE strings. Optional regex filtering using POSIX regex or TinyRegex fallback.  
+| Command | Description |
+|--------|-------------|
+| `-rh`, `--rich-header` | Print Rich header |
+| `-vi`, `--version-info` | Print version information |
+| `-sym`, `--symbol-table` | Print COFF symbol table |
+| `-st`, `--string-table` | Print COFF string table |
+| `-o`, `--overlay` | Print overlay data |
+| `-ov`, `--overview` | Print high-level file overview |
+| `-a`, `--all` | Print all available information |
 
-### Extraction
-- `-x`, `--extract <target[:spec]>`  
+---
 
-Targets:  
-- `section:NAME | #IDX | rva/VAL | fo/VAL`  
-- `export:NAME | #ORD | rva/VAL | FWD | LIB`  
-- `import:NAME | #ORD | @HNT | LIB | LIB/NAME`  
+## Output Formatting
 
-Address formats: `HEX`, `0xHEX`, `HEXh`  
+| Command | Description |
+|--------|-------------|
+| `-v2f`, `--va2file <NUMBER>` | Convert virtual address to file offset |
+| `-f`, `--format <type[:spec]>` | Output format and optional range |
+| `-tf`, `--temp-format <type[:spec]>` | Temporary format override |
 
-### Hashing
-- `-H`, `--hash <target[@alg]>`  
-Supported algorithms: `md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224`, `sha512_256`  
+---
 
-### Comparison
-- `-cc`, `--compare-targets <target1>::<target2[@alg]>`  
-Compare regions between two files or within the same file.
+## Strings
+
+| Command | Description |
+|--------|-------------|
+| `-str`, `--strings [rgex:<pattern>]` | Dump ASCII & UTF-16LE strings (minimum length: 5) |
+
+---
+
+## Extraction
+
+| Command | Description |
+|--------|-------------|
+| `-x`, `--extract <target[:spec]>` | Extract sections, imports, exports, or regions |
+
+**Targets**
+- `section:NAME | #IDX | rva/VAL | fo/VAL`
+- `export:NAME | #ORD | rva/VAL | FWD | LIB`
+- `import:NAME | #ORD | @HNT | LIB | LIB/NAME`
+
+**Address formats:** `HEX`, `0xHEX`, `HEXh`
+
+---
+
+## Hashing
+
+| Command | Description |
+|--------|-------------|
+| `-H`, `--hash <target[@alg]>` | Hash file or region (MD5 / SHA family) |
+
+Supported algorithms:
+`md5`, `sha1`, `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224`, `sha512_256`
+
+---
+
+## Comparison
+
+| Command | Description |
+|--------|-------------|
+| `-cc`, `--compare-targets <target1>::<target2[@alg]>` | Compare regions between two targets |
 
 ---
 

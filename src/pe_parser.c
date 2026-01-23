@@ -947,7 +947,7 @@ RET_CODE parsePE(PPEContext peCtx) {
     return RET_SUCCESS;
 }
 
-RET_CODE loadPEContext(const char *fileName, PPEContext *outCtx, FILE **outFile) {
+RET_CODE loadPEContext(const char *fileName ,PPEContext *outCtx, FILE **outFile) {
     if (!fileName || !outCtx || !outFile)
         return RET_INVALID_PARAM;
 
