@@ -232,23 +232,24 @@ RET_CODE get_dll_from_forwarder(const char *forwarderName, char *outDllName, ULO
     }
 
     const char *dot = strchr(forwarderName, '.');
-    if (!dot) {  // just in case, but shouldn't happen for forwarded exports
-        outDllName[0] = '\0';
+    if (!dot) {  // unexpected, but handle gracefully
+        if (strSize > 0) outDllName[0] = '\0';
         return RET_INVALID_PARAM;
     }
 
     ULONGLONG dllLen = (ULONGLONG)(dot - forwarderName);
     if (dllLen >= strSize) dllLen = strSize - 1;
 
-    // Copy DLL name portion
-    strncpy(outDllName, forwarderName, dllLen);
-    outDllName[dllLen] = '\0';
+    // Copy only the DLL portion (up to the dot)
+    memcpy(outDllName, forwarderName, dllLen);
+    outDllName[dllLen] = '\0';  // null-terminate
 
-    // Append ".dll" if space allows
-    if (dllLen + 4 < strSize)
+    // Append ".dll" if there is space
+    if (dllLen + 4 < strSize) {
         strcat(outDllName, ".dll");
-    else
+    } else {
         return RET_BUFFER_OVERFLOW;
+    }
 
     return RET_SUCCESS;
 }

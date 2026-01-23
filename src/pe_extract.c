@@ -52,6 +52,48 @@ RET_CODE extract_section(
     return status; // no match after full loop
 }
 
+// BOOL match_export_entry(
+//     const PExportExtract expCfg,
+//     DWORD funcRva, DWORD nameRva, ULONGLONG ordinal,
+//     const char *name, const char *forwardName, const char *ExportDllName, const char *forwardDllName) {
+
+//     // Debug dump of all values
+//     fprintf(stderr, "=== match_export_entry debug ===\n");
+//     fprintf(stderr, "funcRva: 0x%08X, nameRva: 0x%08X, ordinal: %llu\n", funcRva, nameRva, ordinal);
+    
+//     if (name) fprintf(stderr, "name: '%s'\n", name); else fprintf(stderr, "name: NULL\n");
+//     if (forwardName) fprintf(stderr, "forwardName: '%s'\n", forwardName); else fprintf(stderr, "forwardName: NULL\n");
+//     if (ExportDllName) fprintf(stderr, "ExportDllName: '%s'\n", ExportDllName); else fprintf(stderr, "ExportDllName: NULL\n");
+//     if (forwardDllName) fprintf(stderr, "forwardDllName: '%s'\n", forwardDllName); else fprintf(stderr, "forwardDllName: NULL\n");
+
+//     if (expCfg) {
+//         fprintf(stderr, "expCfg->useRva: %d, expCfg->rva: 0x%08X\n", expCfg->useRva, expCfg->rva);
+//         fprintf(stderr, "expCfg->useOrdinal: %d, expCfg->ordinal: %llu\n", expCfg->useOrdinal, expCfg->ordinal);
+//         fprintf(stderr, "expCfg->useName: %d, expCfg->funcName: '%s'\n", expCfg->useName, expCfg->funcName);
+//         fprintf(stderr, "expCfg->useForwarder: %d, expCfg->forwarderName: '%s'\n", expCfg->useForwarder, expCfg->forwarderName);
+//         fprintf(stderr, "expCfg->useDll: %d, expCfg->dllName: '%s'\n", expCfg->useDll, expCfg->dllName);
+//     } else {
+//         fprintf(stderr, "expCfg: NULL\n");
+//     }
+
+//     // Original checks
+//     if (expCfg->useRva && (expCfg->rva == funcRva || expCfg->rva == nameRva)) return TRUE;
+//     if (expCfg->useOrdinal && expCfg->ordinal == ordinal) return TRUE;
+
+//     if (expCfg->useName &&
+//         strncmp(expCfg->funcName, name, sizeof(expCfg->funcName)) == 0) return TRUE;
+
+//     if (expCfg->useForwarder && 
+//         strncmp(expCfg->forwarderName, forwardName, sizeof(expCfg->forwarderName)) == 0) return TRUE;
+
+//     if (expCfg->useDll && (
+//         strncmp(expCfg->dllName, ExportDllName, sizeof(expCfg->dllName)) == 0 ||
+//         strncmp(expCfg->dllName, forwardDllName, sizeof(expCfg->dllName)) == 0 )) return TRUE;
+
+//     return FALSE;
+// }
+
+
 BOOL match_export_entry(
     const PExportExtract expCfg,
     DWORD funcRva, DWORD nameRva, ULONGLONG ordinal,
@@ -97,7 +139,7 @@ RET_CODE extract_exports(
         if (FSEEK64(peFile, secExportName.rawOffset + expDir->Name - secExportName.virtualAddress, SEEK_SET) == 0)
             fread(ExportDllName, 1, MAX_DLL_NAME - 1, peFile);
     } 
-    else strcpy(ExportDllName, "<invalid>");
+    else STRNCPY(ExportDllName, "<invalid>");
 
     // === Parse Export Tables ===
     DWORD *EAT = parse_table_from_rva(peFile, expDir->AddressOfFunctions,
@@ -180,14 +222,14 @@ RET_CODE extract_exports(
 
             if (ExportMatch.type & EXPORT_TYPE_DLL_NAME) {
                 if (isForwarded) {
-                    strncpy(ExportMatch.dllName, forwardDllName, sizeof(ExportMatch.dllName) - 1);
+                    STRNCPY(ExportMatch.dllName, forwardDllName);
                 } else {
-                    strncpy(ExportMatch.dllName, ExportDllName, sizeof(ExportMatch.dllName) - 1);
+                    STRNCPY(ExportMatch.dllName, ExportDllName);
                 }
             }
 
-            strncpy(ExportMatch.funcName, funcName, sizeof(ExportMatch.funcName) - 1);
-            strncpy(ExportMatch.forwarderName, forwardName, sizeof(ExportMatch.forwarderName) - 1);
+            STRNCPY(ExportMatch.funcName, funcName);
+            STRNCPY(ExportMatch.forwarderName, forwardName);
 
             ExportMatch.rva = rvaBase;
             entryMatched = 1;
@@ -287,8 +329,8 @@ RET_CODE extract_imports(
                 if (IMAGE_SNAP_BY_ORDINAL64(thunk64.u1.Ordinal)) {
                     ordinal = IMAGE_ORDINAL64(thunk64.u1.Ordinal);
                     if (match_import_entry(impCfg, ordinal, 0, "", dllName)) {
-                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
-                        strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
+                        STRNCPY(importMatch.dllName, dllName);
+                        STRNCPY(importMatch.funcName, "<unknown>");
                         importMatch.ordinal = (WORD)ordinal;
                         importMatch.type = impCfg->useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
                         importMatch.rawOrd = thunk64.u1.Ordinal;
@@ -302,8 +344,8 @@ RET_CODE extract_imports(
                         continue;
 
                     if (match_import_entry(impCfg, 0, hint, name, dllName)) {
-                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
-                        strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
+                        STRNCPY(importMatch.dllName, dllName);
+                        STRNCPY(importMatch.funcName, name);
                         importMatch.hint = hint;
                         importMatch.type =
                             impCfg->useName ? IMPORT_TYPE_NAME :
@@ -324,8 +366,8 @@ RET_CODE extract_imports(
                 if (IMAGE_SNAP_BY_ORDINAL32(thunk32.u1.Ordinal)) {
                     ordinal = IMAGE_ORDINAL32(thunk32.u1.Ordinal);
                     if (match_import_entry(impCfg, ordinal, 0, "", dllName)) {
-                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
-                        strncpy(importMatch.funcName, "<unknown>", sizeof(importMatch.funcName));
+                        STRNCPY(importMatch.dllName, dllName);
+                        STRNCPY(importMatch.funcName, "<unknown>");
                         importMatch.ordinal = (WORD)ordinal;
                         importMatch.type = impCfg->useOrdinal ? IMPORT_TYPE_ORDINAL : IMPORT_TYPE_DLL_NAME;
                         importMatch.rawOrd = thunk32.u1.Ordinal;
@@ -339,8 +381,8 @@ RET_CODE extract_imports(
                         continue;
 
                     if (match_import_entry(impCfg, 0, hint, name, dllName)) {
-                        strncpy(importMatch.dllName, dllName, sizeof(importMatch.dllName));
-                        strncpy(importMatch.funcName, name, sizeof(importMatch.funcName));
+                        STRNCPY(importMatch.dllName, dllName);
+                        STRNCPY(importMatch.funcName, name);
                         importMatch.hint = hint;
                         importMatch.type =
                             impCfg->useName ? IMPORT_TYPE_NAME :

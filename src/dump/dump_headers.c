@@ -519,10 +519,9 @@ RET_CODE dump_symbol_table(
         } else {
             DWORD longOffset = sym->N.Name.Long;
             if (longOffset < stringTableSize) {
-                strncpy(nameBuffer, stringTable + longOffset, MAX_SYMBOL_NAME - 1);
-                nameBuffer[MAX_SYMBOL_NAME - 1] = '\0';
+                STRNCPY(nameBuffer, stringTable + longOffset);
             } else {
-                strcpy(nameBuffer, "<invalid offset>");
+                STRNCPY(nameBuffer, "<invalid offset>");
             }
         }
 
@@ -1121,8 +1120,7 @@ RET_CODE print_section_header(
 
         WORD nameLen = 0;
         if (nameOffset < stringTableSize) {                
-            strncpy(nameBuffer, stringTable + nameOffset, sizeof(nameBuffer) - 1);
-            nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+            STRNCPY(nameBuffer, stringTable + nameOffset);
 
             while (nameOffset + nameLen < stringTableSize && stringTable[nameOffset + nameLen] != '\0') {
                 nameLen++;

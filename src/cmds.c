@@ -166,8 +166,7 @@ RET_CODE va_to_fileOff_cmd(
 
 LONG parseNumber(const char *s, int *isLine) {
     char buf[128];
-    strncpy(buf, s, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+    STRNCPY(buf, s);
 
     int hex = 0;
 
@@ -207,8 +206,8 @@ RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
     if (isTmp) formatCfg.isTmp = 1;
 
     char buf[64];
-    strncpy(buf, arg, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+    STRNCPY(buf, arg);
+
     strToLower(buf, strlen(buf));
 
     char *sep = strchr(buf, ':');
@@ -278,7 +277,7 @@ RET_CODE handle_section_extract(char *val, PSectionExtract section) {
     memset(section, 0, sizeof(*section));
 
     if (*val == '/' || *val == '.') {
-        strncpy(section->name, val, sizeof(section->name) - 1);
+        STRNCPY(section->name, val);
         section->useName = 1;
     }
     else if (*val == '#') {
@@ -327,20 +326,20 @@ RET_CODE handle_export_extract(char *val, PExportExtract exp) {
             if (STREQI(ext, ".dll") == 0 || STREQI(ext, ".exe") == 0 ||
                 STREQI(ext, ".sys") == 0 || STREQI(ext, ".ocx") == 0 ||
                 STREQI(ext, ".cpl") == 0 || STREQI(ext, ".scr") == 0) {
-                strncpy(exp->dllName, val, sizeof(exp->dllName) - 1);
+                STRNCPY(exp->dllName, val);
                 exp->useDll = 1;
 
                 return RET_SUCCESS;
             }
 
             if (strchr(val, '.')) {
-                strncpy(exp->forwarderName, val, sizeof(exp->forwarderName) - 1);
+                STRNCPY(exp->forwarderName, val);
                 exp->useForwarder = 1;
                 return RET_SUCCESS;
             }
         }
 
-        strncpy(exp->funcName, val, sizeof(exp->funcName) - 1);
+        STRNCPY(exp->funcName, val);
         exp->useName = 1;
         return RET_SUCCESS;
     }
@@ -359,7 +358,7 @@ RET_CODE handle_import_extract(char *val, PImportExtract imp) {
     if (slash) {
         // DLL + something
         *slash++ = '\0';
-        strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
+        STRNCPY(imp->dllName, val);
         imp->isGlobal = 0;
 
         if (*slash == '\0') return RET_INVALID_PARAM;
@@ -373,7 +372,7 @@ RET_CODE handle_import_extract(char *val, PImportExtract imp) {
             imp->useHint   = 1;
         }
         else {
-            strncpy(imp->funcName, slash, sizeof(imp->funcName) - 1);
+            STRNCPY(imp->funcName, slash);
             imp->useName = 1;
         }
     }
@@ -381,7 +380,7 @@ RET_CODE handle_import_extract(char *val, PImportExtract imp) {
         // No slash -> global import
         if (len >= 4 && STREQI(val + len - 4, ".dll") == 0) {
             // DLL only
-            strncpy(imp->dllName, val, sizeof(imp->dllName) - 1);
+            STRNCPY(imp->dllName, val);
             imp->useDll   = 1;
             imp->isGlobal = 0;
         }
@@ -397,7 +396,7 @@ RET_CODE handle_import_extract(char *val, PImportExtract imp) {
         }
         else {
             // Global function
-            strncpy(imp->funcName, val, sizeof(imp->funcName) - 1);
+            STRNCPY(imp->funcName, val);
             imp->useName  = 1;
             imp->isGlobal = 1;
         }
@@ -426,8 +425,7 @@ RET_CODE parse_extract_arg(const char *arg, PConfig c) {
 
     // Copy arg safely
     char buf[564];
-    strncpy(buf, arg, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+    STRNCPY(buf, arg);
 
     if (strncmp(buf, "section:", 8) == 0) {
         extractConfig.kind = EXTRACT_SECTION;
@@ -495,8 +493,7 @@ RET_CODE parse_hash_config(const char *arg, HashConfig *hc) {
 
     // Copy arg safely
     char buf[564];
-    strncpy(buf, arg, sizeof(buf) - 1);
-    buf[sizeof(buf) - 1] = '\0';
+    STRNCPY(buf, arg);
 
     // Parse algorithm after '@'
     char *alg = strchr(buf, '@');
