@@ -68,12 +68,10 @@ RET_CODE va_to_fileOff_cmd
 
 // Parses a numeric string, supporting both direct numbers and line-based inputs.
 // s      : Input numeric string.
-// isLine : Output flag indicating whether the value was line-based (1) or numeric (0).
 // Returns: Parsed number as a LONG value.
 LONG parseNumber
 (
-    IN const char *s,
-    IN int *isLine
+    IN const char *s
 );
 
 // Parses and applies formatting-related arguments to the configuration.

@@ -972,7 +972,7 @@ BOOL is_import_library_present(
     for (WORD i = 0; i < numberOfEntries; i++) {
         char currentName[MAX_DLL_NAME] = {0};
         if (!read_import_dll_name(peFile, &impDesc[i], sections, numberOfSections, currentName)) {
-            strcpy(currentName, "<invalid>"); 
+            STRNCPY(currentName, "<invalid>"); 
         }
 
         if (STREQI(currentName, dllName) == 0)

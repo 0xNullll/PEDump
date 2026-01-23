@@ -2129,17 +2129,17 @@ RET_CODE dump_MISC_debug_info(
         wchar_t *wdata = (wchar_t*)misc.Data;
         for (DWORD i = 0; i < misc.Length / 2; i++) {
             if (iswprint((wint_t)wdata[i]))
-                wprintf(L"%s\t\t\t%04X : %c\n", INDENT(level + 1), i, wdata[i]);
+                wprintf(L"%hs\t\t\t%04X : %c\n", INDENT(level + 1), i, wdata[i]);
             else
-                wprintf(L"%s\t\t\t%04X : 0x%04X\n", INDENT(level + 1), i, wdata[i]);
+                wprintf(L"%hs\t\t\t%04X : 0x%04X\n", INDENT(level + 1), i, wdata[i]);
         }
     } else {
         BYTE *bdata = misc.Data;
         for (DWORD i = 0; i < misc.Length; i++) {
             if (isprint(bdata[i]))
-                printf("%s\t\t\t%04lX : %c\n", INDENT(level + 1), i, bdata[i]);
+                printf("%hs\t\t\t%04lX : %c\n", INDENT(level + 1), i, bdata[i]);
             else
-                printf("%s\t\t\t%04lX : 0x%02lX\n", INDENT(level + 1), i, (ULONG)bdata[i]);
+                printf("%hs\t\t\t%04lX : 0x%02lX\n", INDENT(level + 1), i, (ULONG)bdata[i]);
         }
     }
 
@@ -3920,8 +3920,6 @@ RET_CODE dump_load_config_dir(
 
 RET_CODE dump_bound_import_dir(
     FILE *peFile,
-    PIMAGE_SECTION_HEADER sections,
-    WORD numberOfSections,
     PIMAGE_DATA_DIRECTORY boundImportDataDir,
     ULONGLONG imageBase) {
 
@@ -4081,10 +4079,10 @@ RET_CODE dump_delay_import_dir(
                 fread(dllName, 1, MAX_DLL_NAME - 1, peFile);
                 dllName[MAX_DLL_NAME - 1] = '\0'; // safety null-termination
             } else {
-                strcpy(dllName, "<invalid>");
+                STRNCPY(dllName, "<invalid>");
             }
         } else {
-            strcpy(dllName, "<invalid>");
+            STRNCPY(dllName, "<invalid>");
         }
 
         // Descriptor heading for this DLL
@@ -4200,7 +4198,7 @@ RET_CODE dump_delay_import_dir(
         char header[64];
         sprintf(header, "END OF DELAY IMPORT DESCRIPTOR %d (%ld function%s)", i + 1, numIAT, numIAT == 1 ? "" : "s");
 
-        printf("\n");
+        putchar('\n');
         print_centered_header(header, '-', 102);
         printf("\n\n");
 
@@ -4460,7 +4458,7 @@ RET_CODE dump_all_data_directories(
 
     // BOUND IMPORT
     TRY_DUMP(pBoundImportDataDir,
-             dump_bound_import_dir(peFile, sections, numberOfSections, pBoundImportDataDir, imageBase),
+             dump_bound_import_dir(peFile, pBoundImportDataDir, imageBase),
              "Bound Import");
 
     // IAT

@@ -848,16 +848,12 @@ RET_CODE dump_load_config_dir
 
 // Dumps the Bound Import Directory of a PE file.
 // peFile            : handle to the opened PE file.
-// sections          : array of section headers.
-// numberOfSections  : total number of sections.
 // boundImportDataDir: pointer to IMAGE_DATA_DIRECTORY of Bound Imports.
 // imageBase         : base address of the loaded image.
 // Returns           : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_bound_import_dir
 (
     IN FILE *peFile,
-    IN PIMAGE_SECTION_HEADER sections,
-    IN WORD numberOfSections,
     IN PIMAGE_DATA_DIRECTORY boundImportDataDir,
     IN ULONGLONG imageBase
 );

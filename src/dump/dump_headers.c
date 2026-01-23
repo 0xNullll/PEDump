@@ -1127,7 +1127,7 @@ RET_CODE print_section_header(
             }
             SAFE_FREE(stringTable);
         } else {
-            strcpy(nameBuffer, "<invalid offset>");
+            STRNCPY(nameBuffer, "<invalid offset>");
         }
 
         printf("\t\t  %08lX  [%-3lu]\tName                       : %s (%s)\n\n",
