@@ -322,16 +322,22 @@ RET_CODE handle_export_extract(char *val, PExportExtract exp) {
     else {
         size_t len = strlen(val);
 
-        if (len >= 4 && STREQI(val + len - 4, ".dll") == 0) {
-            strncpy(exp->dllName, val, sizeof(exp->dllName) - 1);
-            exp->useDll = 1;
-            return RET_SUCCESS;
-        }
+        const char *ext = strrchr(val, '.');
+        if (ext) {
+            if (STREQI(ext, ".dll") == 0 || STREQI(ext, ".exe") == 0 ||
+                STREQI(ext, ".sys") == 0 || STREQI(ext, ".ocx") == 0 ||
+                STREQI(ext, ".cpl") == 0 || STREQI(ext, ".scr") == 0) 
+            {
+                strncpy(exp->dllName, val, sizeof(exp->dllName) - 1);
+                exp->useDll = 1;
+                return RET_SUCCESS;
+            }
 
-        if (strchr(val, '.')) {
-            strncpy(exp->forwarderName, val, sizeof(exp->forwarderName) - 1);
-            exp->useForwarder = 1;
-            return RET_SUCCESS;
+            if (strchr(val, '.')) {
+                strncpy(exp->forwarderName, val, sizeof(exp->forwarderName) - 1);
+                exp->useForwarder = 1;
+                return RET_SUCCESS;
+            }
         }
 
         strncpy(exp->funcName, val, sizeof(exp->funcName) - 1);
