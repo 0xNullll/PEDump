@@ -286,7 +286,7 @@ RET_CODE extract_imports(
         char dllName[MAX_DLL_NAME] = {0};
         
         if (!read_import_dll_name(peFile, &impDesc[i], sections, numberOfSections, dllName)) {
-            strcpy(dllName, "<invalid>");
+            STRNCPY(dllName, "<invalid>");
         }
 
         // Skip DLLs if not global and DLL doesn't match

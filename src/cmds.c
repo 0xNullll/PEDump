@@ -164,7 +164,7 @@ RET_CODE va_to_fileOff_cmd(
     return status;
 }
 
-LONG parseNumber(const char *s, int *isLine) {
+LONG parseNumber(const char *s) {
     char buf[128];
     STRNCPY(buf, s);
 
@@ -186,7 +186,6 @@ LONG parseNumber(const char *s, int *isLine) {
     // base = hex ? 16 : 10
     LONG val = (LONG)strtol(buf, NULL, hex ? 16 : 10);
 
-    // do not change isLine automatically
     return val;
 }
 
@@ -222,8 +221,8 @@ RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
             char *startStr = rangeStr;
             char *endStr   = dotdot + 2;
 
-            int startVal = parseNumber(startStr, &formatCfg.startIsLine);
-            int endVal   = parseNumber(endStr, &formatCfg.endIsLine);
+            int startVal = parseNumber(startStr);
+            int endVal   = parseNumber(endStr);
 
             formatCfg.startLine = startVal;
             formatCfg.maxLine   = endVal - startVal + 1; // count = end - start + 1
@@ -236,12 +235,12 @@ RET_CODE parse_format_arg(const char *arg, BOOL isTmp, PConfig c) {
                 char *startStr = rangeStr;
                 char *endStr   = comma + 1;
 
-                formatCfg.startLine = parseNumber(startStr, &formatCfg.startIsLine);
-                formatCfg.maxLine   = parseNumber(endStr, &formatCfg.endIsLine);
+                formatCfg.startLine = parseNumber(startStr);
+                formatCfg.maxLine   = parseNumber(endStr);
             }
             // --- Single value mode
             else {
-                int val = parseNumber(rangeStr, &formatCfg.startIsLine);
+                int val = parseNumber(rangeStr);
 
                 formatCfg.endIsLine = formatCfg.startIsLine;
 
@@ -319,8 +318,6 @@ RET_CODE handle_export_extract(char *val, PExportExtract exp) {
         exp->useRva  = 1;
     }
     else {
-        size_t len = strlen(val);
-
         const char *ext = strrchr(val, '.');
         if (ext) {
             if (STREQI(ext, ".dll") == 0 || STREQI(ext, ".exe") == 0 ||
@@ -1017,7 +1014,7 @@ RET_CODE handle_commands(int argc, char **argv, PPEContext peCtx) {
                 }
                 
                 if (config.formatConfig.view == VIEW_TABLE) {
-                    if (dump_bound_import_dir(peCtx->fileHandle, peCtx->sections, numberOfSections, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
+                    if (dump_bound_import_dir(peCtx->fileHandle, pBoundImportDataDir, imageBase) != RET_SUCCESS) {
                         fprintf(stderr, "[!] Failed to dump Bound Import Directory\n");
                     }
                 } else {

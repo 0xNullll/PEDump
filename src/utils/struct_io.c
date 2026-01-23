@@ -136,11 +136,6 @@ void fill_pe_sections_manual(PPEContext peCtx, PFileSectionList outList) {
     }
 
     // --- NT Headers ---
-    DWORD fileHeaderSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER);
-    DWORD optionalHeaderSize = is64bit ? sizeof(IMAGE_OPTIONAL_HEADER64)
-                                       : sizeof(IMAGE_OPTIONAL_HEADER32);
-    // DWORD ntHeadersSize = fileHeaderSize + optionalHeaderSize;
-
     DWORD ntHeadersSize = sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + fileHdr->SizeOfOptionalHeader;
 
     if (add_section(outList, ntOffset, ntHeadersSize,
