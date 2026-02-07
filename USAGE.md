@@ -74,7 +74,162 @@ Show this help message with all available commands and options.
 
 **Example:**
 ```
-# output example placeholder
+$ PEDump -h
+
+Usage: PEDump [options] file <file2>
+Options:
+  -h,    --help                                Show this help message
+
+Headers & PE info:
+  -dh,   --dos-header                          Print DOS header
+  -fh,   --file-header                         Print File header
+  -oh,   --optional-header                     Print Optional header
+  -nth,  --nt-headers                          Print NT headers
+  -sh,   --section-headers                     Print Section Headers
+
+Data Directories:
+  -e,    --exports                             Print Exports
+  -i,    --imports                             Print Imports
+  -r,    --resources                           Print Resources
+  -ex,   --exception                           Print Exception directory
+  -sec,  --security                            Print Security info
+  -br,   --basereloc                           Print Base relocations
+  -d,    --debug                               Print Debug directory
+  -tls,  --tls                                 Print TLS directory
+  -lc,   --load-config                         Print Load Config directory
+  -bi,   --bound-import                        Print Bound imports
+  -iat,  --iat                                 Print IAT
+  -di,   --delay-import                        Print Delay imports
+  -ch,   --clr-header                          Print CLR Header
+  -dd,   --data-directories                    Print all Data directories
+
+
+Miscellaneous:
+  -rh,   --rich-header                         Print Rich header
+  -vi,   --version-info                        Print Version info
+  -sym,  --symbol-table                        Print Symbol table
+  -st,   --string-table                        Print String table
+  -o,    --overlay                             Print Overlay
+  -ov,   --overview                            Print Overview info about the file
+  -a,    --all                                 Print all available info
+
+Output formatting:
+  -v2f,  --va2file NUMBER                      Convert virtual address to file offset
+
+  -f,    --format <type[:spec]>                Set output format and optionally limit range
+                                               <type> can be:
+                                                   hex   - bytes in hexadecimal (16 bytes/line)
+                                                   dec   - bytes as decimal values (0-255)
+                                                   bin   - bytes in binary (8 bits per byte)
+                                                   table - combined view: offset | hex | ASCII
+                                               Range specifiers (ignored for table):
+                                                   :N            - print the first N lines; if negative, print |N| lines from the end
+                                                   :start,max    - print from 'start' to 'max' (line or offset)
+                                                                   - decimal = line index
+                                                                   - negative values are not allowed
+                                                                   - 0x...   = byte offset (rounded up to nearest line boundary)
+                                                   :start..end   - print from 'start' to 'end' offsets (supports hex or decimal)
+                                                                   - decimal = byte offset (rounded up to nearest line boundary)
+                                                                   - 0x...   = hex byte offset
+                                                                   - negative values are not allowed
+                                               Note: offsets starting with '0x' are treated as byte offsets
+                                                     and are aligned to the view's bytes-per-line.
+
+  -tf, --temp-format <type[:spec]>          Set temporary output format (overrides -f for current operation)
+                                              <type> can be same as -f and supports range specifiers.
+
+Extraction:
+  -s,    --strings [rgex:<pattern>]            Dump ASCII/UTF-16LE strings from the file
+                                                   If no <pattern> is provided, all strings are dumped.
+                                                   Optional regex filtering:
+                                                       rgex:pattern  - filters strings matching <pattern>
+                                                   Examples:
+                                                       -s                          Dump all strings
+                                                       --strings rgex:^Hello       Dump strings starting with 'Hello'
+                                                   Regex backend:
+                                                       Uses system POSIX regex if available,
+                                                       otherwise falls back to TinyRegex.
+
+  -x,    --extract <target[:spec]>             Extract a specific part of the PE file
+                                               <target> can be:
+                                                   section:NAME        - extract a section by name (e.g., section:.text, section:.rdata)
+                                                   section:#IDX        - extract a section by index (e.g., section:#2)
+                                                   section:rva/VAL     - extract data at a specific RVA (e.g., section:rva/0x401000)
+                                                   section:fo/VAL      - extract data at a specific file offset (e.g., section:fo/0x200)
+
+                                                   export:NAME         - extract an exported function by name (e.g., export:CreateFileA)
+                                                   export:#ORD         - extract an exported function by ordinal (e.g., export:#37)
+                                                   export:rva/VAL      - extract an exported entry by RVA; matches either Func-RVA or Name-RVA (e.g., export:rva/0x401000)
+                                                   export:FWD          - extract a forwarded export (e.g., export:KERNEL32.CreateFileA)
+                                                   export:LIB          - extract ALL exports from the specified DLL
+                                                                           (must include the '.dll' extension, e.g., export:KERNEL32.dll)
+
+                                                   import:NAME         - extract a function by name globally  (e.g., CreateFileA)
+                                                   import:#ORD         - extract a function by ordinal globally (e.g, #0x287)
+                                                   import:@HNT         - extract a function by hint globally (e.g., @37)
+                                                   import:LIB          - extract ALL imports from the specified DLL
+                                                                           (must include the '.dll' extension, e.g., import:KERNEL32.dll)
+                                                   import:LIB/NAME     - extract a function by name (e.g., KERNEL32.dll/CreateFileA)
+                                                   import:LIB/#ORD     - extract a function by ordinal (e.g, KERNEL32.DLL/#0x287)
+                                                   import:LIB/@HNT     - extract a function by hint (e.g., KERNEL32.dll/@37)
+
+                                               Address specifiers:
+                                                   rva/VAL             - use Relative Virtual Address (RVA)
+                                                   fo/VAL              - use File Offset (FO)
+
+                                               Value formats accepted for VAL:
+                                                   HEX                 e.g. rva/4198400
+                                                   0xHEX               e.g. rva/0x401000
+                                                   HEXh (Intel)        e.g. rva/401000h
+                                                   (Parsers are case-insensitive for hex digits and the trailing 'h')
+
+Hashing & Comparison:
+  Note: Targets follow the same format as --extract, including section, rva/VAL, and fo/VAL.
+        Value formatting (HEX, 0xHEX, HEXh) works the same here.
+
+  -H,  --hash <target[@alg]>                   Compute the hash of a file, section, or range
+                                               <target> can be:
+                                                   file                        - entire file
+                                                   section:NAME                - section by name (e.g., section:.text)
+                                                   section:#IDX                - section by index (e.g., section:#2)
+                                                   section:rva/VAL             - data at specific RVA (e.g., section:rva/0x401000)
+                                                   section:fo/VAL              - data at specific file offset (e.g., section:fo/0x200)
+                                                   range:START-END             - arbitrary file range (e.g., range:0x260-0x500)
+                                                   richheader                  - PE Rich Header
+                                               Optional algorithm:
+                                                   @md5 | @sha1 | @sha224 | @sha256 | @sha384 | @sha512 | @sha512_224 | @sha512_256
+                                               (default: md5)
+
+                                               Examples:
+                                                   PEDump -H file@sha512                  sample.exe
+                                                   PEDump -H section:.text@sha512_256     sample.exe
+                                                   PEDump -H section:#2@sha224            sample.exe
+                                                   PEDump -H section:rva/0x401000@sha256  sample.exe
+                                                   PEDump -H section:fo/0x200@md5         sample.exe
+                                                   PEDump -H range:0x200-0x400@sha512_224 sample.exe
+                                                   PEDump -H range:512-1024@sha384        sample.exe
+                                                   PEDump -H range:0x1000-0x1800@sha1     sample.exe
+                                                   PEDump -H richheader@sha256            sample.exe
+
+  -cc, --compare-targets <target1>::<target2[@alg]>
+                                               Compare two targets between two files
+                                               If only one file is provided, the targets will be compared
+                                               within the same file.
+                                               Use '::' to separate the two targets (target1::target2)
+                                               Targets follow the same spec as --extract:
+                                                   section:NAME, section:#IDX, section:rva/VAL, section:fo/VAL, range:START-END
+                                               Optional algorithm:
+                                                   @md5 | @sha1 | @sha224 | @sha256 | @sha384 | @sha512 | @sha512_224 | @sha512_256
+                                               (default: md5)
+
+                                               Examples:
+                                                   PEDump -cc file::file@sha512_256                       sample1.exe sample2.exe
+                                                   PEDump -cc section:.text::section:.rdata@sha512        sample1.exe sample2.exe
+                                                   PEDump -cc range:0x100-0x200::range:0x300-0x400@sha224 sample1.exe sample2.exe
+                                                   PEDump -cc section:.text::range:0x400-0x600@sha256     sample1.exe sample2.exe
+                                                   PEDump -cc section:#2::section:#3@sha512_224           sample1.exe sample2.exe
+                                                   PEDump -cc richheader::richheader@sha384               sample1.exe sample2.exe
+                                                   PEDump -cc section:.text::section:.rdata@md5           sample.exe   (compare within same file)
 ```
 
 ---
