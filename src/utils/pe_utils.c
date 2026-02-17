@@ -300,8 +300,6 @@ RET_CODE get_symbol_file_offset(
 
 void print_help(void) {
     printf(
-        "# PEDump -h\n"
-        "\n"
         "Usage: PEDump [options] file <file2>\n"
         "Options:\n"
         "  -h,    --help                                Show this help message\n"

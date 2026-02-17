@@ -4,19 +4,13 @@
 #include "include/cmds.h"
 
 int main(int argc, char *argv[]) {
-    // Check for at least one argument before accessing argv[1]
-    if (argc > 1 && isHelpCmd(argv[1])) {
+    // If no arguments, or first argument is a help command, print help
+    if (argc < 2 || isHelpCmd(argv[1])) {
         print_help();
         return RET_SUCCESS;
     }
 
-    // Ensure there are enough arguments
-    if (argc < 2) {
-        fprintf(stderr, "[!] Not enough arguments. Expected file name.\n");
-        return RET_ERROR;
-    }
-
-    char *fileName = argv[argc - 1];  // The first-to-last argument is the file name
+    char *fileName = argv[argc - 1];  // last argument is the file name
 
     FILE *peFile = NULL;
     PPEContext peCtx = NULL;
@@ -26,6 +20,13 @@ int main(int argc, char *argv[]) {
     status = loadPEContext(fileName, &peCtx, &peFile);
     if (status != RET_SUCCESS) {
         fprintf(stderr, "[!] Failed to load PE context from file: %s\n", fileName);
+
+    peFile = fopen(fileName, "rb");
+        if (!peFile) {
+            fprintf(stderr, "[!] You must provide a valid file name to open: %s\n", fileName);
+            return RET_ERROR;
+        }
+        fclose(peFile);  // close after validation
         return status;
     }
 
@@ -36,12 +37,9 @@ int main(int argc, char *argv[]) {
         goto cleanup;
     }
 
-    // For debugging
-    // printf("PE parsing completed successfully.\n");
     fflush(stdout);
-    
+
 cleanup:
-    // Cleanup resources safely
     if (peCtx) {
         freePEContext(peCtx);
     }
