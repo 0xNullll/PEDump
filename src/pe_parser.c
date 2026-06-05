@@ -158,6 +158,9 @@ RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RI
     }
 
     (*richHeader)->XORKey = xorKey;
+    (*richHeader)->checksumPadding1 = xorKey;
+    (*richHeader)->checksumPadding2 = xorKey;
+    (*richHeader)->checksumPadding3 = xorKey;
     (*richHeader)->Rich   = raw[richIdx];
     (*richHeader)->DanS   = raw[danSIdx] ^ xorKey;
     (*richHeader)->NumberOfEntries = numberOfEntries;
