@@ -185,6 +185,6 @@ const char* getRichProductIdName(IN WORD prodid);
 // Data used from RichPrint by dishather (https://github.com/dishather)
 // Copyright (c) 2015-2024 dishather
 // Redistribution and use of this data permitted under the BSD-style license
-const char* GetRichCompIdString(IN DWORD comp_id);
+// const char* GetRichCompIdString(IN DWORD comp_id);
 
 #endif

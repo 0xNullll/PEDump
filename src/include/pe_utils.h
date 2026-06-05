@@ -196,16 +196,6 @@ RET_CODE get_symbol_file_offset
 // Prints the program’s help or usage information to stdout.
 void print_help(void);
 
-// Decrypts a Rich header (XOR-based obfuscation) into a readable format.
-// encRichHdr : Pointer to encrypted Rich header
-// decRichHdr : Pointer to structure that receives the decrypted result
-// Returns    : RET_CODE (RET_SUCCESS on success, RET_ERROR on failure)
-RET_CODE decrypt_rich_header
-(
-    IN  PIMAGE_RICH_HEADER encRichHdr,
-    OUT PIMAGE_RICH_HEADER decRichHdr
-);
-
 // Converts all alphabetic characters in a buffer to lowercase.
 // buf : Input/output character buffer
 // len : Number of characters to process

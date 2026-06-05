@@ -465,44 +465,6 @@ void print_help(void) {
     );
 }
 
-RET_CODE decrypt_rich_header(PIMAGE_RICH_HEADER encRichHdr, PIMAGE_RICH_HEADER decRichHdr) {
-    if (!encRichHdr || !decRichHdr || encRichHdr->NumberOfEntries == 0)
-        return RET_INVALID_PARAM;
-
-    DWORD XORKey = encRichHdr->XORKey;
-    PULONGLONG rawEntries = (PULONGLONG)encRichHdr->Entries;
-    WORD numberOfEntries = encRichHdr->NumberOfEntries;
-
-    // Copy and decrypt the header markers
-    decRichHdr->DanS   = encRichHdr->DanS ^ XORKey;
-    decRichHdr->Rich   = encRichHdr->Rich;  // Rich marker usually stored plain
-    decRichHdr->XORKey = XORKey;
-
-    decRichHdr->checksumPadding1 = XORKey;
-    decRichHdr->checksumPadding2 = XORKey;
-    decRichHdr->checksumPadding3 = XORKey;
-
-    decRichHdr->richHdrOff = encRichHdr->richHdrOff;
-    decRichHdr->richHdrSize = encRichHdr->richHdrSize;
-
-    decRichHdr->NumberOfEntries = numberOfEntries;
-
-    // Decrypt each entry (each = 1 ULONGLONG: compid + count)
-    for (int i = 0; i < (int)numberOfEntries; i++) {
-        ULONGLONG encEntry = rawEntries[i];
-
-        DWORD count  = (DWORD)( encEntry       & 0xFFFFFFFFULL) ^ XORKey; // lower 32 bits
-        WORD buildID = (WORD)(((encEntry >> 32) & 0xFFFFULL) ^ (XORKey & 0xFFFF)); 
-        WORD prodID  = (WORD)(((encEntry >> 48) & 0xFFFFULL) ^ (XORKey >> 16)); // if key split or rotated
-
-        decRichHdr->Entries[i].BuildID = buildID;  // top 16 bits
-        decRichHdr->Entries[i].ProdID  = prodID;   // next 16 bits
-        decRichHdr->Entries[i].Count   = count;    // lower 32 bits
-    }
-
-    return RET_SUCCESS;
-}
-
 void strToLower(char *buf, ULONGLONG len) {
     for (size_t i = 0; i < len; i++) {
         buf[i] = (char)tolower((unsigned char)buf[i]);

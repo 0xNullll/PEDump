@@ -66,30 +66,24 @@ RET_CODE parse_dos_header(FILE *peFile, PIMAGE_DOS_HEADER dosHeader) {
 }
 
 RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RICH_HEADER *richHeader) {
-    PDWORD raw = NULL;               // temporary buffer for raw DWORDs
-    PBYTE rawBytes = NULL;           // temporary buffer for raw Bytes
-    DWORD bufferSize = endOff - StartOff;
+    if (!peFile || !StartOff || !endOff)
+        return RET_INVALID_PARAM;
+
+    PDWORD raw = NULL;
+    PBYTE rawBytes = NULL;
+
+    DWORD bufferSize  = endOff - StartOff;
     DWORD bufferCount = bufferSize / sizeof(DWORD);
 
-    DWORD rawEntryDWORDs = 0;           // counts DWORDs in the raw entries
-    WORD numberOfEntries = 0;           // actual logical entries (each 2 DWORDs)
-    int entryIdx = 0;                   // index where entries start
-    int danSIdx = 0;                    // index of the DanS tag
+    int richIdx = -1;
+    DWORD xorKey = 0;
 
-    DWORD begStructOff = 0;             // offset of the beginning of structure
-    DWORD richHdrStartOff = 0;          // offset of the beginning offset of the rich header
-    int richIdx = 0;                    // index of the Rich signature
-    DWORD checksum = 0;                 // XOR key / checksum
-
-    if (!peFile || !StartOff || !endOff) return RET_INVALID_PARAM;
-
-    if (FSEEK64(peFile, StartOff, SEEK_SET) != 0) return RET_ERROR;
-
-    rawBytes = malloc(bufferSize);
-    if (!rawBytes) {
-        printf("[!!] Failed to malloc\n");
+    if (FSEEK64(peFile, StartOff, SEEK_SET) != 0)
         return RET_ERROR;
-    }
+
+    rawBytes = (PBYTE)malloc(bufferSize);
+    if (!rawBytes)
+        return RET_ERROR;
 
     if (fread(rawBytes, 1, bufferSize, peFile) != bufferSize) {
         SAFE_FREE(rawBytes);
@@ -98,77 +92,100 @@ RET_CODE parse_rich_header(FILE *peFile, DWORD StartOff, DWORD endOff, PIMAGE_RI
 
     raw = (PDWORD)rawBytes;
 
-    for (int i = 0; i < (int)bufferCount; i++) {
-        if (tagBegId == raw[i]) {
-            richIdx = i;
-            checksum = raw[i + 1];
-            break; // found it, stop loop
+    // Find Rich marker and XOR key
+    for (DWORD i = 0; i < bufferCount; i++) {
+        if (raw[i] == tagBegId) {
+            richIdx = (int)i;
+            xorKey  = raw[i + 1];
+            break;
         }
     }
 
-    if (!richIdx) { SAFE_FREE(rawBytes); return RET_NO_VALUE; }
+    if (richIdx < 0) {
+        SAFE_FREE(rawBytes);
+        return RET_NO_VALUE;
+    }
+
+    // Find entry start (first DWORD after last XOR-key-like padding)
+    int entryStart = 0;
 
     for (int i = richIdx; i >= 0; i--) {
-        DWORD decrypted = raw[i] ^ checksum;
-
-        if (decrypted == tagEndId) {
-
-            begStructOff = (DWORD)i * (DWORD)sizeof(DWORD);
-            richHdrStartOff = StartOff + begStructOff;
-            danSIdx = i;
-            entryIdx += i + 1;
-            break; // found it, stop loop
-        } 
-        else if (decrypted != tagEndId && raw[i] != checksum) {
-            rawEntryDWORDs += 1;
-        } 
-        else if (raw[i] == checksum) {
-            entryIdx += 1;
+        if (raw[i] == xorKey)
+        {
+            entryStart = i + 1;
+            break;
         }
-        
     }
 
-    if (!danSIdx) { SAFE_FREE(rawBytes); return RET_NO_VALUE; }
+    if (entryStart <= 0 || entryStart >= richIdx) {
+        SAFE_FREE(rawBytes);
+        return RET_NO_VALUE;
+    }
 
-    numberOfEntries = (WORD)((rawEntryDWORDs / 2) + 1);
+    int entryDWORDs = richIdx - entryStart;
 
-
-    *richHeader = calloc(1, sizeof(IMAGE_RICH_HEADER));
-    if (!*richHeader) {
-        printf("[!!] Failed to calloc\n");
+    if (entryDWORDs <= 0 || (entryDWORDs % 2) != 0) {
         SAFE_FREE(rawBytes);
         return RET_ERROR;
     }
 
-    // allocate memory for the Entries pointer inside the struct
-    (*richHeader)->Entries = calloc(numberOfEntries, sizeof(RICH_ENTRY));
+    WORD numberOfEntries = (WORD)(entryDWORDs / 2);
+
+    // Find DanS (must be decrypted match)
+    int danSIdx = -1;
+
+    for (int i = richIdx; i >= 0; i--) {
+        if ((raw[i] ^ xorKey) == tagEndId) {
+            danSIdx = i;
+            break;
+        }
+    }
+
+    if (danSIdx < 0) {
+        SAFE_FREE(rawBytes);
+        return RET_NO_VALUE;
+    }
+
+    // Allocate structure
+    *richHeader = (PIMAGE_RICH_HEADER)calloc(1, sizeof(IMAGE_RICH_HEADER));
+    if (!*richHeader) {
+        SAFE_FREE(rawBytes);
+        return RET_ERROR;
+    }
+
+    (*richHeader)->Entries = (RICH_ENTRY*)calloc(numberOfEntries, sizeof(RICH_ENTRY));
     if (!(*richHeader)->Entries) {
-        printf("[!!] Failed to calloc Entries\n");
         SAFE_FREE(*richHeader);
         SAFE_FREE(rawBytes);
         return RET_ERROR;
     }
 
-    // Fill header fields
-    (*richHeader)->checksumPadding1 = checksum;
-    (*richHeader)->checksumPadding2 = checksum;
-    (*richHeader)->checksumPadding3 = checksum;
-    (*richHeader)->XORKey = checksum;
+    // Fill header (consistent XOR domain)
+    (*richHeader)->XORKey = xorKey;
 
-    (*richHeader)->DanS = raw[danSIdx];
-
+    (*richHeader)->DanS = raw[danSIdx] ^ xorKey;
     (*richHeader)->Rich = raw[richIdx];
 
     (*richHeader)->NumberOfEntries = numberOfEntries;
 
-    memcpy((*richHeader)->Entries, &raw[entryIdx - 2], numberOfEntries * sizeof(RICH_ENTRY));
+    // Decode entries (2 DWORD per entry)
+    PDWORD stream = &raw[entryStart];
 
-    (*richHeader)->richHdrOff = richHdrStartOff;
+    for (WORD i = 0; i < numberOfEntries; i++) {
+        DWORD comp = stream[i * 2]     ^ xorKey;
+        DWORD cnt  = stream[i * 2 + 1] ^ xorKey;
 
-    // danS signature (DWORD), 3 checksum padding (DWORD), rich signature (DWORD), checksum (DWORD)
-    (*richHeader)->richHdrSize = (DWORD)(6 * sizeof(DWORD) + (ULONGLONG)(sizeof(RICH_ENTRY) * numberOfEntries)
-    
-    );
+        (*richHeader)->Entries[i].ProdID  = (WORD)(comp >> 16);
+        (*richHeader)->Entries[i].BuildID = (WORD)(comp & 0xFFFF);
+        (*richHeader)->Entries[i].Count   = cnt;
+    }
+
+    // Offsets + size
+    (*richHeader)->richHdrOff = StartOff + (danSIdx * sizeof(DWORD));
+
+    (*richHeader)->richHdrSize =
+        ((richIdx - danSIdx) + 2 + entryDWORDs) * sizeof(DWORD);
+
     SAFE_FREE(rawBytes);
     return RET_SUCCESS;
 }

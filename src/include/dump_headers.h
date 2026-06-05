@@ -20,12 +20,12 @@ RET_CODE dump_dos_header
 
 // Dumps and analyzes the Rich Header of a PE file.
 // peFile         : handle to the opened PE file.
-// encRichHeader  : pointer to the IMAGE_RICH_HEADER structure.
+// richHeader     : pointer to the IMAGE_RICH_HEADER structure.
 // Returns        : RET_SUCCESS on success, RET_ERROR on failure.
 RET_CODE dump_rich_header
 (
     IN FILE *peFile,
-    IN PIMAGE_RICH_HEADER encRichHeader
+    IN PIMAGE_RICH_HEADER richHeader
 );
 
 // Prints details of an Auxiliary Function Definition symbol.

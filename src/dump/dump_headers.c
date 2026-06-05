@@ -124,112 +124,88 @@ RET_CODE dump_dos_header(PIMAGE_DOS_HEADER dosHeader, ULONGLONG imageBase) {
     return RET_SUCCESS;
 }
 
-RET_CODE dump_rich_header(
-    FILE *peFile,
-    PIMAGE_RICH_HEADER encRichHeader) {
+RET_CODE dump_rich_header(FILE *peFile, PIMAGE_RICH_HEADER richHeader) {
+    if (!peFile || !richHeader)
+        return RET_INVALID_PARAM;
 
-    if (!peFile || !encRichHeader) return RET_INVALID_PARAM;
-
-    PIMAGE_RICH_HEADER decRichHdr = NULL;
-    DWORD foBase;
-
-
-    foBase = encRichHeader->richHdrOff;
-
-    decRichHdr = malloc(sizeof(IMAGE_RICH_HEADER)); 
-
-    // Allocate memory for the decrypted entries
-    decRichHdr->Entries = calloc(encRichHeader->NumberOfEntries, sizeof(RICH_ENTRY));
-    if (!decRichHdr->Entries) {
-        SAFE_FREE(encRichHeader);
-        SAFE_FREE(decRichHdr);
-        return RET_ERROR;
-    }
-    
-    if (decrypt_rich_header(encRichHeader, decRichHdr) != RET_SUCCESS) {
-        fprintf(stderr, "[!!] Failed to decrypt Rich Header\n");
-        SAFE_FREE(encRichHeader);
-        SAFE_FREE(decRichHdr);
-        return RET_ERROR;
-    }
+    DWORD foBase = richHeader->richHdrOff;
 
     printf("\n%08lX\t\t\t\t\t\t\t- RICH HEADER -\n\n", foBase);
 
-    // DanS marker
+    // DanS marker (already decoded in parse stage)
     printf("%08lX  [4]  DanS marker      : %08lX  (\"%c%c%c%c\")\n\n",
-        foBase, decRichHdr->DanS,
-        (int)(decRichHdr->DanS & 0xFF),
-        (int)(decRichHdr->DanS >> 8) & 0xFF,
-        (int)(decRichHdr->DanS >> 16) & 0xFF,
-        (int)(decRichHdr->DanS >> 24) & 0xFF);
+        foBase,
+        richHeader->DanS,
+        (char)(richHeader->DanS & 0xFF),
+        (char)((richHeader->DanS >> 8) & 0xFF),
+        (char)((richHeader->DanS >> 16) & 0xFF),
+        (char)((richHeader->DanS >> 24) & 0xFF));
+
     foBase += 4;
 
-    // Checksum paddings
-    printf("%08lX  [4]  Checksum padding : %08lX\n",
-        foBase, decRichHdr->checksumPadding1);
+    // Padding (struct-level only, no interpretation)
+    printf("%08lX  [4]  Checksum padding : %08lX\n", foBase, richHeader->checksumPadding1);
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum padding : %08lX\n",
-        foBase, decRichHdr->checksumPadding2);
+    printf("%08lX  [4]  Checksum padding : %08lX\n", foBase, richHeader->checksumPadding2);
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum padding : %08lX\n\n\n",
-        foBase, decRichHdr->checksumPadding3);
+    printf("%08lX  [4]  Checksum padding : %08lX\n\n", foBase, richHeader->checksumPadding3);
     foBase += 4;
 
-    printf("Index | FO         | Value              | Unmasked Value     | Meaning                            | ProdID                               | BuildID  | Count\n");
-    printf("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+    // Entries
+    size_t maxProdLen = 0;
 
-    // Note: RICH entries are cross-packed:
-    // ProdID, BuildID, and Count are shifted across adjacent entries,
-    // so I did use i-1 and i in different fields to match the original encoding.
-    for (WORD i = 1; i < decRichHdr->NumberOfEntries; i++) {
-        ULONGLONG encRawEntry =
-            ((ULONGLONG)encRichHeader->Entries[i - 1].ProdID  << 48) |  // top 16 bits
-            ((ULONGLONG)encRichHeader->Entries[i].BuildID << 32) |      // next 16 bits
-            ((ULONGLONG)encRichHeader->Entries[i - 1].Count);           // lower 32 bits (END)
+    for (WORD i = 0; i < richHeader->NumberOfEntries; i++) {
+        RICH_ENTRY *e = &richHeader->Entries[i];
 
-        ULONGLONG decRawEntry =
-            ((ULONGLONG)decRichHdr->Entries[i].Count << 32) |        // top 32 bits
-            ((ULONGLONG)decRichHdr->Entries[i - 1].ProdID  << 16) |  // next 16 bits
-            ((ULONGLONG)decRichHdr->Entries[i - 1].BuildID);         // lower 16 bits (END)
+        const char *name = getRichProductIdName(e->ProdID);
 
-        printf("%5d | 0x%08lX | 0x%016llX | 0x%016llX | %08u.%08u.%016u | %08u - %-25s | %08u | %9lu\n",
-            i,
-            foBase,
-            encRawEntry,
-            decRawEntry,
-            (unsigned) decRichHdr->Entries[i - 1].BuildID,
-            (unsigned) decRichHdr->Entries[i - 1].ProdID,
-            (unsigned) decRichHdr->Entries[i].Count,
-            decRichHdr->Entries[i - 1].ProdID,
-            getRichProductIdName(decRichHdr->Entries[i - 1].ProdID),
-            decRichHdr->Entries[i - 1].BuildID,
-            decRichHdr->Entries[i].Count);
+        size_t len = snprintf(NULL, 0, "%4u (%s)", e->ProdID, name);
 
-        foBase += 8; // size of ULONGLONG
+        if (len > maxProdLen)
+            maxProdLen = len;
     }
 
-    printf("----------------------------------------------------------------------------------------------------------------------------------------------------------------\n\n");
+    printf("Index | FO         | %-*s | BuildID  | Count\n", (int)maxProdLen, "ProdID (Meaning)");
 
+    printf("--------------------------------------------------------------------------\n");
 
-    // Rich marker and XOR key
+    for (WORD i = 0; i < richHeader->NumberOfEntries; i++) {
+        RICH_ENTRY *e = &richHeader->Entries[i];
+        const char *name = getRichProductIdName(e->ProdID);
+
+        printf("%5d | 0x%08lX | %4u (%s)%*s | %7u | %5lu\n",
+            i,
+            foBase,
+            e->ProdID,
+            name,
+            (int)(maxProdLen - snprintf(NULL, 0, "%4u (%s)", e->ProdID, name)),
+            "",
+            e->BuildID,
+            e->Count);
+
+        foBase += 8;
+    }
+
+    printf("-------------------------------------------------------------------\n\n");
+
+    // Rich + XOR key (already resolved upstream)
     printf("%08lX  [4]  Rich marker      : %08lX  (\"%c%c%c%c\")\n",
-        foBase, decRichHdr->Rich,
-        (int)(decRichHdr->Rich & 0xFF),            // lowest byte
-        (int)(decRichHdr->Rich >> 8) & 0xFF,
-        (int)(decRichHdr->Rich >> 16) & 0xFF,
-        (int)(decRichHdr->Rich >> 24) & 0xFF);
+        foBase,
+        richHeader->Rich,
+        (char)(richHeader->Rich & 0xFF),
+        (char)((richHeader->Rich >> 8) & 0xFF),
+        (char)((richHeader->Rich >> 16) & 0xFF),
+        (char)((richHeader->Rich >> 24) & 0xFF));
+
     foBase += 4;
 
-    printf("%08lX  [4]  Checksum         : %08lX\n",
-        foBase, decRichHdr->XORKey);
-    foBase += 4;
+    printf("%08lX  [4]  XOR Key          : %08lX\n", foBase, richHeader->XORKey);
 
     printf("\n");
 
     fflush(stdout);
-
     return RET_SUCCESS;
 }
 
