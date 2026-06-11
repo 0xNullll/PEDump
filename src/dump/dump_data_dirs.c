@@ -2762,7 +2762,7 @@ RET_CODE dump_tls_dir(
             }
 
             printf("%-5d  %016llX  %08lX          %0*llX\n",
-                i + 1, addressOfCallBacks, offOfCallBacks, ptrSize, callBackEntry);
+                i + 1, addressOfCallBacks, offOfCallBacks, (int)ptrSize, callBackEntry);
 
             addressOfCallBacks += ptrSize;
             offOfCallBacks += ptrSize;
