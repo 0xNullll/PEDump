@@ -4057,10 +4057,7 @@ RET_CODE dump_delay_import_dir(
     while (delayImportDir[count].DllNameRVA != 0 ||
         delayImportDir[count].ModuleHandleRVA != 0 ||
         delayImportDir[count].ImportAddressTableRVA != 0 ||
-        delayImportDir[count].ImportNameTableRVA != 0 ||
-        delayImportDir[count].BoundImportAddressTableRVA != 0 ||
-        delayImportDir[count].UnloadInformationTableRVA != 0 ||
-        delayImportDir[count].TimeDateStamp != 0) {
+        delayImportDir[count].ImportNameTableRVA != 0) {
         count++;
     }
 
